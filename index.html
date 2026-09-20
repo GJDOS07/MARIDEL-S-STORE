@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MARIDEL'S STORE</title>
+    <meta name="description" content="Maridel's Store - Pinoy essentials for everyday living." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+</head>
+<body>
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+            <button class="modal-close" id="closeLogin" type="button" aria-label="Close login">&times;</button>
+            <p class="login-label">Customer access</p>
+            <h2 id="loginTitle">Welcome to Maridel's Store</h2>
+            <p class="login-copy">Enter your Gmail address to continue. No password is required.</p>
+            <form class="gmail-form" id="gmailForm">
+                <label for="gmailInput">Enter your Gmail address</label>
+                <input id="gmailInput" type="email" placeholder="customer@gmail.com" autocomplete="email" required />
+                <p class="login-error" id="loginError" role="alert" hidden>Please enter a valid Gmail address.</p>
+                <button class="btn btn-primary" type="submit">Continue</button>
+            </form>
+            <p class="login-status" id="loginStatus" role="status"></p>
+        </div>
+    </div>
+
+    <div class="page-shell" id="homePage">
+        <header class="topbar">
+            <a class="brand" href="#home" aria-label="Maridel's Store home"><div class="brand-mark">MS</div><div class="brand-text"><span>Maridel's</span><small>Store</small></div></a>
+            <nav class="main-nav" aria-label="Main navigation">
+                <a href="#home">Home</a><a href="#shop">Shop</a><a href="#categories">Categories</a><a href="#about">About Us</a><a href="#contact">Contact</a>
+            </nav>
+            <a href="#shop" class="btn btn-primary nav-cta">Shop Now</a>
+        </header>
+
+        <main>
+            <section class="hero" id="home">
+                <div class="hero-copy">
+                    <span class="eyebrow">Pinoy essentials for everyday living</span>
+                    <h1>Simple essentials for a <span>happy Filipino home.</span></h1>
+                    <p>Discover familiar groceries, household needs, and daily essentials selected for your family.</p>
+                    <div class="cta-row"><a href="#shop" class="btn btn-primary">Shop Now</a><a href="#shop" class="btn btn-secondary">View Products</a></div>
+                    <div class="hero-note"><span class="note-dot"></span><span>Everyday products, thoughtfully presented.</span></div>
+                </div>
+                <div class="hero-visual" aria-label="Featured Maridel's Store product">
+                    <div class="showcase-card"><span class="badge">Featured product</span><div class="product-visual rice-box"></div><div class="showcase-info"><p>Rice &amp; Grains</p><h3>Premium Rice 5kg</h3><div class="price-row"><strong>₱450</strong></div></div><div class="floating-card floating-two"><small>For your home</small><strong>Fresh &amp; Clean</strong></div></div>
+                </div>
+            </section>
+
+            <section class="category-strip" id="categories" aria-label="Store categories">
+                <div class="section-head compact"><div><p class="section-label">Browse by category</p><h2>Find what you need</h2></div></div>
+                <div class="category-buttons" role="group" aria-label="Product category filters"><button class="category-button active" type="button">All Products</button><button class="category-button" type="button">Food</button><button class="category-button" type="button">Beverages</button><button class="category-button" type="button">Household</button><button class="category-button" type="button">Personal Care</button><button class="category-button" type="button">Other Products</button></div>
+            </section>
+
+            <section class="featured" id="shop">
+                <div class="section-head"><div><p class="section-label">Our products</p><h2>Everyday essentials</h2></div><span class="section-hint">Browse the collection</span></div>
+                <div class="product-grid">
+                    <article class="product-card"><div class="thumb thumb-rice"></div><div class="product-body"><p>Food</p><h3>Premium Rice 5kg</h3><span class="product-description">A dependable pantry staple for everyday meals.</span><div class="product-meta"><strong>₱450</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
+                    <article class="product-card"><div class="thumb thumb-soap"></div><div class="product-body"><p>Household</p><h3>Clean &amp; Fresh Soap</h3><span class="product-description">A simple household essential for a clean home.</span><div class="product-meta"><strong>₱120</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
+                    <article class="product-card"><div class="thumb thumb-canned"></div><div class="product-body"><p>Food</p><h3>Healthy Canned Goods</h3><span class="product-description">Convenient pantry choices for busy days.</span><div class="product-meta"><strong>₱180</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
+                    <article class="product-card"><div class="thumb thumb-drink"></div><div class="product-body"><p>Beverages</p><h3>Pinoy Fruit Juice</h3><span class="product-description">A familiar drink to enjoy with every meal.</span><div class="product-meta"><strong>₱95</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
+                </div>
+            </section>
+
+            <section class="about-section" id="about"><div class="about-copy"><p class="section-label">About the store</p><h2>MARIDEL'S STORE</h2><p>Maridel's Store brings together groceries, household needs, and everyday essentials for the Filipino home.</p><p>Our goal is to make familiar products easy to discover in one simple, welcoming place.</p></div></section>
+            <section class="contact-section" id="contact"><div><p class="section-label">Contact us</p><h2>We'd love to hear from you.</h2><p class="contact-copy">For store questions and product inquiries, please use the contact details provided by MARIDEL'S STORE.</p></div><div class="contact-card"><p class="contact-label">Store contact</p><p class="contact-unavailable">Contact details are not listed yet.</p><p class="contact-note">Add the official store number, email, address, or social links here when available.</p></div></section>
+        </main>
+
+        <footer class="site-footer"><div class="brand footer-brand"><div class="brand-mark">MS</div><div class="brand-text"><span>Maridel's</span><small>Store</small></div></div><p>© 2026 Maridel's Store. All rights reserved.</p><div class="footer-links"><a href="#home">Home</a><a href="#shop">Shop</a><a href="#contact">Contact</a></div></footer>
+    </div>
+
+    <script>
+        const loginOverlay = document.getElementById('loginOverlay');
+        const gmailForm = document.getElementById('gmailForm');
+        const gmailInput = document.getElementById('gmailInput');
+        const loginError = document.getElementById('loginError');
+        const openLoginButton = document.getElementById('openLogin');
+        function openLogin() {
+            if (!loginOverlay || !gmailInput) return;
+            loginOverlay.classList.remove('hidden');
+            gmailInput.focus();
+        }
+        if (openLoginButton) openLoginButton.addEventListener('click', openLogin);
+        const closeLoginButton = document.getElementById('closeLogin');
+        if (closeLoginButton) closeLoginButton.addEventListener('click', () => loginOverlay.classList.add('hidden'));
+        gmailForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const isGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(gmailInput.value.trim());
+            loginError.hidden = isGmail;
+            if (!isGmail) return;
+
+            const emailjsConfig = {
+                publicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
+                serviceId: 'YOUR_EMAILJS_SERVICE_ID',
+                templateId: 'YOUR_EMAILJS_TEMPLATE_ID'
+            };
+            const loginStatus = document.getElementById('loginStatus');
+            loginStatus.textContent = '';
+            if (!window.emailjs || Object.values(emailjsConfig).some((value) => value.startsWith('YOUR_'))) {
+                loginStatus.textContent = 'Email notification is not configured yet. You may continue to the store.';
+                loginOverlay.classList.add('hidden');
+                return;
+            }
+
+            try {
+                emailjs.init({ publicKey: emailjsConfig.publicKey });
+                await emailjs.send(emailjsConfig.serviceId, emailjsConfig.templateId, {
+                    customer_gmail: gmailInput.value.trim(),
+                    submission_time: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+                    recipient_email: 'gjalcantara24@gmail.com'
+                });
+                loginStatus.textContent = 'Salamat! Matagumpay na naisumite ang iyong Gmail address.';
+                gmailForm.reset();
+                loginOverlay.classList.add('hidden');
+            } catch (error) {
+                loginStatus.textContent = 'May nangyaring problema. Pakisubukan muli.';
+                loginOverlay.classList.add('hidden');
+            }
+        });
+        document.querySelectorAll('.category-button').forEach((button) => button.addEventListener('click', () => { document.querySelector('.category-button.active').classList.remove('active'); button.classList.add('active'); }));
+        window.addEventListener('load', () => {
+            if (openLoginButton) openLogin();
+        });
+    </script>
+</body>
+</html>
