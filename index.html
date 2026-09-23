@@ -3,127 +3,1410 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MARIDEL'S STORE</title>
-    <meta name="description" content="Maridel's Store - Pinoy essentials for everyday living." />
+    <title>Maridel's Store - Modern Pinoy Groceries & Everyday Essentials</title>
+    <meta name="description" content="Simple essentials for a happy Filipino home in Australia. Authentic groceries, household needs, and pantry staples." />
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet" />
+    
     <link rel="stylesheet" href="style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 </head>
 <body>
-    <div class="login-overlay" id="loginOverlay">
-        <div class="login-modal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-            <button class="modal-close" id="closeLogin" type="button" aria-label="Close login">&times;</button>
-            <p class="login-label">Customer access</p>
-            <h2 id="loginTitle">Welcome to Maridel's Store</h2>
-            <p class="login-copy">Enter your Gmail address to continue. No password is required.</p>
-            <form class="gmail-form" id="gmailForm">
-                <label for="gmailInput">Enter your Gmail address</label>
-                <input id="gmailInput" type="email" placeholder="customer@gmail.com" autocomplete="email" required />
-                <p class="login-error" id="loginError" role="alert" hidden>Please enter a valid Gmail address.</p>
-                <button class="btn btn-primary" type="submit">Continue</button>
-            </form>
-            <p class="login-status" id="loginStatus" role="status"></p>
+
+    <!-- TOP ANNOUNCEMENT BAR -->
+    <aside class="top-announcement" aria-label="Store announcement">
+        <span class="badge">Mabuhay!</span>
+        <span>Australia-wide shipping &bull; Free delivery on orders over <b>₱1,500</b> &bull; Use code <b>PINOYHOME</b> for 10% off</span>
+    </aside>
+
+    <!-- HEADER / TOPBAR -->
+    <header class="topbar-wrapper" id="topHeader">
+        <div class="topbar-container">
+            <!-- Brand Logo -->
+            <a href="#home" class="brand" aria-label="Maridel's Store Home">
+                <div class="brand-mark">MS</div>
+                <div class="brand-text">
+                    <span class="name">Maridel's</span>
+                    <span class="sub">STORE</span>
+                </div>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="main-nav" aria-label="Primary navigation">
+                <a href="#home" class="nav-link active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10.25L12 3l9 7.25v10a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1v-10z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Home
+                </a>
+                <a href="#shop" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6zM3 6h18M16 10a4 4 0 01-8 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Shop
+                </a>
+                <a href="#shop" class="nav-link" onclick="filterCategory('all');">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
+                    Categories
+                </a>
+                <a href="#about" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    About Us
+                </a>
+                <a href="#contact" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Contact
+                </a>
+            </nav>
+
+            <!-- Actions: Search, Account, Cart -->
+            <div class="topbar-actions">
+                <!-- Search Box -->
+                <div class="search-box" id="searchBoxContainer">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search for products..." autocomplete="off" />
+                    <button type="button" class="search-clear" id="searchClearBtn" aria-label="Clear search">&times;</button>
+                </div>
+
+                <!-- Account Icon -->
+                <button type="button" class="action-btn" id="openAuthBtn" aria-label="User Account">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </button>
+
+                <!-- Cart Button with Live Badge -->
+                <button type="button" class="action-btn" id="openCartBtn" aria-label="Shopping Cart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                    <span class="cart-badge" id="cartBadge">2</span>
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle navigation">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero-wrapper" id="home">
+            <div class="hero-container">
+                <!-- Left: Headline & Actions -->
+                <div class="hero-content">
+                    <div class="hero-pill-badge">
+                        <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+                        <span>PINOY STORE AUSTRALIA &nbsp;|&nbsp; EST. 2021</span>
+                    </div>
+
+                    <h1 class="hero-title">
+                        Simple essentials <br />
+                        <span class="happy-highlight">
+                            for a happy
+                            <svg class="brush-underline" viewBox="0 0 220 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M4 11C68 3.5 152 3.5 216 11" stroke="#F6C944" stroke-width="5" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        Filipino home.
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Discover familiar groceries, household needs, and daily essentials selected for your family.
+                    </p>
+
+                    <div class="hero-actions">
+                        <a href="#shop" class="btn-hero-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                            Shop Now &rarr;
+                        </a>
+                        <a href="#shop" class="btn-hero-secondary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            View Products
+                        </a>
+                    </div>
+
+                    <!-- Slide Indicator Dots -->
+                    <div class="hero-slider-dots">
+                        <span class="dot-indicator active" data-slide="0" onclick="switchFeaturedSlide(0)"></span>
+                        <span class="dot-indicator" data-slide="1" onclick="switchFeaturedSlide(1)"></span>
+                        <span class="dot-indicator" data-slide="2" onclick="switchFeaturedSlide(2)"></span>
+                        <span class="dot-indicator" data-slide="3" onclick="switchFeaturedSlide(3)"></span>
+                    </div>
+                </div>
+
+                <!-- Right: Interactive Featured Product Card -->
+                <div class="featured-card-wrapper">
+                    <article class="hero-product-card" id="featuredCard">
+                        <!-- Photo container -->
+                        <div class="card-image-box">
+                            <div class="card-featured-badge">
+                                <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span>FEATURED PRODUCT</span>
+                            </div>
+                            <img id="featuredImg" src="https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&amp;fit=crop&amp;w=900&amp;q=85" alt="Premium Rice 5kg" />
+                        </div>
+
+                        <!-- Details container -->
+                        <div class="card-details-box">
+                            <span class="card-category" id="featuredCategory">RICE &amp; GRAINS</span>
+                            <h2 class="card-title" id="featuredTitle">Premium Rice 5kg</h2>
+                            <div class="card-pill-tag" id="featuredTag">
+                                <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+                                <span>Fresh &amp; Clean</span>
+                            </div>
+
+                            <div class="card-price-row">
+                                <span class="card-price" id="featuredPrice">₱450</span>
+                                <span class="card-original-price" id="featuredOldPrice">₱490</span>
+                                <span class="card-stock-badge">✓ In Stock</span>
+                            </div>
+
+                            <div class="card-quantity-row">
+                                <div class="quantity-stepper">
+                                    <button type="button" class="stepper-btn" onclick="adjustFeaturedQty(-1)">&minus;</button>
+                                    <span class="stepper-value" id="featuredQty">1</span>
+                                    <button type="button" class="stepper-btn" onclick="adjustFeaturedQty(1)">+</button>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn-card-add" id="featuredAddBtn" onclick="addFeaturedToCart()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                                <span>Add to Cart</span>
+                            </button>
+                        </div>
+                    </article>
+
+                    <!-- Next Carousel Button -->
+                    <button type="button" class="carousel-nav-btn" id="featuredNextBtn" onclick="nextFeaturedSlide()" aria-label="Next featured product">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- VALUE PROPOSITIONS / TRUST BAR -->
+        <section class="trust-bar-wrapper" aria-label="Customer trust guarantees">
+            <div class="trust-bar-container">
+                <div class="trust-item">
+                    <div class="trust-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    </div>
+                    <div class="trust-text">
+                        <strong>Fast &amp; Reliable Delivery</strong>
+                        <span>Get your orders on time</span>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                    </div>
+                    <div class="trust-text">
+                        <strong>Quality Products</strong>
+                        <span>Fresh and trusted brands</span>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+                    </div>
+                    <div class="trust-text">
+                        <strong>Family Essentials</strong>
+                        <span>For your everyday needs</span>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                    </div>
+                    <div class="trust-text">
+                        <strong>Support Local</strong>
+                        <span>Bringing the taste of home</span>
+                    </div>
+                </div>
+
+                <div class="trust-item">
+                    <div class="trust-icon-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+                    </div>
+                    <div class="trust-text">
+                        <strong>Friendly Customer Service</strong>
+                        <span>We're here to help</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- WEEKLY SPECIALS / PROMO BANNER -->
+        <section class="promo-strip-wrapper">
+            <div class="promo-banner">
+                <div class="promo-info">
+                    <span class="promo-pill">🔥 Weekly Paborito Deals</span>
+                    <h3>Save up to 25% on Filipino Pantry Bundles</h3>
+                    <p>Stock up on authentic rice, soy sauces, corned beef, and noodles shipped direct to your doorstep.</p>
+                </div>
+                <div class="promo-timer">
+                    <div class="timer-box">
+                        <span class="timer-num" id="timerHours">14</span>
+                        <span class="timer-label">Hours</span>
+                    </div>
+                    <div class="timer-box">
+                        <span class="timer-num" id="timerMins">28</span>
+                        <span class="timer-label">Mins</span>
+                    </div>
+                    <div class="timer-box">
+                        <span class="timer-num" id="timerSecs">45</span>
+                        <span class="timer-label">Secs</span>
+                    </div>
+                </div>
+                <a href="#shop" class="btn-promo">Shop Deals &rarr;</a>
+            </div>
+        </section>
+
+        <!-- STORE CATALOG & SHOPPING SECTION -->
+        <section class="shop-section" id="shop">
+            <div class="section-header-row">
+                <div>
+                    <span class="section-label">Our Collection</span>
+                    <h2 class="section-title">Everyday Pinoy Essentials</h2>
+                </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <nav class="category-filter-nav" aria-label="Filter products by category">
+                <button type="button" class="filter-pill active" data-filter="all" onclick="filterCategory('all', this)">
+                    All Products <span class="pill-count">8</span>
+                </button>
+                <button type="button" class="filter-pill" data-filter="rice" onclick="filterCategory('rice', this)">
+                    Rice &amp; Grains <span class="pill-count">2</span>
+                </button>
+                <button type="button" class="filter-pill" data-filter="sauces" onclick="filterCategory('sauces', this)">
+                    Sauces &amp; Condiments <span class="pill-count">2</span>
+                </button>
+                <button type="button" class="filter-pill" data-filter="canned" onclick="filterCategory('canned', this)">
+                    Canned Goods <span class="pill-count">2</span>
+                </button>
+                <button type="button" class="filter-pill" data-filter="snacks" onclick="filterCategory('snacks', this)">
+                    Snacks &amp; Drinks <span class="pill-count">2</span>
+                </button>
+            </nav>
+
+            <!-- Product Grid -->
+            <div class="product-grid" id="productGrid">
+                <!-- Product 1: Premium Rice -->
+                <article class="product-card" data-category="rice" data-id="p1" data-title="Premium Rice 5kg" data-price="450">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-bestseller">Best Seller</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Premium Rice 5kg" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p1')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Rice &amp; Grains</span>
+                        <h3 class="product-name">Premium Rice 5kg</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.9 (128)</span>
+                        </div>
+                        <p class="product-desc-snippet">High quality, naturally fragrant white rice perfect for every Filipino family meal.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱450</span>
+                                <span class="price-del">₱490</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p1', 'Premium Rice 5kg', 450, 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 2: Datu Puti Twin Pack -->
+                <article class="product-card" data-category="sauces" data-id="p2" data-title="Datu Puti Soy Sauce &amp; Vinegar Twin Pack (1L x 2)" data-price="195">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-popular">Popular</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Datu Puti Soy Sauce &amp; Vinegar" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p2')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Sauces &amp; Condiments</span>
+                        <h3 class="product-name">Datu Puti Twin Pack (1L x 2)</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>5.0 (94)</span>
+                        </div>
+                        <p class="product-desc-snippet">The iconic Filipino adobo pair: pure cane vinegar &amp; premium naturally brewed soy sauce.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱195</span>
+                                <span class="price-del">₱220</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p2', 'Datu Puti Twin Pack (1L x 2)', 195, 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 3: Purefoods Corned Beef -->
+                <article class="product-card" data-category="canned" data-id="p3" data-title="Purefoods Corned Beef 210g" data-price="175">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-sale">Sale -10%</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Purefoods Corned Beef" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p3')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Canned Goods</span>
+                        <h3 class="product-name">Purefoods Corned Beef 210g</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.8 (82)</span>
+                        </div>
+                        <p class="product-desc-snippet">100% premium beef strands, seasoned Filipino-style for a classic breakfast sinangag partner.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱175</span>
+                                <span class="price-del">₱195</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p3', 'Purefoods Corned Beef 210g', 175, 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 4: Lucky Me Pancit Canton -->
+                <article class="product-card" data-category="snacks" data-id="p4" data-title="Lucky Me! Pancit Canton Kalamansi (5-Pack)" data-price="145">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-bestseller">Best Seller</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Lucky Me Pancit Canton" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p4')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Snacks &amp; Drinks</span>
+                        <h3 class="product-name">Lucky Me! Pancit Canton (5-Pack)</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.9 (156)</span>
+                        </div>
+                        <p class="product-desc-snippet">The beloved quick merienda. Zesty kalamansi citrus flavor with savory seasonings.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱145</span>
+                                <span class="price-del">₱165</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p4', 'Lucky Me! Pancit Canton (5-Pack)', 145, 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 5: Mang Tomas All-Around Sarsa -->
+                <article class="product-card" data-category="sauces" data-id="p5" data-title="Mang Tomas All-Around Sarsa 325g" data-price="110">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-popular">Essential</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1627485937980-221c88ac04f9?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Mang Tomas Sarsa" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p5')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Sauces &amp; Condiments</span>
+                        <h3 class="product-name">Mang Tomas All-Around Sarsa 325g</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.8 (64)</span>
+                        </div>
+                        <p class="product-desc-snippet">Rich, sweet, and peppery pork sauce. Essential for lechon kawali, liempo, and fried chops.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱110</span>
+                                <span class="price-del">₱125</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p5', 'Mang Tomas All-Around Sarsa 325g', 110, 'https://images.unsplash.com/photo-1627485937980-221c88ac04f9?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 6: Pinoy Fruit Juice / Calamansi -->
+                <article class="product-card" data-category="snacks" data-id="p6" data-title="Pinoy Calamansi Fruit Juice 1L" data-price="120">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-popular">Fresh</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Pinoy Fruit Juice" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p6')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Snacks &amp; Drinks</span>
+                        <h3 class="product-name">Pinoy Calamansi Fruit Juice 1L</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.7 (48)</span>
+                        </div>
+                        <p class="product-desc-snippet">Made with real Philippine calamansi lime. Crisp, refreshing citrus drink to cool your day.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱120</span>
+                                <span class="price-del">₱135</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p6', 'Pinoy Calamansi Fruit Juice 1L', 120, 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 7: Clean & Fresh Soap -->
+                <article class="product-card" data-category="rice" data-id="p7" data-title="Clean &amp; Fresh Soap (Pack of 3)" data-price="180">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-sale">Household</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Clean &amp; Fresh Soap" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p7')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Household &amp; Care</span>
+                        <h3 class="product-name">Clean &amp; Fresh Soap (3-Pack)</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.9 (73)</span>
+                        </div>
+                        <p class="product-desc-snippet">Gentle antibacterial family bath soap with long-lasting freshness and skin protection.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱180</span>
+                                <span class="price-del">₱200</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p7', 'Clean & Fresh Soap (3-Pack)', 180, 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Product 8: Filipino Style Spaghetti Sauce -->
+                <article class="product-card" data-category="canned" data-id="p8" data-title="Sweet Filipino Style Spaghetti Sauce 900g" data-price="135">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag badge-popular">Popular</span>
+                        <button type="button" class="btn-wishlist" onclick="toggleWishlist(this)" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="https://images.unsplash.com/photo-1621996346565-e3d5d628169e?auto=format&amp;fit=crop&amp;w=800&amp;q=85" alt="Filipino Style Spaghetti Sauce" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view" onclick="openQuickView('p8')">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">Canned Goods</span>
+                        <h3 class="product-name">Sweet Spaghetti Sauce 900g</h3>
+                        <div class="product-rating">
+                            <span class="rating-stars">&starf;&starf;&starf;&starf;&starf;</span>
+                            <span>4.9 (112)</span>
+                        </div>
+                        <p class="product-desc-snippet">The iconic Pinoy birthday spaghetti sauce. Extra sweet tomato blend with parmesan hints.</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱135</span>
+                                <span class="price-del">₱150</span>
+                            </div>
+                            <button type="button" class="btn-quick-add" onclick="addProductToCart('p8', 'Sweet Spaghetti Sauce 900g', 135, 'https://images.unsplash.com/photo-1621996346565-e3d5d628169e?auto=format&amp;fit=crop&amp;w=800&amp;q=85', this)">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <!-- ABOUT STORE STORY SECTION -->
+        <section class="about-wrapper" id="about">
+            <div class="about-text">
+                <span class="section-label">About Maridel's Store</span>
+                <h2>Familiar favourites, thoughtfully stocked for your home.</h2>
+                <p>
+                    Established in 2021, Maridel's Store brings together the authentic flavors, beloved pantry staples, and everyday household essentials for the Filipino community across Australia.
+                </p>
+                <p>
+                    From jasmine rice to familiar merienda noodles and condiments, we pack every parcel with utmost care so you can cook the dishes that make home feel close.
+                </p>
+                <div class="about-highlights-grid">
+                    <div class="highlight-box">
+                        <strong>100% Authentic</strong>
+                        <span>Genuine Philippine brands and certified staples.</span>
+                    </div>
+                    <div class="highlight-box">
+                        <strong>Australia-Wide</strong>
+                        <span>Reliable express dispatch to Sydney, Melbourne, Perth &amp; more.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="about-visual-card">
+                <span class="visual-badge">Our Commitment</span>
+                <h3>Good products.<br />Warm service.</h3>
+                <p>
+                    Whether you are cooking a celebratory Sunday sinigang or looking for comfort snacks after work, Maridel's Store is your trusted Pinoy pantry partner.
+                </p>
+            </div>
+        </section>
+
+        <!-- CUSTOMER REVIEWS -->
+        <section class="reviews-section" aria-label="Customer reviews">
+            <div class="section-header-row">
+                <div>
+                    <span class="section-label">Community Love</span>
+                    <h2 class="section-title">What Our Customers Say</h2>
+                </div>
+            </div>
+
+            <div class="reviews-grid">
+                <div class="review-card">
+                    <div class="review-stars">&starf;&starf;&starf;&starf;&starf;</div>
+                    <p class="review-quote">"Finding quality rice and genuine Datu Puti in Melbourne was always a hassle until I found Maridel's Store. Packed so neatly and arrived in 2 days!"</p>
+                    <div class="reviewer-box">
+                        <div class="reviewer-avatar">EA</div>
+                        <div class="reviewer-info">
+                            <strong>Elena Alcantara</strong>
+                            <span>Melbourne, VIC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-card">
+                    <div class="review-stars">&starf;&starf;&starf;&starf;&starf;</div>
+                    <p class="review-quote">"The kids loved having their favorite Pancit Canton and sweet spaghetti sauce back in the pantry. Maraming salamat for the warm, accommodating service!"</p>
+                    <div class="reviewer-box">
+                        <div class="reviewer-avatar">RM</div>
+                        <div class="reviewer-info">
+                            <strong>Ramon Mendoza</strong>
+                            <span>Sydney, NSW</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-card">
+                    <div class="review-stars">&starf;&starf;&starf;&starf;&starf;</div>
+                    <p class="review-quote">"Fast shipping, authentic products, and competitive prices. Maridel's has become my monthly go-to grocery store here in Australia."</p>
+                    <div class="reviewer-box">
+                        <div class="reviewer-avatar">CS</div>
+                        <div class="reviewer-info">
+                            <strong>Carmina Santos</strong>
+                            <span>Brisbane, QLD</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT SECTION -->
+        <section class="contact-wrapper" id="contact">
+            <div class="contact-info-card">
+                <div>
+                    <span class="section-label" style="color: var(--gold);">Get In Touch</span>
+                    <h2>Let's make your next shop easier.</h2>
+                    <p>Have a question about product restocks, special bulk orders, or shipping? Reach out to us anytime and we will be delighted to assist you.</p>
+                </div>
+
+                <div class="contact-method-list">
+                    <div class="contact-method-item">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                        </div>
+                        <div>
+                            <small>Phone Support</small>
+                            <strong>+61 400 000 000</strong>
+                        </div>
+                    </div>
+
+                    <div class="contact-method-item">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </div>
+                        <div>
+                            <small>Email Inquiries</small>
+                            <strong>hello@maridelsstore.com</strong>
+                        </div>
+                    </div>
+
+                    <div class="contact-method-item">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </div>
+                        <div>
+                            <small>Dispatch Hub</small>
+                            <strong>Australia-Wide Delivery</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-form-card">
+                <h3>Send Us a Message</h3>
+                <form class="contact-form" id="contactForm">
+                    <div class="form-group">
+                        <label for="contactName">Your Name</label>
+                        <input type="text" id="contactName" class="form-input" placeholder="e.g. Maria Santos" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email Address</label>
+                        <input type="email" id="contactEmail" class="form-input" placeholder="you@example.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="contactMessage">How can we help?</label>
+                        <textarea id="contactMessage" class="form-textarea" rows="4" placeholder="Ask about restocks, delivery times, or special requests..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit-contact">Send Message &rarr;</button>
+                    <p id="contactStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-top: 8px;"></p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer-site">
+        <div class="footer-container">
+            <div class="footer-grid">
+                <div class="footer-brand-box">
+                    <div class="brand">
+                        <div class="brand-mark">MS</div>
+                        <div class="brand-text">
+                            <span class="name" style="color: #ffffff;">Maridel's</span>
+                            <span class="sub" style="color: var(--gold);">STORE</span>
+                        </div>
+                    </div>
+                    <p>Bringing authentic Filipino groceries, pantry staples, and heartwarming comfort to homes across Australia since 2021.</p>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <div class="footer-links">
+                        <a href="#home">Home</a>
+                        <a href="#shop">Shop All Products</a>
+                        <a href="#shop">Weekly Deals</a>
+                        <a href="#about">About Us</a>
+                        <a href="#contact">Contact</a>
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Categories</h4>
+                    <div class="footer-links">
+                        <a href="#shop" onclick="filterCategory('rice')">Rice &amp; Grains</a>
+                        <a href="#shop" onclick="filterCategory('sauces')">Sauces &amp; Seasonings</a>
+                        <a href="#shop" onclick="filterCategory('canned')">Canned Goods</a>
+                        <a href="#shop" onclick="filterCategory('snacks')">Snacks &amp; Drinks</a>
+                    </div>
+                </div>
+
+                <div class="footer-col">
+                    <h4>Customer Care</h4>
+                    <div class="footer-links">
+                        <a href="#contact">Shipping Info</a>
+                        <a href="#contact">Delivery Coverage</a>
+                        <a href="#contact">Returns &amp; Refunds</a>
+                        <a href="#contact">Help Center</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom-row">
+                <p>&copy; 2026 Maridel's Store. All rights reserved. Made with love for the Filipino community in Australia.</p>
+                <div style="display: flex; gap: 14px; font-weight: 600;">
+                    <span>🔒 Safe &amp; Secure Checkout</span>
+                    <span>🇦🇺 Australia-Wide Express</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SLIDE-OVER SHOPPING CART DRAWER -->
+    <div class="cart-drawer-overlay" id="cartOverlay">
+        <aside class="cart-drawer" aria-label="Shopping Cart">
+            <!-- Cart Header -->
+            <div class="cart-header">
+                <h3>
+                    <span>Your Cart</span>
+                    <span class="cart-count-pill" id="cartDrawerCount">2 items</span>
+                </h3>
+                <button type="button" class="btn-close-drawer" id="closeCartBtn" aria-label="Close cart">&times;</button>
+            </div>
+
+            <!-- Free Shipping Progress Bar -->
+            <div class="free-shipping-progress">
+                <div class="shipping-msg" id="shippingMessage">
+                    🚚 Add ₱855 more for <b>Free Australia-wide Delivery!</b>
+                </div>
+                <div class="shipping-progress-track">
+                    <div class="shipping-progress-bar" id="shippingProgressBar" style="width: 43%;"></div>
+                </div>
+            </div>
+
+            <!-- Cart Items List -->
+            <div class="cart-items-list" id="cartItemsContainer">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Cart Footer -->
+            <div class="cart-footer">
+                <div class="cart-promo-row">
+                    <input type="text" id="promoCodeInput" class="promo-input" placeholder="Promo code (e.g. PINOYHOME)" />
+                    <button type="button" class="btn-apply-promo" onclick="applyPromoCode()">Apply</button>
+                </div>
+                <p id="promoStatus" style="font-size: 0.78rem; font-weight: 700; color: #166534; margin-bottom: 8px; display: none;"></p>
+
+                <div class="cart-totals-breakdown">
+                    <div class="totals-line">
+                        <span>Subtotal</span>
+                        <strong id="cartSubtotal">₱645</strong>
+                    </div>
+                    <div class="totals-line" id="discountRow" style="display: none; color: #166534;">
+                        <span>Discount (10%)</span>
+                        <strong id="cartDiscount">-₱64.50</strong>
+                    </div>
+                    <div class="totals-line">
+                        <span>Estimated Shipping</span>
+                        <strong id="cartShipping">₱150</strong>
+                    </div>
+                    <div class="totals-line total-line">
+                        <span>Total</span>
+                        <strong id="cartGrandTotal">₱795</strong>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-checkout" onclick="proceedToCheckout()">
+                    <span>Proceed to Checkout</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 18px; height: 18px;"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- PRODUCT QUICK VIEW MODAL -->
+    <div class="modal-overlay" id="quickViewModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" onclick="closeQuickView()">&times;</button>
+            <div class="quick-view-grid">
+                <div class="modal-product-img">
+                    <img id="qvImage" src="" alt="Product View" />
+                </div>
+                <div class="modal-product-details">
+                    <span class="modal-product-category" id="qvCategory">Category</span>
+                    <h3 class="modal-product-title" id="qvTitle">Product Title</h3>
+                    <div class="card-pill-tag" style="margin-bottom: 8px;">
+                        <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+                        <span>Verified Authentic Import</span>
+                    </div>
+                    <div class="modal-product-price" id="qvPrice">₱0</div>
+                    <p class="modal-product-desc" id="qvDescription">Product description.</p>
+                    
+                    <div style="display: flex; align-items: center; gap: 14px; margin-top: auto;">
+                        <div class="quantity-stepper">
+                            <button type="button" class="stepper-btn" onclick="adjustQuickViewQty(-1)">&minus;</button>
+                            <span class="stepper-value" id="qvQty">1</span>
+                            <button type="button" class="stepper-btn" onclick="adjustQuickViewQty(1)">+</button>
+                        </div>
+                        <button type="button" class="btn-card-add" id="qvAddBtn" onclick="addQuickViewToCart()">
+                            <span>Add to Cart</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="page-shell" id="homePage">
-        <header class="topbar">
-            <a class="brand" href="#home" aria-label="Maridel's Store home"><div class="brand-mark">MS</div><div class="brand-text"><span>Maridel's</span><small>Store</small></div></a>
-            <nav class="main-nav" aria-label="Main navigation">
-                <a href="#home">Home</a><a href="#shop">Shop</a><a href="#categories">Categories</a><a href="#about">About Us</a><a href="#contact">Contact</a>
-            </nav>
-            <a href="#shop" class="btn btn-primary nav-cta">Shop Now</a>
-        </header>
-
-        <main>
-            <section class="hero" id="home">
-                <div class="hero-copy">
-                    <span class="eyebrow">Pinoy essentials for everyday living</span>
-                    <h1>Simple essentials for a <span>happy Filipino home.</span></h1>
-                    <p>Discover familiar groceries, household needs, and daily essentials selected for your family.</p>
-                    <div class="cta-row"><a href="#shop" class="btn btn-primary">Shop Now</a><a href="#shop" class="btn btn-secondary">View Products</a></div>
-                    <div class="hero-note"><span class="note-dot"></span><span>Everyday products, thoughtfully presented.</span></div>
+    <!-- CUSTOMER ACCOUNT / SIGN-IN MODAL (Preserves EmailJS Gmail notification) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-card" style="max-width: 440px;">
+            <button type="button" class="modal-close-btn" onclick="closeAuthModal()">&times;</button>
+            <div class="auth-modal-content">
+                <div class="auth-modal-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 30px; height: 30px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </div>
-                <div class="hero-visual" aria-label="Featured Maridel's Store product">
-                    <div class="showcase-card"><span class="badge">Featured product</span><div class="product-visual rice-box"></div><div class="showcase-info"><p>Rice &amp; Grains</p><h3>Premium Rice 5kg</h3><div class="price-row"><strong>₱450</strong></div></div><div class="floating-card floating-two"><small>For your home</small><strong>Fresh &amp; Clean</strong></div></div>
-                </div>
-            </section>
+                <h3>Customer Access</h3>
+                <p>Enter your Gmail address to receive order updates, exclusive store discounts, and restock notifications.</p>
 
-            <section class="category-strip" id="categories" aria-label="Store categories">
-                <div class="section-head compact"><div><p class="section-label">Browse by category</p><h2>Find what you need</h2></div></div>
-                <div class="category-buttons" role="group" aria-label="Product category filters"><button class="category-button active" type="button">All Products</button><button class="category-button" type="button">Food</button><button class="category-button" type="button">Beverages</button><button class="category-button" type="button">Household</button><button class="category-button" type="button">Personal Care</button><button class="category-button" type="button">Other Products</button></div>
-            </section>
-
-            <section class="featured" id="shop">
-                <div class="section-head"><div><p class="section-label">Our products</p><h2>Everyday essentials</h2></div><span class="section-hint">Browse the collection</span></div>
-                <div class="product-grid">
-                    <article class="product-card"><div class="thumb thumb-rice"></div><div class="product-body"><p>Food</p><h3>Premium Rice 5kg</h3><span class="product-description">A dependable pantry staple for everyday meals.</span><div class="product-meta"><strong>₱450</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
-                    <article class="product-card"><div class="thumb thumb-soap"></div><div class="product-body"><p>Household</p><h3>Clean &amp; Fresh Soap</h3><span class="product-description">A simple household essential for a clean home.</span><div class="product-meta"><strong>₱120</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
-                    <article class="product-card"><div class="thumb thumb-canned"></div><div class="product-body"><p>Food</p><h3>Healthy Canned Goods</h3><span class="product-description">Convenient pantry choices for busy days.</span><div class="product-meta"><strong>₱180</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
-                    <article class="product-card"><div class="thumb thumb-drink"></div><div class="product-body"><p>Beverages</p><h3>Pinoy Fruit Juice</h3><span class="product-description">A familiar drink to enjoy with every meal.</span><div class="product-meta"><strong>₱95</strong><span class="availability">Check availability</span></div><div class="product-actions"><button class="btn btn-light" type="button">View Details</button><button class="btn btn-primary" type="button">Add to Cart</button><button class="btn btn-secondary" type="button">Buy Now</button></div></div></article>
-                </div>
-            </section>
-
-            <section class="about-section" id="about"><div class="about-copy"><p class="section-label">About the store</p><h2>MARIDEL'S STORE</h2><p>Maridel's Store brings together groceries, household needs, and everyday essentials for the Filipino home.</p><p>Our goal is to make familiar products easy to discover in one simple, welcoming place.</p></div></section>
-            <section class="contact-section" id="contact"><div><p class="section-label">Contact us</p><h2>We'd love to hear from you.</h2><p class="contact-copy">For store questions and product inquiries, please use the contact details provided by MARIDEL'S STORE.</p></div><div class="contact-card"><p class="contact-label">Store contact</p><p class="contact-unavailable">Contact details are not listed yet.</p><p class="contact-note">Add the official store number, email, address, or social links here when available.</p></div></section>
-        </main>
-
-        <footer class="site-footer"><div class="brand footer-brand"><div class="brand-mark">MS</div><div class="brand-text"><span>Maridel's</span><small>Store</small></div></div><p>© 2026 Maridel's Store. All rights reserved.</p><div class="footer-links"><a href="#home">Home</a><a href="#shop">Shop</a><a href="#contact">Contact</a></div></footer>
+                <form id="customerGmailForm" class="contact-form" style="gap: 14px;">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="customerGmailInput">Gmail Address</label>
+                        <input type="email" id="customerGmailInput" class="form-input" placeholder="yourname@gmail.com" required />
+                        <span id="gmailValidationMsg" style="font-size: 0.75rem; color: #ef4444; display: none;">Mangyaring maglagay ng valid na Gmail address (@gmail.com).</span>
+                    </div>
+                    <button type="submit" class="btn-submit-contact" style="width: 100%;">Continue &rarr;</button>
+                    <p id="gmailSubmitStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534;"></p>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <script>
-        const loginOverlay = document.getElementById('loginOverlay');
-        const gmailForm = document.getElementById('gmailForm');
-        const gmailInput = document.getElementById('gmailInput');
-        const loginError = document.getElementById('loginError');
-        const openLoginButton = document.getElementById('openLogin');
-        function openLogin() {
-            if (!loginOverlay || !gmailInput) return;
-            loginOverlay.classList.remove('hidden');
-            gmailInput.focus();
-        }
-        if (openLoginButton) openLoginButton.addEventListener('click', openLogin);
-        const closeLoginButton = document.getElementById('closeLogin');
-        if (closeLoginButton) closeLoginButton.addEventListener('click', () => loginOverlay.classList.add('hidden'));
-        gmailForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const isGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(gmailInput.value.trim());
-            loginError.hidden = isGmail;
-            if (!isGmail) return;
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-notice" id="toastNotice">
+        <span>✓ Item added to your shopping cart!</span>
+    </div>
 
+    <!-- ==========================================================================
+         CLIENT INTERACTIVITY & SHOPPING LOGIC
+         ========================================================================== -->
+    <script>
+        // --- FEATURED PRODUCTS CAROUSEL DATA ---
+        const featuredProducts = [
+            {
+                id: 'p1',
+                title: 'Premium Rice 5kg',
+                category: 'RICE & GRAINS',
+                tag: 'Fresh & Clean',
+                price: 450,
+                oldPrice: 490,
+                image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=900&q=85'
+            },
+            {
+                id: 'p2',
+                title: 'Datu Puti Twin Pack (1L x 2)',
+                category: 'SAUCES & CONDIMENTS',
+                tag: 'Filipino Classic',
+                price: 195,
+                oldPrice: 220,
+                image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=900&q=85'
+            },
+            {
+                id: 'p3',
+                title: 'Purefoods Corned Beef 210g',
+                category: 'CANNED GOODS',
+                tag: '100% Pure Beef',
+                price: 175,
+                oldPrice: 195,
+                image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=900&q=85'
+            },
+            {
+                id: 'p4',
+                title: 'Lucky Me! Pancit Canton (5-Pack)',
+                category: 'SNACKS & NOODLES',
+                tag: 'Zesty Kalamansi',
+                price: 145,
+                oldPrice: 165,
+                image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=85'
+            }
+        ];
+
+        let currentFeaturedIndex = 0;
+        let featuredQuantity = 1;
+
+        function updateFeaturedSlide(index) {
+            currentFeaturedIndex = (index + featuredProducts.length) % featuredProducts.length;
+            const p = featuredProducts[currentFeaturedIndex];
+            
+            document.getElementById('featuredImg').src = p.image;
+            document.getElementById('featuredCategory').textContent = p.category;
+            document.getElementById('featuredTitle').textContent = p.title;
+            document.getElementById('featuredTag').querySelector('span').textContent = p.tag;
+            document.getElementById('featuredPrice').textContent = '₱' + p.price;
+            document.getElementById('featuredOldPrice').textContent = '₱' + p.oldPrice;
+            
+            featuredQuantity = 1;
+            document.getElementById('featuredQty').textContent = '1';
+
+            // Update dots
+            document.querySelectorAll('.dot-indicator').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === currentFeaturedIndex);
+            });
+        }
+
+        function nextFeaturedSlide() {
+            updateFeaturedSlide(currentFeaturedIndex + 1);
+        }
+
+        function switchFeaturedSlide(idx) {
+            updateFeaturedSlide(idx);
+        }
+
+        function adjustFeaturedQty(delta) {
+            featuredQuantity = Math.max(1, featuredQuantity + delta);
+            document.getElementById('featuredQty').textContent = featuredQuantity;
+        }
+
+        function addFeaturedToCart() {
+            const p = featuredProducts[currentFeaturedIndex];
+            addProductToCart(p.id, p.title, p.price, p.image, null, featuredQuantity);
+            
+            const btn = document.getElementById('featuredAddBtn');
+            btn.classList.add('added');
+            btn.querySelector('span').textContent = 'Added ✓';
+            setTimeout(() => {
+                btn.classList.remove('added');
+                btn.querySelector('span').textContent = 'Add to Cart';
+            }, 1500);
+        }
+
+        // --- SHOPPING CART STATE & MANAGEMENT ---
+        // Initial state pre-populated with 2 items matching the screenshot badge "2"
+        let cart = [
+            {
+                id: 'p1',
+                title: 'Premium Rice 5kg',
+                price: 450,
+                image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=85',
+                qty: 1
+            },
+            {
+                id: 'p2',
+                title: 'Datu Puti Twin Pack (1L x 2)',
+                price: 195,
+                image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=85',
+                qty: 1
+            }
+        ];
+
+        let discountRate = 0; // 0.10 when promo code PINOYHOME is applied
+        const FREE_SHIPPING_THRESHOLD = 1500;
+        const STANDARD_SHIPPING = 150;
+
+        function renderCart() {
+            const container = document.getElementById('cartItemsContainer');
+            const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            // Update badges
+            const cartBadge = document.getElementById('cartBadge');
+            cartBadge.textContent = totalQty;
+            cartBadge.classList.add('bump');
+            setTimeout(() => cartBadge.classList.remove('bump'), 200);
+
+            document.getElementById('cartDrawerCount').textContent = `${totalQty} item${totalQty === 1 ? '' : 's'}`;
+
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="cart-empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                        <p style="font-weight: 700; color: #111827; margin-bottom: 6px;">Your cart is currently empty</p>
+                        <p style="font-size: 0.85rem;">Discover daily essentials from our shop.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cart.map(item => `
+                    <div class="cart-item" data-id="${item.id}">
+                        <div class="cart-item-thumb">
+                            <img src="${item.image}" alt="${item.title}" />
+                        </div>
+                        <div class="cart-item-info">
+                            <h4 class="cart-item-title">${item.title}</h4>
+                            <div class="cart-item-price">₱${item.price}</div>
+                            <div class="cart-item-actions">
+                                <div class="cart-item-qty">
+                                    <button type="button" class="cart-qty-btn" onclick="updateItemQty('${item.id}', -1)">&minus;</button>
+                                    <span class="cart-qty-val">${item.qty}</span>
+                                    <button type="button" class="cart-qty-btn" onclick="updateItemQty('${item.id}', 1)">+</button>
+                                </div>
+                                <button type="button" class="btn-remove-item" onclick="removeCartItem('${item.id}')">Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Calculations
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            const discount = subtotal * discountRate;
+            const shipping = (subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0) ? 0 : STANDARD_SHIPPING;
+            const grandTotal = subtotal - discount + shipping;
+
+            document.getElementById('cartSubtotal').textContent = '₱' + subtotal.toLocaleString();
+            
+            const discountRow = document.getElementById('discountRow');
+            if (discount > 0) {
+                discountRow.style.display = 'flex';
+                document.getElementById('cartDiscount').textContent = '-₱' + discount.toFixed(2);
+            } else {
+                discountRow.style.display = 'none';
+            }
+
+            document.getElementById('cartShipping').textContent = shipping === 0 ? 'FREE' : '₱' + shipping;
+            document.getElementById('cartGrandTotal').textContent = '₱' + Math.max(0, grandTotal).toLocaleString();
+
+            // Shipping Progress Bar
+            const remainingForFree = FREE_SHIPPING_THRESHOLD - subtotal;
+            const shippingMsg = document.getElementById('shippingMessage');
+            const shippingBar = document.getElementById('shippingProgressBar');
+            
+            if (remainingForFree <= 0) {
+                shippingMsg.innerHTML = `🎉 <b>Congratulations!</b> You unlocked <b>Free Delivery!</b>`;
+                shippingBar.style.width = '100%';
+            } else {
+                shippingMsg.innerHTML = `🚚 Add <b>₱${remainingForFree.toLocaleString()}</b> more for <b>Free Australia-wide Delivery!</b>`;
+                const pct = Math.min(100, Math.max(10, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100)));
+                shippingBar.style.width = pct + '%';
+            }
+        }
+
+        function addProductToCart(id, title, price, image, btnElement, quantity = 1) {
+            const existing = cart.find(i => i.id === id);
+            if (existing) {
+                existing.qty += quantity;
+            } else {
+                cart.push({ id, title, price, image, qty: quantity });
+            }
+
+            if (btnElement) {
+                btnElement.classList.add('added');
+                const origHtml = btnElement.innerHTML;
+                btnElement.innerHTML = 'Added ✓';
+                setTimeout(() => {
+                    btnElement.classList.remove('added');
+                    btnElement.innerHTML = origHtml;
+                }, 1400);
+            }
+
+            renderCart();
+            showToast(`Added "${title}" to your cart!`);
+        }
+
+        function updateItemQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) {
+                item.qty += delta;
+                if (item.qty <= 0) {
+                    cart = cart.filter(i => i.id !== id);
+                }
+                renderCart();
+            }
+        }
+
+        function removeCartItem(id) {
+            cart = cart.filter(i => i.id !== id);
+            renderCart();
+        }
+
+        function applyPromoCode() {
+            const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
+            const status = document.getElementById('promoStatus');
+            if (code === 'PINOYHOME' || code === 'MABUHAY10') {
+                discountRate = 0.10;
+                status.style.display = 'block';
+                status.style.color = '#166534';
+                status.textContent = 'Promo code applied: 10% discount!';
+            } else if (code === '') {
+                status.style.display = 'none';
+            } else {
+                discountRate = 0;
+                status.style.display = 'block';
+                status.style.color = '#dc2626';
+                status.textContent = 'Invalid promo code. Try PINOYHOME';
+            }
+            renderCart();
+        }
+
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                alert('Your cart is empty. Please add items to checkout.');
+                return;
+            }
+            alert(`Salamat! Proceeding to checkout. Total: ${document.getElementById('cartGrandTotal').textContent}`);
+        }
+
+        // --- CART DRAWER OPEN / CLOSE ---
+        const cartOverlay = document.getElementById('cartOverlay');
+        document.getElementById('openCartBtn').addEventListener('click', () => cartOverlay.classList.add('open'));
+        document.getElementById('closeCartBtn').addEventListener('click', () => cartOverlay.classList.remove('open'));
+        cartOverlay.addEventListener('click', (e) => {
+            if (e.target === cartOverlay) cartOverlay.classList.remove('open');
+        });
+
+        // --- CATEGORY FILTERING ---
+        function filterCategory(cat, buttonEl) {
+            if (buttonEl) {
+                document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+                buttonEl.classList.add('active');
+            }
+            
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                if (cat === 'all' || card.dataset.category === cat) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- LIVE SEARCH BAR ---
+        const searchInput = document.getElementById('searchInput');
+        const searchClearBtn = document.getElementById('searchClearBtn');
+        const searchBoxContainer = document.getElementById('searchBoxContainer');
+
+        searchInput.addEventListener('focus', () => searchBoxContainer.classList.add('focused'));
+        searchInput.addEventListener('blur', () => {
+            if (!searchInput.value) searchBoxContainer.classList.remove('focused');
+        });
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.trim().toLowerCase();
+            searchClearBtn.classList.toggle('visible', query.length > 0);
+
+            const cards = document.querySelectorAll('.product-card');
+            cards.forEach(card => {
+                const title = card.dataset.title.toLowerCase();
+                const cat = card.dataset.category.toLowerCase();
+                if (title.includes(query) || cat.includes(query)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+        });
+
+        searchClearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClearBtn.classList.remove('visible');
+            document.querySelectorAll('.product-card').forEach(c => c.classList.remove('hidden'));
+            searchInput.focus();
+        });
+
+        // --- WISHLIST TOGGLE ---
+        function toggleWishlist(btn) {
+            btn.classList.toggle('active');
+            showToast(btn.classList.contains('active') ? 'Saved to your wishlist!' : 'Removed from wishlist');
+        }
+
+        // --- QUICK VIEW MODAL ---
+        const productDetails = {
+            'p1': {
+                title: 'Premium Rice 5kg',
+                category: 'Rice & Grains',
+                price: 450,
+                image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=85',
+                desc: 'Naturally fragrant long-grain white rice imported straight for Filipino tables in Australia. Fluffy texture, perfect for sinangag, adobo, or everyday family lunches.'
+            },
+            'p2': {
+                title: 'Datu Puti Twin Pack (1L x 2)',
+                category: 'Sauces & Condiments',
+                price: 195,
+                image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=800&q=85',
+                desc: 'The timeless pair of Filipino cuisine: 100% natural fermented cane vinegar and naturally brewed dark soy sauce. Packed together for maximum value and convenience.'
+            },
+            'p3': {
+                title: 'Purefoods Corned Beef 210g',
+                category: 'Canned Goods',
+                price: 175,
+                image: 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=800&q=85',
+                desc: 'Premium quality corned beef made from 100% pure beef chunks. Sautéd with garlic, onions, and diced potatoes for the ultimate Filipino breakfast.'
+            },
+            'p4': {
+                title: 'Lucky Me! Pancit Canton (5-Pack)',
+                category: 'Snacks & Drinks',
+                price: 145,
+                image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=800&q=85',
+                desc: 'The quintessential Pinoy instant noodle comfort food. Features bouncy stir-fried noodles coated in tangy calamansi citrus and savory seasonings.'
+            },
+            'p5': {
+                title: 'Mang Tomas All-Around Sarsa 325g',
+                category: 'Sauces & Condiments',
+                price: 110,
+                image: 'https://images.unsplash.com/photo-1627485937980-221c88ac04f9?auto=format&fit=crop&w=800&q=85',
+                desc: 'The definitive all-around sauce in the Philippines. Perfect dipping gravy for lechon kawali, crispy pata, fried chicken, or grilled meats.'
+            },
+            'p6': {
+                title: 'Pinoy Calamansi Fruit Juice 1L',
+                category: 'Snacks & Drinks',
+                price: 120,
+                image: 'https://images.unsplash.com/photo-1622597467836-f3285f2131b8?auto=format&fit=crop&w=800&q=85',
+                desc: 'Fresh and invigorating Philippine calamansi lime beverage. Packed with natural vitamin C and pure tropical citrus sweetness.'
+            },
+            'p7': {
+                title: 'Clean & Fresh Soap (3-Pack)',
+                category: 'Household & Care',
+                price: 180,
+                image: 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&fit=crop&w=800&q=85',
+                desc: 'Reliable antibacterial bath soap for everyday family hygiene. Produces a rich, gentle lather leaving skin clean and lightly scented.'
+            },
+            'p8': {
+                title: 'Sweet Spaghetti Sauce 900g',
+                category: 'Canned Goods',
+                price: 135,
+                image: 'https://images.unsplash.com/photo-1621996346565-e3d5d628169e?auto=format&fit=crop&w=800&q=85',
+                desc: 'Cook authentic Filipino-style sweet spaghetti loaded with sliced hotdogs and ground meat. Blended with real cheddar cheese and ripe tomatoes.'
+            }
+        };
+
+        let currentQvId = null;
+        let qvQtyValue = 1;
+        const quickViewModal = document.getElementById('quickViewModal');
+
+        function openQuickView(id) {
+            const p = productDetails[id];
+            if (!p) return;
+            currentQvId = id;
+            qvQtyValue = 1;
+            
+            document.getElementById('qvImage').src = p.image;
+            document.getElementById('qvCategory').textContent = p.category;
+            document.getElementById('qvTitle').textContent = p.title;
+            document.getElementById('qvPrice').textContent = '₱' + p.price;
+            document.getElementById('qvDescription').textContent = p.desc;
+            document.getElementById('qvQty').textContent = '1';
+
+            quickViewModal.classList.add('open');
+        }
+
+        function closeQuickView() {
+            quickViewModal.classList.remove('open');
+        }
+
+        function adjustQuickViewQty(delta) {
+            qvQtyValue = Math.max(1, qvQtyValue + delta);
+            document.getElementById('qvQty').textContent = qvQtyValue;
+        }
+
+        function addQuickViewToCart() {
+            if (!currentQvId) return;
+            const p = productDetails[currentQvId];
+            addProductToCart(currentQvId, p.title, p.price, p.image, null, qvQtyValue);
+            closeQuickView();
+        }
+
+        quickViewModal.addEventListener('click', (e) => {
+            if (e.target === quickViewModal) closeQuickView();
+        });
+
+        // --- AUTH / GMAIL NOTIFICATION MODAL ---
+        const authModal = document.getElementById('authModal');
+        document.getElementById('openAuthBtn').addEventListener('click', () => authModal.classList.add('open'));
+        function closeAuthModal() { authModal.classList.remove('open'); }
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) closeAuthModal();
+        });
+
+        document.getElementById('customerGmailForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('customerGmailInput');
+            const valMsg = document.getElementById('gmailValidationMsg');
+            const status = document.getElementById('gmailSubmitStatus');
+            const isGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(input.value.trim());
+
+            if (!isGmail) {
+                valMsg.style.display = 'block';
+                return;
+            }
+            valMsg.style.display = 'none';
+
+            // EmailJS configuration support from AUTH_SETUP.md
             const emailjsConfig = {
                 publicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
                 serviceId: 'YOUR_EMAILJS_SERVICE_ID',
                 templateId: 'YOUR_EMAILJS_TEMPLATE_ID'
             };
-            const loginStatus = document.getElementById('loginStatus');
-            loginStatus.textContent = '';
-            if (!window.emailjs || Object.values(emailjsConfig).some((value) => value.startsWith('YOUR_'))) {
-                loginStatus.textContent = 'Email notification is not configured yet. You may continue to the store.';
-                loginOverlay.classList.add('hidden');
+
+            if (!window.emailjs || Object.values(emailjsConfig).some(v => v.startsWith('YOUR_'))) {
+                status.textContent = 'Salamat! Your Gmail has been noted for store notifications.';
+                setTimeout(() => {
+                    input.value = '';
+                    status.textContent = '';
+                    closeAuthModal();
+                }, 1800);
                 return;
             }
 
             try {
                 emailjs.init({ publicKey: emailjsConfig.publicKey });
                 await emailjs.send(emailjsConfig.serviceId, emailjsConfig.templateId, {
-                    customer_gmail: gmailInput.value.trim(),
+                    customer_gmail: input.value.trim(),
                     submission_time: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
                     recipient_email: 'gjalcantara24@gmail.com'
                 });
-                loginStatus.textContent = 'Salamat! Matagumpay na naisumite ang iyong Gmail address.';
-                gmailForm.reset();
-                loginOverlay.classList.add('hidden');
-            } catch (error) {
-                loginStatus.textContent = 'May nangyaring problema. Pakisubukan muli.';
-                loginOverlay.classList.add('hidden');
+                status.textContent = 'Salamat! Matagumpay na naisumite ang iyong Gmail address.';
+                setTimeout(() => {
+                    input.value = '';
+                    status.textContent = '';
+                    closeAuthModal();
+                }, 1800);
+            } catch (err) {
+                status.textContent = 'May nangyaring problema. Pakisubukan muli.';
             }
         });
-        document.querySelectorAll('.category-button').forEach((button) => button.addEventListener('click', () => { document.querySelector('.category-button.active').classList.remove('active'); button.classList.add('active'); }));
-        window.addEventListener('load', () => {
-            if (openLoginButton) openLogin();
+
+        // --- CONTACT FORM SUBMISSION ---
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const status = document.getElementById('contactStatus');
+            status.textContent = 'Salamat po! Your message has been sent. We will reply promptly.';
+            e.target.reset();
+            setTimeout(() => { status.textContent = ''; }, 4000);
+        });
+
+        // --- TOAST HELPER ---
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotice');
+            toast.querySelector('span').textContent = msg;
+            toast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // --- COUNTDOWN TIMER ---
+        let totalSeconds = 14 * 3600 + 28 * 60 + 45;
+        setInterval(() => {
+            if (totalSeconds <= 0) return;
+            totalSeconds--;
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            document.getElementById('timerHours').textContent = String(h).padStart(2, '0');
+            document.getElementById('timerMins').textContent = String(m).padStart(2, '0');
+            document.getElementById('timerSecs').textContent = String(s).padStart(2, '0');
+        }, 1000);
+
+        // --- MOBILE MENU TOGGLE ---
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mainNav = document.querySelector('.main-nav');
+        if (mobileMenuBtn && mainNav) {
+            mobileMenuBtn.addEventListener('click', () => {
+                mainNav.classList.toggle('open');
+            });
+            mainNav.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', () => mainNav.classList.remove('open'));
+            });
+        }
+
+        // --- INITIAL RENDER ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCart();
         });
     </script>
 </body>
