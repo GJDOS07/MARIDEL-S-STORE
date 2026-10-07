@@ -36,3 +36,4 @@ The EmailJS public key is intended for browser use. Do not put private API keys 
 6. Test an invalid address such as `customer@yahoo.com`; it must show `Mangyaring maglagay ng valid na Gmail address.` and must not call EmailJS.
 
 The current workspace cannot verify delivery until the owner supplies the EmailJS configuration. Without it, the site truthfully shows `May nangyaring problema. Pakisubukan muli.`.
+
