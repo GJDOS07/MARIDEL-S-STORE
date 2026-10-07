@@ -140,11 +140,16 @@
                                 <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                 <span>FEATURED PRODUCT</span>
                             </div>
+<<<<<<< HEAD
                             <img id="featuredImg" src="https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&amp;fit=crop&amp;w=900&amp;q=85" alt="Premium Rice 5kg" />
+=======
+                            <img id="featuredImg" src="" alt="" />
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
                         </div>
 
                         <!-- Details container -->
                         <div class="card-details-box">
+<<<<<<< HEAD
                             <span class="card-category" id="featuredCategory">RICE &amp; GRAINS</span>
                             <h2 class="card-title" id="featuredTitle">Premium Rice 5kg</h2>
                             <div class="card-pill-tag" id="featuredTag">
@@ -156,6 +161,19 @@
                                 <span class="card-price" id="featuredPrice">₱450</span>
                                 <span class="card-original-price" id="featuredOldPrice">₱490</span>
                                 <span class="card-stock-badge">✓ In Stock</span>
+=======
+                            <span class="card-category" id="featuredCategory"></span>
+                            <h2 class="card-title" id="featuredTitle">Loading products...</h2>
+                            <div class="card-pill-tag" id="featuredTag">
+                                <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
+                                <span>Featured Product</span>
+                            </div>
+
+                            <div class="card-price-row">
+                                <span class="card-price" id="featuredPrice"></span>
+                                <span class="card-original-price" id="featuredOldPrice"></span>
+                                <span class="card-stock-badge">Stock status loading</span>
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
                             </div>
 
                             <div class="card-quantity-row">
@@ -273,6 +291,7 @@
 
             <!-- Category Filter Pills -->
             <nav class="category-filter-nav" aria-label="Filter products by category">
+<<<<<<< HEAD
                 <button type="button" class="filter-pill active" data-filter="all" onclick="filterCategory('all', this)">
                     All Products <span class="pill-count">8</span>
                 </button>
@@ -288,10 +307,13 @@
                 <button type="button" class="filter-pill" data-filter="snacks" onclick="filterCategory('snacks', this)">
                     Snacks &amp; Drinks <span class="pill-count">2</span>
                 </button>
+=======
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             </nav>
 
             <!-- Product Grid -->
             <div class="product-grid" id="productGrid">
+<<<<<<< HEAD
                 <!-- Product 1: Premium Rice -->
                 <article class="product-card" data-category="rice" data-id="p1" data-title="Premium Rice 5kg" data-price="450">
                     <div class="product-thumb-box">
@@ -555,6 +577,8 @@
                         </div>
                     </div>
                 </article>
+=======
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             </div>
         </section>
 
@@ -888,6 +912,7 @@
          ========================================================================== -->
     <script>
         // --- FEATURED PRODUCTS CAROUSEL DATA ---
+<<<<<<< HEAD
         const featuredProducts = [
             {
                 id: 'p1',
@@ -926,11 +951,28 @@
                 image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=85'
             }
         ];
+=======
+        let activeProductCategory = 'all';
+        let activeProductSearch = '';
+
+        const LOCAL_API_BASE_URL = 'http://localhost:3000';
+        const PUBLIC_API_BASE_URL = 'https://maridel-s-store-api-gjdos07.onrender.com';
+        const isLocalFrontend = window.location.protocol === 'file:'
+            || window.location.hostname === 'localhost'
+            || window.location.hostname === '127.0.0.1';
+        const API_BASE_URL = isLocalFrontend ? LOCAL_API_BASE_URL : PUBLIC_API_BASE_URL;
+
+        const featuredProducts = [];
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
 
         let currentFeaturedIndex = 0;
         let featuredQuantity = 1;
 
         function updateFeaturedSlide(index) {
+<<<<<<< HEAD
+=======
+            if (featuredProducts.length === 0) return;
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             currentFeaturedIndex = (index + featuredProducts.length) % featuredProducts.length;
             const p = featuredProducts[currentFeaturedIndex];
             
@@ -939,7 +981,14 @@
             document.getElementById('featuredTitle').textContent = p.title;
             document.getElementById('featuredTag').querySelector('span').textContent = p.tag;
             document.getElementById('featuredPrice').textContent = '₱' + p.price;
+<<<<<<< HEAD
             document.getElementById('featuredOldPrice').textContent = '₱' + p.oldPrice;
+=======
+            const featuredOldPrice = document.getElementById('featuredOldPrice');
+            featuredOldPrice.textContent = p.oldPrice ? '₱' + p.oldPrice : '';
+            featuredOldPrice.style.display = p.oldPrice ? '' : 'none';
+            document.querySelector('.card-stock-badge').textContent = p.stockLabel || 'In Stock';
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             
             featuredQuantity = 1;
             document.getElementById('featuredQty').textContent = '1';
@@ -964,6 +1013,10 @@
         }
 
         function addFeaturedToCart() {
+<<<<<<< HEAD
+=======
+            if (featuredProducts.length === 0) return;
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             const p = featuredProducts[currentFeaturedIndex];
             addProductToCart(p.id, p.title, p.price, p.image, null, featuredQuantity);
             
@@ -978,6 +1031,7 @@
 
         // --- SHOPPING CART STATE & MANAGEMENT ---
         // Initial state pre-populated with 2 items matching the screenshot badge "2"
+<<<<<<< HEAD
         let cart = [
             {
                 id: 'p1',
@@ -994,6 +1048,9 @@
                 qty: 1
             }
         ];
+=======
+        let cart = [];
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
 
         let discountRate = 0; // 0.10 when promo code PINOYHOME is applied
         const FREE_SHIPPING_THRESHOLD = 1500;
@@ -1021,6 +1078,7 @@
                 `;
             } else {
                 container.innerHTML = cart.map(item => `
+<<<<<<< HEAD
                     <div class="cart-item" data-id="${item.id}">
                         <div class="cart-item-thumb">
                             <img src="${item.image}" alt="${item.title}" />
@@ -1035,10 +1093,37 @@
                                     <button type="button" class="cart-qty-btn" onclick="updateItemQty('${item.id}', 1)">+</button>
                                 </div>
                                 <button type="button" class="btn-remove-item" onclick="removeCartItem('${item.id}')">Remove</button>
+=======
+                    <div class="cart-item" data-id="${escapeHtml(item.id)}">
+                        <div class="cart-item-thumb">
+                            <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" />
+                        </div>
+                        <div class="cart-item-info">
+                            <h4 class="cart-item-title">${escapeHtml(item.title)}</h4>
+                            <div class="cart-item-price">₱${item.price}</div>
+                            <div class="cart-item-actions">
+                                <div class="cart-item-qty">
+                                    <button type="button" class="cart-qty-btn" data-delta="-1">&minus;</button>
+                                    <span class="cart-qty-val">${item.qty}</span>
+                                    <button type="button" class="cart-qty-btn" data-delta="1">+</button>
+                                </div>
+                                <button type="button" class="btn-remove-item">Remove</button>
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
                             </div>
                         </div>
                     </div>
                 `).join('');
+<<<<<<< HEAD
+=======
+
+                container.querySelectorAll('.cart-item').forEach(cartItem => {
+                    const id = cartItem.dataset.id;
+                    cartItem.querySelectorAll('.cart-qty-btn').forEach(button => {
+                        button.addEventListener('click', () => updateItemQty(id, Number(button.dataset.delta)));
+                    });
+                    cartItem.querySelector('.btn-remove-item').addEventListener('click', () => removeCartItem(id));
+                });
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             }
 
             // Calculations
@@ -1150,10 +1235,15 @@
 
         // --- CATEGORY FILTERING ---
         function filterCategory(cat, buttonEl) {
+<<<<<<< HEAD
+=======
+            activeProductCategory = cat;
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             if (buttonEl) {
                 document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
                 buttonEl.classList.add('active');
             }
+<<<<<<< HEAD
             
             const cards = document.querySelectorAll('.product-card');
             cards.forEach(card => {
@@ -1163,6 +1253,10 @@
                     card.classList.add('hidden');
                 }
             });
+=======
+
+            applyProductFilters();
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
         }
 
         // --- LIVE SEARCH BAR ---
@@ -1176,6 +1270,7 @@
         });
 
         searchInput.addEventListener('input', () => {
+<<<<<<< HEAD
             const query = searchInput.value.trim().toLowerCase();
             searchClearBtn.classList.toggle('visible', query.length > 0);
 
@@ -1189,12 +1284,23 @@
                     card.classList.add('hidden');
                 }
             });
+=======
+            activeProductSearch = searchInput.value.trim().toLowerCase();
+            searchClearBtn.classList.toggle('visible', activeProductSearch.length > 0);
+            applyProductFilters();
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
         });
 
         searchClearBtn.addEventListener('click', () => {
             searchInput.value = '';
+<<<<<<< HEAD
             searchClearBtn.classList.remove('visible');
             document.querySelectorAll('.product-card').forEach(c => c.classList.remove('hidden'));
+=======
+            activeProductSearch = '';
+            searchClearBtn.classList.remove('visible');
+            applyProductFilters();
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
             searchInput.focus();
         });
 
@@ -1205,6 +1311,7 @@
         }
 
         // --- QUICK VIEW MODAL ---
+<<<<<<< HEAD
         const productDetails = {
             'p1': {
                 title: 'Premium Rice 5kg',
@@ -1264,6 +1371,204 @@
             }
         };
 
+=======
+        const productDetails = {};
+
+        const productGrid = document.getElementById('productGrid');
+        const categoryFilterNav = document.querySelector('.category-filter-nav');
+        let storeProducts = [];
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[character]);
+        }
+
+        function normalizeProductName(value) {
+            return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function categorySlug(value) {
+            return String(value || 'other').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'other';
+        }
+
+        const productImageByName = {
+            'pocarisweat330ml': 'https://www.philvending.com.ph/wp-content/uploads/2017/04/ITPOCA002A-scaled.jpg',
+            'thaicocococonutjuice': 'https://www.topgrocer.com/images/product/8850227021171.jpeg',
+            'jufranbananasauce560g': 'https://pinoywarehouse.com.au/wp-content/uploads/2026/03/jufran-banana-sauce-560g-1.jpg',
+            'angelevaporatedfilledmilk370ml': 'https://smmarkets.ph/media/catalog/product/1/0/10142764-PC-1_1.jpg',
+            'angelkremdensada410ml': 'https://tse3.mm.bing.net/th/id/OIP.Q_4zawXIpVo2ru1Mqa1LUgHaHa?r=0&pid=Api',
+            'angelallpurposecreamer370ml': 'https://kitchenangel.com.ph/wp-content/uploads/2024/08/Product-All-Purpose-Creamer.png',
+            'magnoliagoldlabelmacapunoubeswirl': 'https://cdn.shopify.com/s/files/1/0729/0322/9681/files/b8c455bd-95f3-4b9b-a0a2-e90fde9acad4_size3840x3598_cropCenter_7ef437f9-e301-417b-ad9f-9d0bb1dd820d.jpg?v=1758805261',
+            'ficpinoysorbetesubequesodebola460ml': 'https://static.wixstatic.com/media/87c66c_5621b5c723fb4a758a00bccf97547467~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_5621b5c723fb4a758a00bccf97547467~mv2.jpg',
+            'ficpinoysorbetesbukopandan460ml': 'https://static.wixstatic.com/media/87c66c_1ecdbb94d9b949f59a9d5c59761fd76b~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_1ecdbb94d9b949f59a9d5c59761fd76b~mv2.jpg',
+            'ficpinoysorbetesmango460ml': 'https://m.media-amazon.com/images/I/71TpBjQ+0zL._AC_SX425_.jpg',
+            'ficpinoysorbetesubemacapuno460ml': 'https://static.wixstatic.com/media/87c66c_6be50ea6b5f94f37b1ae4daea927234f~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_6be50ea6b5f94f37b1ae4daea927234f~mv2.jpg',
+            'cookedpeanut500g': 'https://almerepinoystore.com/wp-content/uploads/2025/02/Peanuts-Whole-Cooked-500g.png',
+            'specialodong12packs': 'https://sukli.com/cdn/shop/products/GoldenTower-SpecialOdong-Noodles-12Pack-240G.jpg?v=1749670230&width=352',
+            'drkoreanslicedkimchi': 'https://tse1.mm.bing.net/th/id/OIP.3lbLZBPcMOtacBlyrJ3LnwHaJ4?r=0&pid=Api',
+            'renoliverspread85g': 'https://tse1.mm.bing.net/th/id/OIP.22uB3d5f31VsVXHwlAdgfAHaHa?r=0&pid=Api',
+            'purefoodsliverspread85g': 'https://tse1.mm.bing.net/th/id/OIP.h8EwXOLaIaezkL64QNlgwAHaHa?r=0&pid=Api',
+            'luckymepancitcantonchilimansi60gx6': 'https://smmarkets.ph/media/catalog/product/2/0/20100139-PK6-4_3.png',
+            'cocomamafreshgata': 'https://tse1.mm.bing.net/th/id/OIP.PBK6zuPUJXSpfrRpskbOxAHaHa?r=0&pid=Api'
+        };
+
+        function fallbackProductImage(product) {
+            return productImageByName[normalizeProductName(product.name)] || '';
+        }
+
+        function mapApiProduct(product, index) {
+            const id = product?.id;
+            const title = String(product?.name || '').trim();
+            const price = Number(product?.price);
+            if (id === null || id === undefined || !title || !Number.isFinite(price)) return null;
+
+            const originalPrice = Number(product.original_price);
+            const stock = Number(product.stock);
+            const category = String(product.category || 'Other').trim();
+            const apiImage = typeof product.image === 'string' ? product.image.trim() : '';
+
+            return {
+                id: String(id),
+                title,
+                category,
+                categoryKey: categorySlug(category),
+                price,
+                oldPrice: Number.isFinite(originalPrice) && originalPrice > price ? originalPrice : null,
+                image: apiImage || fallbackProductImage({ name: title, category }, index),
+                desc: String(product.description || ''),
+                stock: Number.isFinite(stock) ? stock : null,
+                stockLabel: Number.isFinite(stock) ? (stock > 0 ? `${stock} in stock` : 'Out of stock') : 'Stock unavailable'
+            };
+        }
+
+        function renderCategoryFilters(products) {
+            const counts = new Map();
+            products.forEach(product => counts.set(product.categoryKey, (counts.get(product.categoryKey) || 0) + 1));
+            categoryFilterNav.replaceChildren();
+
+            const categories = [{ key: 'all', label: 'All Products', count: products.length }];
+            const labels = new Map(products.map(product => [product.categoryKey, product.category]));
+            counts.forEach((count, key) => categories.push({ key, label: labels.get(key), count }));
+
+            categories.forEach((category, index) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `filter-pill${index === 0 ? ' active' : ''}`;
+                button.dataset.filter = category.key;
+                const label = document.createTextNode(`${category.label} `);
+                const count = document.createElement('span');
+                count.className = 'pill-count';
+                count.textContent = category.count;
+                button.append(label, count);
+                button.addEventListener('click', () => filterCategory(category.key, button));
+                categoryFilterNav.append(button);
+            });
+        }
+
+        function renderProductCards(products) {
+            productGrid.innerHTML = products.map(product => `
+                <article class="product-card" data-category="${escapeHtml(product.categoryKey)}" data-id="${escapeHtml(product.id)}" data-title="${escapeHtml(product.title)}" data-price="${product.price}">
+                    <div class="product-thumb-box">
+                        <span class="badge-tag ${product.stock === 0 ? 'badge-sale' : 'badge-popular'}">${escapeHtml(product.stockLabel)}</span>
+                        <button type="button" class="btn-wishlist" aria-label="Add to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        </button>
+                        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" />
+                        <div class="product-hover-actions">
+                            <button type="button" class="btn-quick-view">Quick View</button>
+                        </div>
+                    </div>
+                    <div class="product-content">
+                        <span class="product-category-sub">${escapeHtml(product.category)}</span>
+                        <h3 class="product-name">${escapeHtml(product.title)}</h3>
+                        <div class="product-rating"><span>${escapeHtml(product.stockLabel)}</span></div>
+                        <p class="product-desc-snippet">${escapeHtml(product.desc)}</p>
+                        <div class="product-footer-row">
+                            <div class="product-price-box">
+                                <span class="price-main">₱${product.price.toLocaleString()}</span>
+                                <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? `₱${product.oldPrice.toLocaleString()}` : ''}</span>
+                            </div>
+                            <button type="button" class="btn-quick-add">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Add
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+
+            productGrid.querySelectorAll('.product-card').forEach(card => {
+                const product = productDetails[card.dataset.id];
+                card.querySelector('.btn-wishlist').addEventListener('click', event => toggleWishlist(event.currentTarget));
+                card.querySelector('.btn-quick-view').addEventListener('click', () => openQuickView(product.id));
+                card.querySelector('.btn-quick-add').addEventListener('click', event => {
+                    addProductToCart(product.id, product.title, product.price, product.image, event.currentTarget);
+                });
+            });
+        }
+
+        function applyProductFilters() {
+            document.querySelectorAll('.product-card').forEach(card => {
+                const categoryMatches = activeProductCategory === 'all'
+                    || card.dataset.category === activeProductCategory
+                    || (activeProductCategory === 'rice' && /rice|grain/.test(card.dataset.category))
+                    || (activeProductCategory === 'sauces' && /sauce|condiment/.test(card.dataset.category))
+                    || (activeProductCategory === 'canned' && /canned/.test(card.dataset.category))
+                    || (activeProductCategory === 'snacks' && /snack|drink|beverage|noodle/.test(card.dataset.category));
+                const searchText = `${card.dataset.title} ${card.dataset.category}`.toLowerCase();
+                card.classList.toggle('hidden', !categoryMatches || !searchText.includes(activeProductSearch));
+            });
+        }
+
+        async function loadProducts() {
+            featuredProducts.splice(0, featuredProducts.length);
+            document.getElementById('featuredAddBtn').disabled = true;
+            productGrid.innerHTML = '<p role="status" style="grid-column: 1 / -1; text-align: center;">Loading products...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/products`);
+                if (!response.ok) throw new Error(`Products API returned ${response.status}`);
+                const rows = await response.json();
+                if (!Array.isArray(rows)) throw new Error('Products API response was not a list');
+
+                storeProducts = rows.map(mapApiProduct).filter(Boolean);
+                Object.keys(productDetails).forEach(id => delete productDetails[id]);
+                storeProducts.forEach(product => { productDetails[product.id] = product; });
+                featuredProducts.splice(0, featuredProducts.length, ...storeProducts.slice(0, 4).map(product => ({
+                    ...product,
+                    category: product.category.toUpperCase(),
+                    tag: product.stockLabel
+                })));
+
+                renderCategoryFilters(storeProducts);
+                if (storeProducts.length > 0) {
+                    renderProductCards(storeProducts);
+                    updateFeaturedSlide(0);
+                    document.getElementById('featuredAddBtn').disabled = false;
+                } else {
+                    productGrid.innerHTML = '<p role="status" style="grid-column: 1 / -1; text-align: center;">No products are currently available.</p>';
+                }
+                applyProductFilters();
+            } catch (error) {
+                console.error('Unable to load products:', error);
+                productDetails && Object.keys(productDetails).forEach(id => delete productDetails[id]);
+                featuredProducts.splice(0, featuredProducts.length);
+                renderCategoryFilters([]);
+                productGrid.innerHTML = '<p role="alert" style="grid-column: 1 / -1; text-align: center;">Products could not be loaded. Please check that the store server is running and try again.</p>';
+                document.getElementById('featuredTitle').textContent = 'Products unavailable';
+                document.getElementById('featuredCategory').textContent = '';
+                document.getElementById('featuredPrice').textContent = '';
+                document.getElementById('featuredOldPrice').style.display = 'none';
+                document.getElementById('featuredAddBtn').disabled = true;
+            }
+        }
+
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
         let currentQvId = null;
         let qvQtyValue = 1;
         const quickViewModal = document.getElementById('quickViewModal');
@@ -1407,6 +1712,10 @@
         // --- INITIAL RENDER ---
         window.addEventListener('DOMContentLoaded', () => {
             renderCart();
+<<<<<<< HEAD
+=======
+            loadProducts();
+>>>>>>> e32e0c3 (Prepare MARIDEL'S STORE for Render deployment)
         });
     </script>
 </body>

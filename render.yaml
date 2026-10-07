@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: maridel-s-store-api-gjdos07
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: node server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
