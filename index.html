@@ -18,7 +18,7 @@
     <!-- TOP ANNOUNCEMENT BAR -->
     <aside class="top-announcement" aria-label="Store announcement">
         <span class="badge">Mabuhay!</span>
-        <span>Australia-wide shipping &bull; Free delivery on orders over <b>Γé▒1,500</b> &bull; Use code <b>PINOYHOME</b> for 10% off</span>
+        <span>Australia-wide shipping &bull; Free delivery on orders over <b>₱1,500</b> &bull; Use code <b>PINOYHOME</b> for 10% off</span>
     </aside>
 
     <!-- HEADER / TOPBAR -->
@@ -496,7 +496,7 @@
             <!-- Free Shipping Progress Bar -->
             <div class="free-shipping-progress">
                 <div class="shipping-msg" id="shippingMessage">
-                    ≡ƒÜÜ Add Γé▒855 more for <b>Free Australia-wide Delivery!</b>
+                    🚚 Add ₱855 more for <b>Free Australia-wide Delivery!</b>
                 </div>
                 <div class="shipping-progress-track">
                     <div class="shipping-progress-bar" id="shippingProgressBar" style="width: 43%;"></div>
@@ -519,19 +519,19 @@
                 <div class="cart-totals-breakdown">
                     <div class="totals-line">
                         <span>Subtotal</span>
-                        <strong id="cartSubtotal">Γé▒645</strong>
+                        <strong id="cartSubtotal">₱645</strong>
                     </div>
                     <div class="totals-line" id="discountRow" style="display: none; color: #166534;">
                         <span>Discount (10%)</span>
-                        <strong id="cartDiscount">-Γé▒64.50</strong>
+                        <strong id="cartDiscount">-₱64.50</strong>
                     </div>
                     <div class="totals-line">
                         <span>Estimated Shipping</span>
-                        <strong id="cartShipping">Γé▒150</strong>
+                        <strong id="cartShipping">₱150</strong>
                     </div>
                     <div class="totals-line total-line">
                         <span>Total</span>
-                        <strong id="cartGrandTotal">Γé▒795</strong>
+                        <strong id="cartGrandTotal">₱795</strong>
                     </div>
                 </div>
 
@@ -558,7 +558,7 @@
                         <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
                         <span>Verified Authentic Import</span>
                     </div>
-                    <div class="modal-product-price" id="qvPrice">Γé▒0</div>
+                    <div class="modal-product-price" id="qvPrice">₱0</div>
                     <p class="modal-product-desc" id="qvDescription">Product description.</p>
                     
                     <div style="display: flex; align-items: center; gap: 14px; margin-top: auto;">
@@ -634,9 +634,9 @@
             document.getElementById('featuredCategory').textContent = p.category;
             document.getElementById('featuredTitle').textContent = p.title;
             document.getElementById('featuredTag').querySelector('span').textContent = p.tag;
-            document.getElementById('featuredPrice').textContent = 'Γé▒' + p.price;
+            document.getElementById('featuredPrice').textContent = '₱' + p.price;
             const featuredOldPrice = document.getElementById('featuredOldPrice');
-            featuredOldPrice.textContent = p.oldPrice ? 'Γé▒' + p.oldPrice : '';
+            featuredOldPrice.textContent = p.oldPrice ? '₱' + p.oldPrice : '';
             featuredOldPrice.style.display = p.oldPrice ? '' : 'none';
             document.querySelector('.card-stock-badge').textContent = p.stockLabel || 'In Stock';
             
@@ -712,7 +712,7 @@
                         </div>
                         <div class="cart-item-info">
                             <h4 class="cart-item-title">${escapeHtml(item.title)}</h4>
-                            <div class="cart-item-price">Γé▒${item.price}</div>
+                            <div class="cart-item-price">₱${item.price}</div>
                             <div class="cart-item-actions">
                                 <div class="cart-item-qty">
                                     <button type="button" class="cart-qty-btn" data-delta="-1">&minus;</button>
@@ -740,18 +740,18 @@
             const shipping = (subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0) ? 0 : STANDARD_SHIPPING;
             const grandTotal = subtotal - discount + shipping;
 
-            document.getElementById('cartSubtotal').textContent = 'Γé▒' + subtotal.toLocaleString();
+            document.getElementById('cartSubtotal').textContent = '₱' + subtotal.toLocaleString();
             
             const discountRow = document.getElementById('discountRow');
             if (discount > 0) {
                 discountRow.style.display = 'flex';
-                document.getElementById('cartDiscount').textContent = '-Γé▒' + discount.toFixed(2);
+                document.getElementById('cartDiscount').textContent = '-₱' + discount.toFixed(2);
             } else {
                 discountRow.style.display = 'none';
             }
 
-            document.getElementById('cartShipping').textContent = shipping === 0 ? 'FREE' : 'Γé▒' + shipping;
-            document.getElementById('cartGrandTotal').textContent = 'Γé▒' + Math.max(0, grandTotal).toLocaleString();
+            document.getElementById('cartShipping').textContent = shipping === 0 ? 'FREE' : '₱' + shipping;
+            document.getElementById('cartGrandTotal').textContent = '₱' + Math.max(0, grandTotal).toLocaleString();
 
             // Shipping Progress Bar
             const remainingForFree = FREE_SHIPPING_THRESHOLD - subtotal;
@@ -762,7 +762,7 @@
                 shippingMsg.innerHTML = `≡ƒÄë <b>Congratulations!</b> You unlocked <b>Free Delivery!</b>`;
                 shippingBar.style.width = '100%';
             } else {
-                shippingMsg.innerHTML = `≡ƒÜÜ Add <b>Γé▒${remainingForFree.toLocaleString()}</b> more for <b>Free Australia-wide Delivery!</b>`;
+                shippingMsg.innerHTML = `🚚 Add <b>₱${remainingForFree.toLocaleString()}</b> more for <b>Free Australia-wide Delivery!</b>`;
                 const pct = Math.min(100, Math.max(10, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100)));
                 shippingBar.style.width = pct + '%';
             }
@@ -1001,8 +1001,8 @@
                         <p class="product-desc-snippet">${escapeHtml(product.desc)}</p>
                         <div class="product-footer-row">
                             <div class="product-price-box">
-                                <span class="price-main">Γé▒${product.price.toLocaleString()}</span>
-                                <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? `Γé▒${product.oldPrice.toLocaleString()}` : ''}</span>
+                                <span class="price-main">₱${product.price.toLocaleString()}</span>
+                                <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? `₱${product.oldPrice.toLocaleString()}` : ''}</span>
                             </div>
                             <button type="button" class="btn-quick-add">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1092,7 +1092,7 @@
             document.getElementById('qvImage').src = p.image;
             document.getElementById('qvCategory').textContent = p.category;
             document.getElementById('qvTitle').textContent = p.title;
-            document.getElementById('qvPrice').textContent = 'Γé▒' + p.price;
+            document.getElementById('qvPrice').textContent = '₱' + p.price;
             document.getElementById('qvDescription').textContent = p.desc;
             document.getElementById('qvQty').textContent = '1';
 
