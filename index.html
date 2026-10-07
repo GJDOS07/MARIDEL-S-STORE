@@ -18,7 +18,7 @@
     <!-- TOP ANNOUNCEMENT BAR -->
     <aside class="top-announcement" aria-label="Store announcement">
         <span class="badge">Mabuhay!</span>
-        <span>Australia-wide shipping &bull; Free delivery on orders over <b>₱1,500</b> &bull; Use code <b>PINOYHOME</b> for 10% off</span>
+        <span>Pickup Only &bull; Collect your order in store</span>
     </aside>
 
     <!-- HEADER / TOPBAR -->
@@ -186,11 +186,11 @@
             <div class="trust-bar-container">
                 <div class="trust-item">
                     <div class="trust-icon-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
                     <div class="trust-text">
-                        <strong>Fast &amp; Reliable Delivery</strong>
-                        <span>Get your orders on time</span>
+                        <strong>Convenient Store Pickup</strong>
+                        <span>Pickup only; collect your order in store</span>
                     </div>
                 </div>
 
@@ -348,7 +348,7 @@
 
                 <div class="review-card">
                     <div class="review-stars">&starf;&starf;&starf;&starf;&starf;</div>
-                    <p class="review-quote">"Fast shipping, authentic products, and competitive prices. Maridel's has become my monthly go-to grocery store here in Australia."</p>
+                    <p class="review-quote">"Authentic products and competitive prices. Maridel's has become my monthly go-to grocery store here in Australia."</p>
                     <div class="reviewer-box">
                         <div class="reviewer-avatar">CS</div>
                         <div class="reviewer-info">
@@ -366,7 +366,7 @@
                 <div>
                     <span class="section-label" style="color: var(--gold);">Get In Touch</span>
                     <h2>Let's make your next shop easier.</h2>
-                    <p>Have a question about product restocks, special bulk orders, or shipping? Reach out to us anytime and we will be delighted to assist you.</p>
+                    <p>Have a question about product restocks, special bulk orders, or store pickup? Reach out to us anytime and we will be delighted to assist you.</p>
                 </div>
 
                 <div class="contact-method-list">
@@ -395,8 +395,8 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         </div>
                         <div>
-                            <small>Dispatch Hub</small>
-                            <strong>Australia-Wide Delivery</strong>
+                            <small>Order Collection</small>
+                            <strong>Pickup Only</strong>
                         </div>
                     </div>
                 </div>
@@ -415,7 +415,7 @@
                     </div>
                     <div class="form-group">
                         <label for="contactMessage">How can we help?</label>
-                        <textarea id="contactMessage" class="form-textarea" rows="4" placeholder="Ask about restocks, delivery times, or special requests..." required></textarea>
+                        <textarea id="contactMessage" class="form-textarea" rows="4" placeholder="Ask about restocks, pickup, or special requests..." required></textarea>
                     </div>
                     <button type="submit" class="btn-submit-contact">Send Message &rarr;</button>
                     <p id="contactStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-top: 8px;"></p>
@@ -463,8 +463,8 @@
                 <div class="footer-col">
                     <h4>Customer Care</h4>
                     <div class="footer-links">
-                        <a href="#contact">Shipping Info</a>
-                        <a href="#contact">Delivery Coverage</a>
+                        <a href="#contact">Pickup Information</a>
+                        <a href="#contact">Pickup Only</a>
                         <a href="#contact">Returns &amp; Refunds</a>
                         <a href="#contact">Help Center</a>
                     </div>
@@ -475,7 +475,7 @@
                 <p>&copy; 2026 Maridel's Store. All rights reserved. Made with love for the Filipino community in Australia.</p>
                 <div style="display: flex; gap: 14px; font-weight: 600;">
                     <span>≡ƒöÆ Safe &amp; Secure Checkout</span>
-                    <span>≡ƒçª≡ƒç║ Australia-Wide Express</span>
+                    <span>Pickup Only</span>
                 </div>
             </div>
         </div>
@@ -493,16 +493,6 @@
                 <button type="button" class="btn-close-drawer" id="closeCartBtn" aria-label="Close cart">&times;</button>
             </div>
 
-            <!-- Free Shipping Progress Bar -->
-            <div class="free-shipping-progress">
-                <div class="shipping-msg" id="shippingMessage">
-                    🚚 Add ₱855 more for <b>Free Australia-wide Delivery!</b>
-                </div>
-                <div class="shipping-progress-track">
-                    <div class="shipping-progress-bar" id="shippingProgressBar" style="width: 43%;"></div>
-                </div>
-            </div>
-
             <!-- Cart Items List -->
             <div class="cart-items-list" id="cartItemsContainer">
                 <!-- Dynamically populated by JS -->
@@ -510,28 +500,16 @@
 
             <!-- Cart Footer -->
             <div class="cart-footer">
-                <div class="cart-promo-row">
-                    <input type="text" id="promoCodeInput" class="promo-input" placeholder="Promo code (e.g. PINOYHOME)" />
-                    <button type="button" class="btn-apply-promo" onclick="applyPromoCode()">Apply</button>
-                </div>
-                <p id="promoStatus" style="font-size: 0.78rem; font-weight: 700; color: #166534; margin-bottom: 8px; display: none;"></p>
+                <p class="pickup-only-note">Pickup Only — collect your order in store.</p>
 
                 <div class="cart-totals-breakdown">
                     <div class="totals-line">
-                        <span>Subtotal</span>
+                        <span>Product Subtotal</span>
                         <strong id="cartSubtotal">₱645</strong>
-                    </div>
-                    <div class="totals-line" id="discountRow" style="display: none; color: #166534;">
-                        <span>Discount (10%)</span>
-                        <strong id="cartDiscount">-₱64.50</strong>
-                    </div>
-                    <div class="totals-line">
-                        <span>Estimated Shipping</span>
-                        <strong id="cartShipping">₱150</strong>
                     </div>
                     <div class="totals-line total-line">
                         <span>Total</span>
-                        <strong id="cartGrandTotal">₱795</strong>
+                        <strong id="cartGrandTotal">₱645</strong>
                     </div>
                 </div>
 
@@ -613,12 +591,7 @@
         let activeProductCategory = 'all';
         let activeProductSearch = '';
 
-        const LOCAL_API_BASE_URL = 'http://localhost:3000';
-        const PUBLIC_API_BASE_URL = 'https://maridel-s-store.onrender.com';
-        const isLocalFrontend = window.location.protocol === 'file:'
-            || window.location.hostname === 'localhost'
-            || window.location.hostname === '127.0.0.1';
-        const API_BASE_URL = isLocalFrontend ? LOCAL_API_BASE_URL : PUBLIC_API_BASE_URL;
+        const API_BASE_URL = 'https://maridel-s-store.onrender.com';
 
         const featuredProducts = [];
 
@@ -680,10 +653,6 @@
         // Initial state pre-populated with 2 items matching the screenshot badge "2"
         let cart = [];
 
-        let discountRate = 0; // 0.10 when promo code PINOYHOME is applied
-        const FREE_SHIPPING_THRESHOLD = 1500;
-        const STANDARD_SHIPPING = 150;
-
         function renderCart() {
             const container = document.getElementById('cartItemsContainer');
             const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -736,36 +705,8 @@
 
             // Calculations
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            const discount = subtotal * discountRate;
-            const shipping = (subtotal >= FREE_SHIPPING_THRESHOLD || subtotal === 0) ? 0 : STANDARD_SHIPPING;
-            const grandTotal = subtotal - discount + shipping;
-
             document.getElementById('cartSubtotal').textContent = '₱' + subtotal.toLocaleString();
-            
-            const discountRow = document.getElementById('discountRow');
-            if (discount > 0) {
-                discountRow.style.display = 'flex';
-                document.getElementById('cartDiscount').textContent = '-₱' + discount.toFixed(2);
-            } else {
-                discountRow.style.display = 'none';
-            }
-
-            document.getElementById('cartShipping').textContent = shipping === 0 ? 'FREE' : '₱' + shipping;
-            document.getElementById('cartGrandTotal').textContent = '₱' + Math.max(0, grandTotal).toLocaleString();
-
-            // Shipping Progress Bar
-            const remainingForFree = FREE_SHIPPING_THRESHOLD - subtotal;
-            const shippingMsg = document.getElementById('shippingMessage');
-            const shippingBar = document.getElementById('shippingProgressBar');
-            
-            if (remainingForFree <= 0) {
-                shippingMsg.innerHTML = `≡ƒÄë <b>Congratulations!</b> You unlocked <b>Free Delivery!</b>`;
-                shippingBar.style.width = '100%';
-            } else {
-                shippingMsg.innerHTML = `🚚 Add <b>₱${remainingForFree.toLocaleString()}</b> more for <b>Free Australia-wide Delivery!</b>`;
-                const pct = Math.min(100, Math.max(10, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100)));
-                shippingBar.style.width = pct + '%';
-            }
+            document.getElementById('cartGrandTotal').textContent = '₱' + subtotal.toLocaleString();
         }
 
         function addProductToCart(id, title, price, image, btnElement, quantity = 1) {
@@ -806,31 +747,12 @@
             renderCart();
         }
 
-        function applyPromoCode() {
-            const code = document.getElementById('promoCodeInput').value.trim().toUpperCase();
-            const status = document.getElementById('promoStatus');
-            if (code === 'PINOYHOME' || code === 'MABUHAY10') {
-                discountRate = 0.10;
-                status.style.display = 'block';
-                status.style.color = '#166534';
-                status.textContent = 'Promo code applied: 10% discount!';
-            } else if (code === '') {
-                status.style.display = 'none';
-            } else {
-                discountRate = 0;
-                status.style.display = 'block';
-                status.style.color = '#dc2626';
-                status.textContent = 'Invalid promo code. Try PINOYHOME';
-            }
-            renderCart();
-        }
-
         function proceedToCheckout() {
             if (cart.length === 0) {
                 alert('Your cart is empty. Please add items to checkout.');
                 return;
             }
-            alert(`Salamat! Proceeding to checkout. Total: ${document.getElementById('cartGrandTotal').textContent}`);
+            alert(`Salamat! Your order is pickup only. Total: ${document.getElementById('cartGrandTotal').textContent}`);
         }
 
         // --- CART DRAWER OPEN / CLOSE ---
@@ -953,7 +875,7 @@
                 image: apiImage || fallbackProductImage({ name: title, category }, index),
                 desc: String(product.description || ''),
                 stock: Number.isFinite(stock) ? stock : null,
-                stockLabel: Number.isFinite(stock) ? (stock > 0 ? `${stock} in stock` : 'Out of stock') : 'Stock unavailable'
+                stockLabel: 'In Stock'
             };
         }
 
@@ -985,7 +907,7 @@
             productGrid.innerHTML = products.map(product => `
                 <article class="product-card" data-category="${escapeHtml(product.categoryKey)}" data-id="${escapeHtml(product.id)}" data-title="${escapeHtml(product.title)}" data-price="${product.price}">
                     <div class="product-thumb-box">
-                        <span class="badge-tag ${product.stock === 0 ? 'badge-sale' : 'badge-popular'}">${escapeHtml(product.stockLabel)}</span>
+                        <span class="badge-tag badge-popular">${escapeHtml(product.stockLabel)}</span>
                         <button type="button" class="btn-wishlist" aria-label="Add to wishlist">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                         </button>
