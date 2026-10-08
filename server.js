@@ -90,6 +90,27 @@ app.use("/api", createOrderRouter(pool, {
 	adminAllowedOrigins: [...allowedOrigins],
 }));
 
+// Temporary read-only diagnostic: which DB host/database is the runtime using?
+// Returns only hostname, database name, and product 73 price. No credentials.
+app.get("/api/debug/db-target", async (req, res, next) => {
+	try {
+		let host = null;
+		let database = null;
+		try {
+			const parsed = new URL(DATABASE_URL);
+			host = parsed.hostname || null;
+			database = (parsed.pathname || "").replace(/^\//, "") || null;
+		} catch {
+			// Keep nulls if parsing fails; do not expose connection string.
+		}
+		const priceResult = await pool.query("SELECT price::text AS price FROM products WHERE id = $1", [73]);
+		const product73Price = priceResult.rows.length > 0 ? priceResult.rows[0].price : null;
+		res.json({ host, database, product73Price });
+	} catch (error) {
+		next(error);
+	}
+});
+
 // Return a clear response for routes that do not exist.
 app.use((req, res) => {
 	res.status(404).json({ error: "Route not found" });
