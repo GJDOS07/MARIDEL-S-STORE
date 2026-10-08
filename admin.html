@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Admin Login | Maridel's Store</title>
+	<link rel="stylesheet" href="admin.css" />
+	<script src="admin.js" defer></script>
+</head>
+<body class="admin-page" data-admin-page="login">
+	<main class="login-shell">
+		<a class="login-brand" href="index.html" aria-label="Maridel's Store home">
+			<span class="brand-mark">MS</span>
+			<span><strong>MARIDEL'S STORE</strong><small>Admin Portal</small></span>
+		</a>
+
+		<section class="login-card" aria-labelledby="login-title">
+			<div class="login-icon" aria-hidden="true">MS</div>
+			<p class="eyebrow">Store management</p>
+			<h1 id="login-title">Welcome back</h1>
+			<p class="login-copy">Sign in to securely manage customer orders and pickups.</p>
+			<form id="adminLoginForm">
+				<label for="adminPassword">Password</label>
+				<div class="password-control">
+					<input id="adminPassword" name="password" type="password" autocomplete="current-password" required />
+					<button id="togglePassword" class="password-toggle" type="button" aria-label="Show password" aria-pressed="false">Show</button>
+				</div>
+				<p id="loginError" class="form-message error-message" role="alert" hidden></p>
+				<button id="loginButton" class="button button-primary login-button" type="submit">
+					<span class="button-label">Login</span>
+					<span class="button-spinner" aria-hidden="true"></span>
+				</button>
+			</form>
+			<p class="login-footnote">Authorized store staff only</p>
+		</section>
+	</main>
+</body>
+</html>

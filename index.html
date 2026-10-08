@@ -236,29 +236,18 @@
             </div>
         </section>
 
-        <!-- WEEKLY SPECIALS / PROMO BANNER -->
-        <section class="promo-strip-wrapper">
-            <div class="promo-banner">
-                <div class="promo-info">
-                    <span class="promo-pill">≡ƒöÑ Weekly Paborito Deals</span>
-                    <h3>Save up to 25% on Filipino Pantry Bundles</h3>
-                    <p>Stock up on authentic rice, soy sauces, corned beef, and noodles shipped direct to your doorstep.</p>
+        <!-- STORE WELCOME BANNER -->
+        <section class="welcome-strip-wrapper" aria-labelledby="storeWelcomeTitle">
+            <div class="welcome-banner">
+                <div class="welcome-info">
+                    <span class="welcome-eyebrow">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.2C12.7 3.5 6 5.3 4 10.7c-1 2.7.4 5.4 3.1 6.1 2.4.6 5.1-.7 6.5-3.4C15.8 9.6 19 6 20.8 3.2Z"/><path d="M3 21c2.4-5 6.4-8.4 11.7-10.4"/></svg>
+                        Welcome to Maridel's Store
+                    </span>
+                    <h3 id="storeWelcomeTitle">Your Filipino Favorites,<br /><span>All in One Place</span></h3>
+                    <p>Discover Filipino food and pantry essentials, shop online, and enjoy convenient pickup at our Melbourne store.</p>
                 </div>
-                <div class="promo-timer">
-                    <div class="timer-box">
-                        <span class="timer-num" id="timerHours">14</span>
-                        <span class="timer-label">Hours</span>
-                    </div>
-                    <div class="timer-box">
-                        <span class="timer-num" id="timerMins">28</span>
-                        <span class="timer-label">Mins</span>
-                    </div>
-                    <div class="timer-box">
-                        <span class="timer-num" id="timerSecs">45</span>
-                        <span class="timer-label">Secs</span>
-                    </div>
-                </div>
-                <a href="#shop" class="btn-promo">Shop Deals &rarr;</a>
+                <a href="#shop" class="btn-welcome">Shop Filipino Favorites <span aria-hidden="true">&rarr;</span></a>
             </div>
         </section>
 
@@ -465,6 +454,7 @@
                     <div class="footer-links">
                         <a href="#contact">Pickup Information</a>
                         <a href="#contact">Pickup Only</a>
+                        <button type="button" class="footer-order-link" id="openTrackOrderBtn">Track My Order</button>
                         <a href="#contact">Returns &amp; Refunds</a>
                         <a href="#contact">Help Center</a>
                     </div>
@@ -505,11 +495,11 @@
                 <div class="cart-totals-breakdown">
                     <div class="totals-line">
                         <span>Product Subtotal</span>
-                        <strong id="cartSubtotal">₱645</strong>
+                        <strong id="cartSubtotal">A$0.00</strong>
                     </div>
                     <div class="totals-line total-line">
                         <span>Total</span>
-                        <strong id="cartGrandTotal">₱645</strong>
+                        <strong id="cartGrandTotal">A$0.00</strong>
                     </div>
                 </div>
 
@@ -519,6 +509,129 @@
                 </button>
             </div>
         </aside>
+    </div>
+
+    <!-- CUSTOMER CHECKOUT -->
+    <div class="modal-overlay order-modal-overlay" id="checkoutOverlay">
+        <section class="modal-card order-modal-card checkout-modal-card" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+            <button type="button" class="modal-close-btn" id="closeCheckoutBtn" aria-label="Close checkout">&times;</button>
+            <div class="order-modal-content">
+                <span class="section-label">Pickup Only</span>
+                <h2 id="checkoutTitle">Checkout</h2>
+                <p class="order-intro">Add your contact details and choose when you would like to collect your order in Melbourne.</p>
+
+                <form id="checkoutForm">
+                    <div class="checkout-fields">
+                        <div class="form-group">
+                            <label for="checkoutCustomerName">Customer Name</label>
+                            <input id="checkoutCustomerName" name="customer_name" class="form-input" type="text" maxlength="100" autocomplete="name" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="checkoutCustomerContact">Contact Number</label>
+                            <input id="checkoutCustomerContact" name="customer_contact" class="form-input" type="tel" maxlength="25" autocomplete="tel" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="checkoutCustomerEmail">Email (optional)</label>
+                            <input id="checkoutCustomerEmail" name="customer_email" class="form-input" type="email" maxlength="254" autocomplete="email" />
+                        </div>
+                    </div>
+
+                    <fieldset class="pickup-choice-group">
+                        <legend>Choose a pickup option</legend>
+                        <label class="pickup-choice-card">
+                            <input type="radio" name="pickup_type" value="ASAP" required />
+                            <span class="pickup-choice-copy">
+                                <strong>Pickup Now / ASAP</strong>
+                                <span id="asapAvailabilityMessage">Checking Melbourne store hours…</span>
+                            </span>
+                        </label>
+                        <label class="pickup-choice-card">
+                            <input type="radio" name="pickup_type" value="SCHEDULED" required />
+                            <span class="pickup-choice-copy">
+                                <strong>Schedule Pickup</strong>
+                                <span>Choose a Melbourne local date and time, 7:00 AM–5:00 PM.</span>
+                            </span>
+                        </label>
+                    </fieldset>
+
+                    <div class="scheduled-pickup-fields" id="scheduledPickupFields" hidden>
+                        <div class="form-group">
+                            <label for="pickupDate">Pickup Date (Melbourne)</label>
+                            <input id="pickupDate" name="pickup_date" class="form-input" type="date" />
+                        </div>
+                        <div class="form-group">
+                            <label for="pickupTime">Pickup Time (Melbourne)</label>
+                            <select id="pickupTime" name="pickup_time" class="form-input">
+                                <option value="">Select a pickup time</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="checkout-review">
+                        <h3>Order Review</h3>
+                        <div id="checkoutItems"></div>
+                        <div class="checkout-review-total">
+                            <span>Total</span>
+                            <strong id="checkoutTotal">A$0.00</strong>
+                        </div>
+                        <p>Pickup only — collect your order at our Melbourne store.</p>
+                    </div>
+
+                    <p class="order-form-error" id="checkoutError" role="alert" hidden></p>
+                    <button type="submit" class="btn-checkout place-order-btn" id="placeOrderBtn">
+                        <span>Place Order</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <!-- CUSTOMER ORDER CONFIRMATION -->
+    <div class="modal-overlay order-modal-overlay" id="orderConfirmationOverlay">
+        <section class="modal-card order-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle">
+            <button type="button" class="modal-close-btn" id="closeConfirmationBtn" aria-label="Close order confirmation">&times;</button>
+            <div class="order-modal-content">
+                <div class="order-success-icon" aria-hidden="true">✓</div>
+                <span class="section-label">Order received</span>
+                <h2 id="confirmationTitle">Thank you for your order</h2>
+                <p class="order-intro" id="confirmationMessage">Your pickup request has been received and is pending confirmation.</p>
+                <div id="confirmationDetails"></div>
+                <div class="access-token-notice">
+                    <strong>Save your order access token</strong>
+                    <p>This token is shown only after checkout. Keep it private to track your order.</p>
+                    <div class="access-token-row">
+                        <code id="orderAccessToken"></code>
+                        <button type="button" class="btn-secondary" id="copyOrderTokenBtn">Copy</button>
+                    </div>
+                </div>
+                <button type="button" class="btn-checkout" id="trackNewOrderBtn">Track This Order</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- CUSTOMER ORDER TRACKING -->
+    <div class="modal-overlay order-modal-overlay" id="trackOrderOverlay">
+        <section class="modal-card order-modal-card" role="dialog" aria-modal="true" aria-labelledby="trackOrderTitle">
+            <button type="button" class="modal-close-btn" id="closeTrackOrderBtn" aria-label="Close order tracking">&times;</button>
+            <div class="order-modal-content">
+                <span class="section-label">Order status</span>
+                <h2 id="trackOrderTitle">Track My Order</h2>
+                <p class="order-intro">Enter your order ID and private access token to view its current status.</p>
+                <form id="trackOrderForm" class="tracking-form">
+                    <div class="form-group">
+                        <label for="trackingOrderId">Order ID</label>
+                        <input id="trackingOrderId" class="form-input" inputmode="numeric" autocomplete="off" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="trackingAccessToken">Order Access Token</label>
+                        <input id="trackingAccessToken" class="form-input" type="password" autocomplete="off" required />
+                    </div>
+                    <p class="order-form-error" id="trackingError" role="alert" hidden></p>
+                    <button type="submit" class="btn-checkout" id="trackOrderSubmitBtn">View Order Status</button>
+                </form>
+                <div id="trackingResult" aria-live="polite"></div>
+            </div>
+        </section>
     </div>
 
     <!-- PRODUCT QUICK VIEW MODAL -->
@@ -536,7 +649,7 @@
                         <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
                         <span>Verified Authentic Import</span>
                     </div>
-                    <div class="modal-product-price" id="qvPrice">₱0</div>
+                    <div class="modal-product-price" id="qvPrice">A$0.00</div>
                     <p class="modal-product-desc" id="qvDescription">Product description.</p>
                     
                     <div style="display: flex; align-items: center; gap: 14px; margin-top: auto;">
@@ -591,7 +704,27 @@
         let activeProductCategory = 'all';
         let activeProductSearch = '';
 
-        const API_BASE_URL = 'https://maridel-s-store.onrender.com';
+        const API_BASE_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+            ? 'http://localhost:3000'
+            : 'https://maridel-s-store.onrender.com';
+        const MAX_ORDER_ITEM_QUANTITY = 99;
+        const MAX_ORDER_TOTAL_QUANTITY = 200;
+        const audNumberFormatter = new Intl.NumberFormat('en-AU', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+        function formatAud(amount) {
+            return `A$${audNumberFormatter.format(Number(amount) || 0)}`;
+        }
+
+        function formatAudCents(cents) {
+            return formatAud(cents / 100);
+        }
+
+        function amountToCents(amount) {
+            return Math.round((Number(amount) + Number.EPSILON) * 100);
+        }
 
         const featuredProducts = [];
 
@@ -607,9 +740,9 @@
             document.getElementById('featuredCategory').textContent = p.category;
             document.getElementById('featuredTitle').textContent = p.title;
             document.getElementById('featuredTag').querySelector('span').textContent = p.tag;
-            document.getElementById('featuredPrice').textContent = '₱' + p.price;
+            document.getElementById('featuredPrice').textContent = formatAud(p.price);
             const featuredOldPrice = document.getElementById('featuredOldPrice');
-            featuredOldPrice.textContent = p.oldPrice ? '₱' + p.oldPrice : '';
+            featuredOldPrice.textContent = p.oldPrice ? formatAud(p.oldPrice) : '';
             featuredOldPrice.style.display = p.oldPrice ? '' : 'none';
             document.querySelector('.card-stock-badge').textContent = p.stockLabel || 'In Stock';
             
@@ -631,7 +764,7 @@
         }
 
         function adjustFeaturedQty(delta) {
-            featuredQuantity = Math.max(1, featuredQuantity + delta);
+            featuredQuantity = Math.min(MAX_ORDER_ITEM_QUANTITY, Math.max(1, featuredQuantity + delta));
             document.getElementById('featuredQty').textContent = featuredQuantity;
         }
 
@@ -681,7 +814,8 @@
                         </div>
                         <div class="cart-item-info">
                             <h4 class="cart-item-title">${escapeHtml(item.title)}</h4>
-                            <div class="cart-item-price">₱${item.price}</div>
+                            <div class="cart-item-price">${formatAud(item.price)} each</div>
+                            <div class="cart-item-line-total">Item total: ${formatAudCents(amountToCents(item.price) * item.qty)}</div>
                             <div class="cart-item-actions">
                                 <div class="cart-item-qty">
                                     <button type="button" class="cart-qty-btn" data-delta="-1">&minus;</button>
@@ -704,13 +838,20 @@
             }
 
             // Calculations
-            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-            document.getElementById('cartSubtotal').textContent = '₱' + subtotal.toLocaleString();
-            document.getElementById('cartGrandTotal').textContent = '₱' + subtotal.toLocaleString();
+            const subtotalCents = cart.reduce((sum, item) => sum + amountToCents(item.price) * item.qty, 0);
+            document.getElementById('cartSubtotal').textContent = formatAudCents(subtotalCents);
+            document.getElementById('cartGrandTotal').textContent = formatAudCents(subtotalCents);
         }
 
         function addProductToCart(id, title, price, image, btnElement, quantity = 1) {
             const existing = cart.find(i => i.id === id);
+            const requestedTotal = cart.reduce((sum, item) => sum + item.qty, 0) + quantity;
+            if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_ORDER_ITEM_QUANTITY
+                || (existing && existing.qty + quantity > MAX_ORDER_ITEM_QUANTITY)
+                || requestedTotal > MAX_ORDER_TOTAL_QUANTITY) {
+                showToast('Please enter a valid quantity.');
+                return;
+            }
             if (existing) {
                 existing.qty += quantity;
             } else {
@@ -734,6 +875,13 @@
         function updateItemQty(id, delta) {
             const item = cart.find(i => i.id === id);
             if (item) {
+                if (delta > 0 && (
+                    item.qty >= MAX_ORDER_ITEM_QUANTITY
+                    || cart.reduce((sum, cartItem) => sum + cartItem.qty, 0) >= MAX_ORDER_TOTAL_QUANTITY
+                )) {
+                    showToast('Please enter a valid quantity.');
+                    return;
+                }
                 item.qty += delta;
                 if (item.qty <= 0) {
                     cart = cart.filter(i => i.id !== id);
@@ -752,8 +900,333 @@
                 alert('Your cart is empty. Please add items to checkout.');
                 return;
             }
-            alert(`Salamat! Your order is pickup only. Total: ${document.getElementById('cartGrandTotal').textContent}`);
+            renderCheckoutReview();
+            document.getElementById('checkoutError').hidden = true;
+            document.getElementById('cartOverlay').classList.remove('open');
+            document.getElementById('checkoutOverlay').classList.add('open');
+            refreshPickupAvailability();
         }
+
+        const checkoutOverlay = document.getElementById('checkoutOverlay');
+        const checkoutForm = document.getElementById('checkoutForm');
+        const scheduledPickupFields = document.getElementById('scheduledPickupFields');
+        const pickupDateInput = document.getElementById('pickupDate');
+        const pickupTimeInput = document.getElementById('pickupTime');
+        const asapPickupInput = document.querySelector('input[name="pickup_type"][value="ASAP"]');
+        const checkoutError = document.getElementById('checkoutError');
+        const orderConfirmationOverlay = document.getElementById('orderConfirmationOverlay');
+        const trackOrderOverlay = document.getElementById('trackOrderOverlay');
+        let mostRecentOrder = null;
+        let inMemoryIdempotency = null;
+
+        function renderCheckoutReview() {
+            const checkoutItems = document.getElementById('checkoutItems');
+            const totalCents = cart.reduce((sum, item) => sum + amountToCents(item.price) * item.qty, 0);
+            checkoutItems.innerHTML = cart.map(item => `
+                <div class="checkout-item-row">
+                    <div>
+                        <strong>${escapeHtml(item.title)}</strong>
+                        <span>${item.qty} × ${formatAud(item.price)}</span>
+                    </div>
+                    <strong>${formatAudCents(amountToCents(item.price) * item.qty)}</strong>
+                </div>
+            `).join('');
+            document.getElementById('checkoutTotal').textContent = formatAudCents(totalCents);
+        }
+
+        function populatePickupTimes() {
+            pickupTimeInput.innerHTML = '<option value="">Select a pickup time</option>';
+            for (let minutes = 7 * 60; minutes <= 17 * 60; minutes += 30) {
+                const hour = Math.floor(minutes / 60);
+                const minute = minutes % 60;
+                const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = formatPickupTime(value);
+                pickupTimeInput.append(option);
+            }
+        }
+
+        function updatePickupFields() {
+            const selectedType = checkoutForm.querySelector('input[name="pickup_type"]:checked')?.value;
+            const scheduled = selectedType === 'SCHEDULED';
+            scheduledPickupFields.hidden = !scheduled;
+            pickupDateInput.required = scheduled;
+            pickupTimeInput.required = scheduled;
+        }
+
+        async function refreshPickupAvailability() {
+            const message = document.getElementById('asapAvailabilityMessage');
+            asapPickupInput.disabled = true;
+            message.textContent = 'Checking Melbourne store hours…';
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pickup/availability`, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`Pickup availability API returned ${response.status}`);
+                const availability = await response.json();
+                if (availability.time_zone !== 'Australia/Melbourne' || !/^\d{4}-\d{2}-\d{2}$/.test(availability.local_date)) {
+                    throw new Error('Pickup availability response was invalid');
+                }
+
+                pickupDateInput.min = availability.local_date;
+                asapPickupInput.disabled = !availability.is_open;
+                message.textContent = availability.is_open
+                    ? `Available now. Melbourne local time: ${formatPickupTime(availability.local_time)}.`
+                    : 'Pickup Now is unavailable while the Melbourne store is closed.';
+                if (!availability.is_open && asapPickupInput.checked) {
+                    asapPickupInput.checked = false;
+                }
+            } catch (error) {
+                console.error('Unable to check pickup availability:', error);
+                message.textContent = 'Pickup Now availability could not be checked. Please try again.';
+            }
+        }
+
+        function formatPickupTime(value) {
+            if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return '';
+            const [hour, minute] = value.split(':').map(Number);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
+        }
+
+        function formatPickupDate(value) {
+            if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'To be confirmed';
+            const [year, month, day] = value.split('-').map(Number);
+            return new Intl.DateTimeFormat('en-AU', {
+                timeZone: 'UTC',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+        }
+
+        function createIdempotencyKey() {
+            const bytes = crypto.getRandomValues(new Uint8Array(32));
+            let binary = '';
+            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+        }
+
+        function getIdempotencyKey(payload) {
+            const signature = JSON.stringify(payload);
+            try {
+                const savedSignature = sessionStorage.getItem('maridelOrderSignature');
+                const savedKey = sessionStorage.getItem('maridelOrderIdempotencyKey');
+                if (savedSignature === signature && savedKey) return savedKey;
+                const key = createIdempotencyKey();
+                sessionStorage.setItem('maridelOrderSignature', signature);
+                sessionStorage.setItem('maridelOrderIdempotencyKey', key);
+                inMemoryIdempotency = { signature, key };
+                return key;
+            } catch (error) {
+                console.warn('Session storage is unavailable; checkout retry protection will last only for this page session.', error);
+                if (inMemoryIdempotency?.signature === signature) return inMemoryIdempotency.key;
+                inMemoryIdempotency = { signature, key: createIdempotencyKey() };
+                return inMemoryIdempotency.key;
+            }
+        }
+
+        function clearIdempotencyKey() {
+            inMemoryIdempotency = null;
+            try {
+                sessionStorage.removeItem('maridelOrderSignature');
+                sessionStorage.removeItem('maridelOrderIdempotencyKey');
+            } catch (error) {
+                console.warn('Unable to clear the checkout retry key from session storage.', error);
+            }
+        }
+
+        async function readApiJson(response, fallbackMessage) {
+            try {
+                return await response.json();
+            } catch (error) {
+                console.error('The store API returned an invalid response:', error);
+                throw new Error(fallbackMessage);
+            }
+        }
+
+        function renderOrderDetails(order) {
+            const pickupTypeLabel = order.pickup_type === 'ASAP' ? 'Pickup Now / ASAP' : 'Scheduled Pickup';
+            const requestedTime = order.requested_pickup_time
+                ? formatPickupTime(order.requested_pickup_time)
+                : 'ASAP — time to be confirmed';
+            const items = Array.isArray(order.items) ? order.items : [];
+            const statuses = ['Pending', 'Confirmed', 'Preparing', 'Ready for Pickup', 'Completed'];
+            const currentStatusIndex = statuses.indexOf(order.status);
+            const statusMarkup = order.status === 'Cancelled'
+                ? '<span class="order-status-badge cancelled">Cancelled</span>'
+                : `<ol class="order-status-progress">${statuses.map((status, index) => `
+                    <li class="${index < currentStatusIndex ? 'complete' : ''}${index === currentStatusIndex ? ' current' : ''}">
+                        <span class="status-step-dot"></span><span>${escapeHtml(status)}</span>
+                    </li>
+                `).join('')}</ol>`;
+
+            return `
+                <div class="order-summary-card">
+                    <div class="order-summary-heading">
+                        <div><span class="order-detail-label">Order ID</span><strong>#${escapeHtml(order.order_id)}</strong></div>
+                        <span class="order-status-badge">${escapeHtml(order.status)}</span>
+                    </div>
+                    <div class="order-detail-grid">
+                        <div><span class="order-detail-label">Customer</span><strong>${escapeHtml(order.customer_name)}</strong></div>
+                        <div><span class="order-detail-label">Pickup option</span><strong>${pickupTypeLabel}</strong></div>
+                        <div><span class="order-detail-label">Requested pickup date</span><strong>${formatPickupDate(order.requested_pickup_date)}</strong></div>
+                        <div><span class="order-detail-label">Requested pickup time</span><strong>${requestedTime}</strong></div>
+                        ${order.confirmed_pickup_date ? `<div><span class="order-detail-label">Confirmed pickup</span><strong>${formatPickupDate(order.confirmed_pickup_date)}${order.confirmed_pickup_time ? ` · ${formatPickupTime(order.confirmed_pickup_time)}` : ''}</strong></div>` : ''}
+                    </div>
+                    <div class="order-items-summary">
+                        <h3>Order Items</h3>
+                        ${items.map(item => `
+                            <div class="checkout-item-row">
+                                <div><strong>${escapeHtml(item.product_name)}</strong><span>${Number(item.quantity)} × ${formatAud(item.unit_price)}</span></div>
+                                <strong>${formatAud(item.subtotal)}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="order-total-highlight"><span>Total</span><strong>${formatAud(order.total_amount)}</strong></div>
+                    <div class="order-progress-section"><span class="order-detail-label">Current order status</span>${statusMarkup}</div>
+                </div>
+            `;
+        }
+
+        async function submitCheckout(event) {
+            event.preventDefault();
+            if (cart.length === 0) {
+                checkoutError.textContent = 'Your cart is empty.';
+                checkoutError.hidden = false;
+                return;
+            }
+            if (!checkoutForm.reportValidity()) return;
+
+            const formData = new FormData(checkoutForm);
+            const pickupType = formData.get('pickup_type');
+            const payload = {
+                customer_name: String(formData.get('customer_name') || '').trim(),
+                customer_contact: String(formData.get('customer_contact') || '').trim(),
+                customer_email: String(formData.get('customer_email') || '').trim(),
+                pickup_type: pickupType,
+                items: cart.map(item => ({ product_id: Number(item.id), quantity: item.qty }))
+            };
+            if (pickupType === 'SCHEDULED') {
+                payload.pickup_date = formData.get('pickup_date');
+                payload.pickup_time = formData.get('pickup_time');
+            }
+
+            const button = document.getElementById('placeOrderBtn');
+            button.disabled = true;
+            button.querySelector('span').textContent = 'Submitting Order…';
+            checkoutError.hidden = true;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Idempotency-Key': getIdempotencyKey(payload)
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await readApiJson(response, 'We couldn’t place your order right now. Please try again.');
+                if (!response.ok) throw new Error(result.error || 'We couldn’t place your order right now. Please try again.');
+                if (!result.customer_access_token || !result.order_id) {
+                    throw new Error('The order response was incomplete. Keep your cart and contact the store before retrying.');
+                }
+
+                clearIdempotencyKey();
+                cart = [];
+                renderCart();
+                checkoutForm.reset();
+                updatePickupFields();
+                mostRecentOrder = { order: result, token: result.customer_access_token };
+                document.getElementById('confirmationMessage').textContent = result.pickup_type === 'ASAP'
+                    ? 'Your pickup request has been received. The store will confirm when your order is ready.'
+                    : 'Your requested pickup time is subject to store confirmation.';
+                document.getElementById('confirmationDetails').innerHTML = renderOrderDetails(result);
+                document.getElementById('orderAccessToken').textContent = result.customer_access_token;
+                checkoutOverlay.classList.remove('open');
+                orderConfirmationOverlay.classList.add('open');
+            } catch (error) {
+                console.error('Order submission failed:', error);
+                checkoutError.textContent = error.message || 'We couldn’t place your order right now. Please try again.';
+                checkoutError.hidden = false;
+            } finally {
+                button.disabled = false;
+                button.querySelector('span').textContent = 'Place Order';
+            }
+        }
+
+        async function loadTrackedOrder(orderId, token) {
+            const errorElement = document.getElementById('trackingError');
+            const resultContainer = document.getElementById('trackingResult');
+            const button = document.getElementById('trackOrderSubmitBtn');
+            errorElement.hidden = true;
+            resultContainer.replaceChildren();
+            button.disabled = true;
+            button.textContent = 'Loading Order…';
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/orders/${encodeURIComponent(orderId)}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store'
+                });
+                const order = await readApiJson(response, 'Order status could not be loaded. Please try again.');
+                if (!response.ok) throw new Error(order.error || 'Order not found or access token is invalid.');
+                resultContainer.innerHTML = renderOrderDetails(order);
+            } catch (error) {
+                console.error('Order lookup failed:', error);
+                errorElement.textContent = error.message || 'Order status could not be loaded. Please try again.';
+                errorElement.hidden = false;
+            } finally {
+                button.disabled = false;
+                button.textContent = 'View Order Status';
+            }
+        }
+
+        function openOrderTracking(orderId = '', token = '') {
+            document.getElementById('trackingOrderId').value = orderId;
+            document.getElementById('trackingAccessToken').value = token;
+            document.getElementById('trackingError').hidden = true;
+            trackOrderOverlay.classList.add('open');
+        }
+
+        populatePickupTimes();
+        checkoutForm.querySelectorAll('input[name="pickup_type"]').forEach(input => {
+            input.addEventListener('change', updatePickupFields);
+        });
+        checkoutForm.addEventListener('submit', submitCheckout);
+        document.getElementById('closeCheckoutBtn').addEventListener('click', () => checkoutOverlay.classList.remove('open'));
+        checkoutOverlay.addEventListener('click', event => {
+            if (event.target === checkoutOverlay) checkoutOverlay.classList.remove('open');
+        });
+        document.getElementById('closeConfirmationBtn').addEventListener('click', () => orderConfirmationOverlay.classList.remove('open'));
+        orderConfirmationOverlay.addEventListener('click', event => {
+            if (event.target === orderConfirmationOverlay) orderConfirmationOverlay.classList.remove('open');
+        });
+        document.getElementById('copyOrderTokenBtn').addEventListener('click', async event => {
+            try {
+                await navigator.clipboard.writeText(document.getElementById('orderAccessToken').textContent);
+                event.currentTarget.textContent = 'Copied';
+            } catch (error) {
+                console.error('Unable to copy order access token:', error);
+                event.currentTarget.textContent = 'Select and copy';
+            }
+        });
+        document.getElementById('trackNewOrderBtn').addEventListener('click', () => {
+            if (!mostRecentOrder) return;
+            orderConfirmationOverlay.classList.remove('open');
+            openOrderTracking(mostRecentOrder.order.order_id, mostRecentOrder.token);
+            loadTrackedOrder(mostRecentOrder.order.order_id, mostRecentOrder.token);
+        });
+        document.getElementById('openTrackOrderBtn').addEventListener('click', () => openOrderTracking());
+        document.getElementById('closeTrackOrderBtn').addEventListener('click', () => trackOrderOverlay.classList.remove('open'));
+        trackOrderOverlay.addEventListener('click', event => {
+            if (event.target === trackOrderOverlay) trackOrderOverlay.classList.remove('open');
+        });
+        document.getElementById('trackOrderForm').addEventListener('submit', event => {
+            event.preventDefault();
+            loadTrackedOrder(
+                document.getElementById('trackingOrderId').value.trim(),
+                document.getElementById('trackingAccessToken').value.trim(),
+            );
+        });
 
         // --- CART DRAWER OPEN / CLOSE ---
         const cartOverlay = document.getElementById('cartOverlay');
@@ -923,8 +1396,8 @@
                         <p class="product-desc-snippet">${escapeHtml(product.desc)}</p>
                         <div class="product-footer-row">
                             <div class="product-price-box">
-                                <span class="price-main">₱${product.price.toLocaleString()}</span>
-                                <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? `₱${product.oldPrice.toLocaleString()}` : ''}</span>
+                                <span class="price-main">${formatAud(product.price)}</span>
+                                <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? formatAud(product.oldPrice) : ''}</span>
                             </div>
                             <button type="button" class="btn-quick-add">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -1014,7 +1487,7 @@
             document.getElementById('qvImage').src = p.image;
             document.getElementById('qvCategory').textContent = p.category;
             document.getElementById('qvTitle').textContent = p.title;
-            document.getElementById('qvPrice').textContent = '₱' + p.price;
+            document.getElementById('qvPrice').textContent = formatAud(p.price);
             document.getElementById('qvDescription').textContent = p.desc;
             document.getElementById('qvQty').textContent = '1';
 
@@ -1026,7 +1499,7 @@
         }
 
         function adjustQuickViewQty(delta) {
-            qvQtyValue = Math.max(1, qvQtyValue + delta);
+            qvQtyValue = Math.min(MAX_ORDER_ITEM_QUANTITY, Math.max(1, qvQtyValue + delta));
             document.getElementById('qvQty').textContent = qvQtyValue;
         }
 
@@ -1115,19 +1588,6 @@
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
         }
-
-        // --- COUNTDOWN TIMER ---
-        let totalSeconds = 14 * 3600 + 28 * 60 + 45;
-        setInterval(() => {
-            if (totalSeconds <= 0) return;
-            totalSeconds--;
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            const s = totalSeconds % 60;
-            document.getElementById('timerHours').textContent = String(h).padStart(2, '0');
-            document.getElementById('timerMins').textContent = String(m).padStart(2, '0');
-            document.getElementById('timerSecs').textContent = String(s).padStart(2, '0');
-        }, 1000);
 
         // --- MOBILE MENU TOGGLE ---
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');

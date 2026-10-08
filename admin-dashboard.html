@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Admin Dashboard | Maridel's Store</title>
+	<link rel="stylesheet" href="admin.css" />
+	<script src="admin.js" defer></script>
+</head>
+<body class="admin-page dashboard-page" data-admin-page="dashboard">
+	<div id="dashboardGate" class="dashboard-gate" role="status">
+		<span class="loading-ring" aria-hidden="true"></span>
+		<span>Checking your session…</span>
+	</div>
+	<div id="dashboardApp" class="dashboard-app" hidden>
+		<header class="dashboard-header">
+			<a class="dashboard-brand" href="index.html" aria-label="Maridel's Store storefront">
+				<span class="brand-mark">MS</span>
+				<span><strong>MARIDEL'S STORE</strong><small>Admin Dashboard</small></span>
+			</a>
+			<div class="header-actions">
+				<span class="live-indicator"><i></i> Order management</span>
+				<button id="logoutButton" class="button button-quiet" type="button">Logout</button>
+			</div>
+		</header>
+
+		<main class="dashboard-main">
+			<section class="welcome-row">
+				<div>
+					<p class="eyebrow">Store overview</p>
+					<h1>Good day, Maridel <span aria-hidden="true">✦</span></h1>
+					<p class="welcome-copy">Keep every order moving smoothly, from confirmation to pickup.</p>
+				</div>
+				<button id="refreshButton" class="button button-outline" type="button">
+					<span aria-hidden="true">↻</span> Refresh orders
+				</button>
+			</section>
+
+			<div id="dashboardMessage" class="dashboard-message" role="status" aria-live="polite" hidden></div>
+
+			<section aria-labelledby="summaryHeading">
+				<div class="section-heading">
+					<div><p class="eyebrow">At a glance</p><h2 id="summaryHeading">Order Summary</h2></div>
+					<span id="orderCountLabel" class="section-meta"></span>
+				</div>
+				<div id="summaryCards" class="summary-grid"></div>
+			</section>
+
+			<section class="priority-section" aria-labelledby="priorityHeading">
+				<div class="section-heading">
+					<div><p class="eyebrow">Needs attention</p><h2 id="priorityHeading">Priority Orders</h2></div>
+					<span class="section-meta">Sorted by pickup urgency</span>
+				</div>
+				<div id="priorityOrders" class="order-grid"></div>
+			</section>
+
+			<section aria-labelledby="allOrdersHeading">
+				<div class="section-heading all-orders-heading">
+					<div><p class="eyebrow">Your order queue</p><h2 id="allOrdersHeading">All Orders</h2></div>
+					<label class="filter-control" for="statusFilter">
+						<span>Show</span>
+						<select id="statusFilter">
+							<option value="All">All statuses</option>
+							<option>Pending</option>
+							<option>Confirmed</option>
+							<option>Preparing</option>
+							<option>Ready for Pickup</option>
+							<option>Completed</option>
+							<option>Cancelled</option>
+						</select>
+					</label>
+				</div>
+				<div id="allOrders" class="order-grid"></div>
+			</section>
+		</main>
+	</div>
+
+	<dialog id="orderDialog" class="order-dialog" aria-labelledby="dialogTitle">
+		<div id="orderDialogContent"></div>
+	</dialog>
+</body>
+</html>
