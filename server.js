@@ -5,6 +5,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const { createOrderRouter } = require("./order-routes");
 const { melbourneNow } = require("./pickup-time");
+const { createApiErrorHandler } = require("./api-error-handler");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -117,16 +118,7 @@ app.use((req, res) => {
 });
 
 // Handle errors raised by API routes without exposing database details to clients.
-app.use((error, req, res, next) => {
-	console.error("API error:", error.code || error.name || "UnknownError");
-	if (error.type === "entity.too.large") {
-		return res.status(413).json({ error: "The request is too large." });
-	}
-	if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
-		return res.status(400).json({ error: "The request body is not valid JSON." });
-	}
-	res.status(500).json({ error: "An internal server error occurred" });
-});
+app.use(createApiErrorHandler());
 
 app.listen(PORT, () => {
 	console.log(`MARIDEL'S STORE backend is running on port ${PORT}`);
