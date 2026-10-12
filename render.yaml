@@ -11,3 +11,9 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: OWNER_PASSWORD_HASH
+        sync: false
+      - key: OWNER_SESSION_SECRET
+        sync: false

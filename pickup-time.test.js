@@ -18,7 +18,7 @@ test("ASAP is accepted only during Melbourne opening hours", () => {
 	assert.equal(open.requestedPickupTime, null);
 
 	assert.throws(
-		() => validatePickupChoice("ASAP", null, null, new Date("2026-10-07T06:00:00.000Z")),
+		() => validatePickupChoice("ASAP", null, null, new Date("2026-10-07T10:30:00.000Z")),
 		{ code: "PICKUP_CLOSED" },
 	);
 });
@@ -27,26 +27,25 @@ test("scheduled Melbourne pickup accepts an ordinary future slot", () => {
 	const pickup = validatePickupChoice(
 		"SCHEDULED",
 		"2026-10-08",
-		"09:30",
+		"13:30",
 		new Date("2026-10-07T00:00:00.000Z"),
 	);
 	assert.equal(pickup.requestedPickupDate, "2026-10-08");
-	assert.equal(pickup.requestedPickupTime, "09:30");
-	assert.equal(pickup.requestedPickupAt.toISOString(), "2026-10-07T22:30:00.000Z");
+	assert.equal(pickup.requestedPickupTime, "13:30");
 });
 
 test("scheduled pickup rejects closed hours and past times", () => {
 	assert.throws(
-		() => validatePickupChoice("SCHEDULED", "2026-10-08", "06:30", new Date("2026-10-07T00:00:00.000Z")),
-		/7:00 AM and 5:00 PM Melbourne time/,
+		() => validatePickupChoice("SCHEDULED", "2026-10-08", "09:30", new Date("2026-10-07T00:00:00.000Z")),
+		/Pickup is available from 10:00 AM to 8:00 PM Melbourne time/,
 	);
 	assert.throws(
-		() => validatePickupChoice("SCHEDULED", "2026-10-08", "17:30", new Date("2026-10-07T00:00:00.000Z")),
-		/7:00 AM and 5:00 PM Melbourne time/,
+		() => validatePickupChoice("SCHEDULED", "2026-10-08", "20:01", new Date("2026-10-07T00:00:00.000Z")),
+		/Pickup is available from 10:00 AM to 8:00 PM Melbourne time/,
 	);
 	assert.throws(
 		() => validatePickupChoice("SCHEDULED", "2026-10-07", "10:00", new Date("2026-10-07T00:00:00.000Z")),
-		/valid future pickup time/,
+		/not passed in Melbourne/,
 	);
 });
 

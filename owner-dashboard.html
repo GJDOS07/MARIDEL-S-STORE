@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Maridel's Store — Owner Orders</title>
+	<style>
+		:root { font-family: Arial, sans-serif; color: #1f2937; background: #f4f6f8; }
+		body { max-width: 1000px; margin: 0 auto; padding: 24px; }
+		header, .panel, .order-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px #0f172a12; }
+		header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+		h1, h2, h3, p { margin-top: 0; }
+		form, .order-actions { display: grid; gap: 10px; }
+		input, select, textarea, button { box-sizing: border-box; font: inherit; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
+		button { border: 0; background: #174d36; color: #fff; font-weight: 700; cursor: pointer; }
+		button:disabled { opacity: .55; cursor: wait; }
+		.order-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+		.order-card { margin: 0; }
+		.order-card p { margin: 7px 0; }
+		.order-items { padding-left: 20px; }
+		.status { display: inline-block; border-radius: 99px; padding: 4px 10px; background: #e8f1eb; color: #174d36; font-weight: 700; }
+		.error { color: #b91c1c; }
+		.muted { color: #64748b; }
+		[hidden] { display: none !important; }
+	</style>
+</head>
+<body>
+	<header>
+		<div>
+			<h1>Maridel's Store</h1>
+			<p class="muted">Owner order dashboard</p>
+		</div>
+		<button type="button" id="logoutButton" hidden>Log out</button>
+	</header>
+
+	<main>
+		<section class="panel" id="loginPanel">
+			<h2>Owner login</h2>
+			<form id="loginForm">
+				<label for="ownerPassword">Password</label>
+				<input id="ownerPassword" type="password" autocomplete="current-password" required maxlength="1024" />
+				<button type="submit">Log in</button>
+				<p class="error" id="loginError" role="alert" hidden></p>
+			</form>
+		</section>
+
+		<section id="ordersPanel" hidden>
+			<div class="panel">
+				<h2>Pickup orders</h2>
+				<label for="statusFilter">Filter by status</label>
+				<select id="statusFilter">
+					<option value="">All statuses</option>
+					<option>Pending</option>
+					<option>Confirmed</option>
+					<option>Ready for Pickup</option>
+					<option>Picked Up</option>
+					<option>Cancelled</option>
+				</select>
+				<p class="error" id="ordersError" role="alert" hidden></p>
+			</div>
+			<div class="order-grid" id="ordersList"></div>
+		</section>
+	</main>
+
+	<script src="pickup-time-display.js" defer></script>
+	<script src="owner-dashboard.js" defer></script>
+</body>
+</html>

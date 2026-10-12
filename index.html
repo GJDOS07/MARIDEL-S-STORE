@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Maridel's Store - Modern Pinoy Groceries & Everyday Essentials</title>
-    <meta name="description" content="Simple essentials for a happy Filipino home in Australia. Authentic groceries, household needs, and pantry staples." />
+    <title>Asian Store Australia - Authentic Asian Groceries & Everyday Essentials</title>
+    <meta name="description" content="Simple essentials for a happy home in Australia. Authentic Asian groceries, household needs, and pantry staples." />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +17,7 @@
 
     <!-- TOP ANNOUNCEMENT BAR -->
     <aside class="top-announcement" aria-label="Store announcement">
-        <span class="badge">Mabuhay!</span>
+        <span class="badge">Welcome!</span>
         <span>Pickup Only &bull; Collect your order in store</span>
     </aside>
 
@@ -70,6 +70,7 @@
                 <button type="button" class="action-btn" id="openAuthBtn" aria-label="User Account">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </button>
+                <button type="button" class="track-order-btn" id="openTrackingBtn">Track Order</button>
 
                 <!-- Cart Button with Live Badge -->
                 <button type="button" class="action-btn" id="openCartBtn" aria-label="Shopping Cart">
@@ -93,7 +94,7 @@
                 <div class="hero-content">
                     <div class="hero-pill-badge">
                         <svg viewBox="0 0 24 24"><path d="M17 8C8 10 5.9 16.17 3.82 21.34l1.89.66.95-2.3c.48.17.98.3 1.34.3C19 20 22 3 22 3c-1 2-8 2.25-13 3.25S2 11.5 2 13.5s1.75 3.75 1.75 3.75C7 8 17 8 17 8z"/></svg>
-                        <span>PINOY STORE AUSTRALIA &nbsp;|&nbsp; EST. 2021</span>
+                        <span>ASIAN STORE AUSTRALIA &nbsp;|&nbsp; EST. 2021</span>
                     </div>
 
                     <h1 class="hero-title">
@@ -104,7 +105,7 @@
                                 <path d="M4 11C68 3.5 152 3.5 216 11" stroke="#F6C944" stroke-width="5" stroke-linecap="round"/>
                             </svg>
                         </span>
-                        Filipino home.
+                        home.
                     </h1>
 
                     <p class="hero-subtitle">
@@ -236,18 +237,15 @@
             </div>
         </section>
 
-        <!-- STORE WELCOME BANNER -->
-        <section class="welcome-strip-wrapper" aria-labelledby="storeWelcomeTitle">
-            <div class="welcome-banner">
-                <div class="welcome-info">
-                    <span class="welcome-eyebrow">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 3.2C12.7 3.5 6 5.3 4 10.7c-1 2.7.4 5.4 3.1 6.1 2.4.6 5.1-.7 6.5-3.4C15.8 9.6 19 6 20.8 3.2Z"/><path d="M3 21c2.4-5 6.4-8.4 11.7-10.4"/></svg>
-                        Welcome to Maridel's Store
-                    </span>
-                    <h3 id="storeWelcomeTitle">Your Filipino Favorites,<br /><span>All in One Place</span></h3>
-                    <p>Discover Filipino food and pantry essentials, shop online, and enjoy convenient pickup at our Melbourne store.</p>
+        <!-- WEEKLY SPECIALS / PROMO BANNER -->
+        <section class="promo-strip-wrapper">
+            <div class="promo-banner">
+                <div class="promo-info">
+                    <span class="promo-pill">Weekly Favourites Deals</span>
+                    <h3>Your Asian Favourites, All in One Place</h3>
+                    <p>Discover authentic Asian groceries and everyday essentials, available for convenient in-store pickup.</p>
                 </div>
-                <a href="#shop" class="btn-welcome">Shop Filipino Favorites <span aria-hidden="true">&rarr;</span></a>
+                <a href="#shop" class="btn-promo">Browse Products &rarr;</a>
             </div>
         </section>
 
@@ -256,13 +254,15 @@
             <div class="section-header-row">
                 <div>
                     <span class="section-label">Our Collection</span>
-                    <h2 class="section-title">Everyday Pinoy Essentials</h2>
+                    <h2 class="section-title">Authentic Asian Groceries</h2>
                 </div>
             </div>
 
             <!-- Category Filter Pills -->
             <nav class="category-filter-nav" aria-label="Filter products by category">
             </nav>
+
+            <p id="productSearchStatus" class="product-search-status" role="status" hidden></p>
 
             <!-- Product Grid -->
             <div class="product-grid" id="productGrid">
@@ -275,15 +275,15 @@
                 <span class="section-label">About Maridel's Store</span>
                 <h2>Familiar favourites, thoughtfully stocked for your home.</h2>
                 <p>
-                    Established in 2021, Maridel's Store brings together the authentic flavors, beloved pantry staples, and everyday household essentials for the Filipino community across Australia.
+                    Established in 2021, Maridel's Store brings together the authentic flavors, beloved pantry staples, and everyday household essentials for families across Australia.
                 </p>
                 <p>
-                    From jasmine rice to familiar merienda noodles and condiments, we pack every parcel with utmost care so you can cook the dishes that make home feel close.
+                    From jasmine rice to familiar noodles and condiments, we pack every parcel with utmost care so you can cook the dishes that make home feel close.
                 </p>
                 <div class="about-highlights-grid">
                     <div class="highlight-box">
                         <strong>100% Authentic</strong>
-                        <span>Genuine Philippine brands and certified staples.</span>
+                        <span>Genuine Asian brands and certified staples.</span>
                     </div>
                     <div class="highlight-box">
                         <strong>Australia-Wide</strong>
@@ -296,7 +296,7 @@
                 <span class="visual-badge">Our Commitment</span>
                 <h3>Good products.<br />Warm service.</h3>
                 <p>
-                    Whether you are cooking a celebratory Sunday sinigang or looking for comfort snacks after work, Maridel's Store is your trusted Pinoy pantry partner.
+                    Whether you are cooking a celebratory family meal or looking for comfort snacks after work, Maridel's Store is your trusted pantry partner.
                 </p>
             </div>
         </section>
@@ -365,7 +365,7 @@
                         </div>
                         <div>
                             <small>Phone Support</small>
-                            <strong>+61 400 000 000</strong>
+                            <strong>0473 953 049</strong>
                         </div>
                     </div>
 
@@ -384,8 +384,18 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         </div>
                         <div>
-                            <small>Order Collection</small>
-                            <strong>Pickup Only</strong>
+                            <small>Pickup Address</small>
+                            <strong>1 Victoria Place, Stawell, Victoria 3380, Australia</strong>
+                        </div>
+                    </div>
+
+                    <div class="contact-method-item">
+                        <div class="icon-circle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <div>
+                            <small>Store Hours</small>
+                            <strong>Open 7 days a week, 10:00 AM – 8:00 PM</strong>
                         </div>
                     </div>
                 </div>
@@ -425,7 +435,7 @@
                             <span class="sub" style="color: var(--gold);">STORE</span>
                         </div>
                     </div>
-                    <p>Bringing authentic Filipino groceries, pantry staples, and heartwarming comfort to homes across Australia since 2021.</p>
+                    <p>Bringing authentic Asian groceries, pantry staples, and heartwarming comfort to homes across Australia since 2021.</p>
                 </div>
 
                 <div class="footer-col">
@@ -450,19 +460,19 @@
                 </div>
 
                 <div class="footer-col">
-                    <h4>Customer Care</h4>
+                    <h4>Pickup Information</h4>
                     <div class="footer-links">
-                        <a href="#contact">Pickup Information</a>
+                        <span>1 Victoria Place, Stawell, Victoria 3380, Australia</span>
+                        <span>0473 953 049</span>
+                        <span>Open 7 days a week, 10:00 AM – 8:00 PM</span>
                         <a href="#contact">Pickup Only</a>
-                        <button type="button" class="footer-order-link" id="openTrackOrderBtn">Track My Order</button>
-                        <a href="#contact">Returns &amp; Refunds</a>
-                        <a href="#contact">Help Center</a>
+                        <a href="#contact">Contact</a>
                     </div>
                 </div>
             </div>
 
             <div class="footer-bottom-row">
-                <p>&copy; 2026 Maridel's Store. All rights reserved. Made with love for the Filipino community in Australia.</p>
+                <p>&copy; 2026 Maridel's Store. All rights reserved. Made with love for families across Australia.</p>
                 <div style="display: flex; gap: 14px; font-weight: 600;">
                     <span>≡ƒöÆ Safe &amp; Secure Checkout</span>
                     <span>Pickup Only</span>
@@ -511,127 +521,135 @@
         </aside>
     </div>
 
-    <!-- CUSTOMER CHECKOUT -->
-    <div class="modal-overlay order-modal-overlay" id="checkoutOverlay">
-        <section class="modal-card order-modal-card checkout-modal-card" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
-            <button type="button" class="modal-close-btn" id="closeCheckoutBtn" aria-label="Close checkout">&times;</button>
-            <div class="order-modal-content">
-                <span class="section-label">Pickup Only</span>
-                <h2 id="checkoutTitle">Checkout</h2>
-                <p class="order-intro">Add your contact details and choose when you would like to collect your order in Melbourne.</p>
-
-                <form id="checkoutForm">
-                    <div class="checkout-fields">
-                        <div class="form-group">
-                            <label for="checkoutCustomerName">Customer Name</label>
-                            <input id="checkoutCustomerName" name="customer_name" class="form-input" type="text" maxlength="100" autocomplete="name" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="checkoutCustomerContact">Contact Number</label>
-                            <input id="checkoutCustomerContact" name="customer_contact" class="form-input" type="tel" maxlength="25" autocomplete="tel" required />
-                        </div>
-                        <div class="form-group">
-                            <label for="checkoutCustomerEmail">Email (optional)</label>
-                            <input id="checkoutCustomerEmail" name="customer_email" class="form-input" type="email" maxlength="254" autocomplete="email" />
+    <!-- PICKUP CHECKOUT MODAL -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-card checkout-modal-card" role="dialog" aria-modal="true" aria-labelledby="checkoutTitle">
+            <button type="button" class="modal-close-btn" onclick="closeCheckout()" aria-label="Close pickup checkout">&times;</button>
+            <header class="checkout-heading">
+                <div class="checkout-heading-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 7h12l1 14H5L6 7Z" stroke-linejoin="round"/><path d="M9 7a3 3 0 0 1 6 0M9 12h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <div class="checkout-heading-copy">
+                    <span class="checkout-pickup-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 10h18M5 10l1-5h12l1 5M5 10v9h14v-9M9 19v-5h6v5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        PICKUP ONLY
+                    </span>
+                    <h3 id="checkoutTitle">Pickup Checkout</h3>
+                    <p>Your order, ready when you are.</p>
+                </div>
+            </header>
+            <form id="checkoutForm" class="checkout-form">
+                <div class="checkout-fields">
+                    <div class="checkout-field">
+                        <label for="checkoutName">Full name</label>
+                        <div class="checkout-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 21v-2a7 7 0 0 1 14 0v2" stroke-linecap="round"/></svg>
+                            <input id="checkoutName" name="customer_name" type="text" maxlength="100" required autocomplete="name" />
                         </div>
                     </div>
-
-                    <fieldset class="pickup-choice-group">
-                        <legend>Choose a pickup option</legend>
-                        <label class="pickup-choice-card">
-                            <input type="radio" name="pickup_type" value="ASAP" required />
-                            <span class="pickup-choice-copy">
-                                <strong>Pickup Now / ASAP</strong>
-                                <span id="asapAvailabilityMessage">Checking Melbourne store hours…</span>
-                            </span>
-                        </label>
-                        <label class="pickup-choice-card">
-                            <input type="radio" name="pickup_type" value="SCHEDULED" required />
-                            <span class="pickup-choice-copy">
-                                <strong>Schedule Pickup</strong>
-                                <span>Choose a Melbourne local date and time, 7:00 AM–5:00 PM.</span>
-                            </span>
-                        </label>
-                    </fieldset>
-
-                    <div class="scheduled-pickup-fields" id="scheduledPickupFields" hidden>
-                        <div class="form-group">
-                            <label for="pickupDate">Pickup Date (Melbourne)</label>
-                            <input id="pickupDate" name="pickup_date" class="form-input" type="date" />
+                    <div class="checkout-field">
+                        <label for="checkoutContact">Contact number</label>
+                        <div class="checkout-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke-linejoin="round"/><path d="M10 17h4" stroke-linecap="round"/></svg>
+                            <input id="checkoutContact" name="customer_contact" type="tel" minlength="7" maxlength="25" required autocomplete="tel" />
                         </div>
-                        <div class="form-group">
-                            <label for="pickupTime">Pickup Time (Melbourne)</label>
-                            <select id="pickupTime" name="pickup_time" class="form-input">
-                                <option value="">Select a pickup time</option>
+                    </div>
+                    <div class="checkout-field">
+                        <label for="openPickupCalendar">Preferred pickup date</label>
+                        <div class="checkout-input-wrap pickup-date-picker">
+                            <button type="button" class="checkout-picker-trigger" id="openPickupCalendar"
+                                aria-label="Choose preferred pickup date" aria-haspopup="dialog"
+                                aria-expanded="false" aria-controls="pickupDatePicker">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18" stroke-linecap="round"/></svg>
+                                <span id="pickupDateDisplay">Select a date</span>
+                            </button>
+                            <input id="checkoutDate" name="pickup_date" type="hidden" />
+                            <section class="pickup-date-popover" id="pickupDatePicker" role="dialog"
+                                aria-label="Select pickup date" hidden>
+                                <p class="pickup-date-selected" id="pickupDateDraftDisplay" aria-live="polite"></p>
+                                <div class="pickup-date-columns">
+                                    <div class="pickup-date-column" data-date-column="month">
+                                        <span class="pickup-date-column-label">Month</span>
+                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous month">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+                                        </button>
+                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Month"></div>
+                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next month">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    <div class="pickup-date-column" data-date-column="day">
+                                        <span class="pickup-date-column-label">Day</span>
+                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous day">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+                                        </button>
+                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Day"></div>
+                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next day">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    <div class="pickup-date-column" data-date-column="year">
+                                        <span class="pickup-date-column-label">Year</span>
+                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous year">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+                                        </button>
+                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Year"></div>
+                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next year">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="pickup-date-actions">
+                                    <button type="button" class="pickup-date-cancel" id="cancelPickupDate">Cancel</button>
+                                    <button type="button" class="pickup-date-confirm" id="confirmPickupDate">Use this date</button>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="checkout-field">
+                        <label for="checkoutTime">Preferred pickup time <span>(Melbourne time)</span></label>
+                        <div class="checkout-input-wrap">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <select id="checkoutTime" name="pickup_time" required aria-describedby="pickupTimeHint">
+                                <option value="" selected disabled>Choose a pickup time</option>
                             </select>
                         </div>
-                    </div>
-
-                    <div class="checkout-review">
-                        <h3>Order Review</h3>
-                        <div id="checkoutItems"></div>
-                        <div class="checkout-review-total">
-                            <span>Total</span>
-                            <strong id="checkoutTotal">A$0.00</strong>
-                        </div>
-                        <p>Pickup only — collect your order at our Melbourne store.</p>
-                    </div>
-
-                    <p class="order-form-error" id="checkoutError" role="alert" hidden></p>
-                    <button type="submit" class="btn-checkout place-order-btn" id="placeOrderBtn">
-                        <span>Place Order</span>
-                    </button>
-                </form>
-            </div>
-        </section>
-    </div>
-
-    <!-- CUSTOMER ORDER CONFIRMATION -->
-    <div class="modal-overlay order-modal-overlay" id="orderConfirmationOverlay">
-        <section class="modal-card order-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmationTitle">
-            <button type="button" class="modal-close-btn" id="closeConfirmationBtn" aria-label="Close order confirmation">&times;</button>
-            <div class="order-modal-content">
-                <div class="order-success-icon" aria-hidden="true">✓</div>
-                <span class="section-label">Order received</span>
-                <h2 id="confirmationTitle">Thank you for your order</h2>
-                <p class="order-intro" id="confirmationMessage">Your pickup request has been received and is pending confirmation.</p>
-                <div id="confirmationDetails"></div>
-                <div class="access-token-notice">
-                    <strong>Save your order access token</strong>
-                    <p>This token is shown only after checkout. Keep it private to track your order.</p>
-                    <div class="access-token-row">
-                        <code id="orderAccessToken"></code>
-                        <button type="button" class="btn-secondary" id="copyOrderTokenBtn">Copy</button>
+                        <small id="pickupTimeHint" class="checkout-field-hint">Choose any available minute during pickup hours.</small>
                     </div>
                 </div>
-                <button type="button" class="btn-checkout" id="trackNewOrderBtn">Track This Order</button>
-            </div>
-        </section>
+                <aside class="checkout-hours-card" aria-label="Pickup hours">
+                    <span class="checkout-hours-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <div>
+                        <strong>Pickup hours</strong>
+                        <p id="pickupHoursRange">10:00 AM – 8:00 PM, 7 days a week</p>
+                        <small id="pickupStoreAddress">1 Victoria Place, Stawell, Victoria 3380, Australia · 0473 953 049</small>
+                    </div>
+                </aside>
+                <p id="checkoutError" class="checkout-message checkout-error" role="alert" hidden></p>
+                <div id="checkoutReview" class="checkout-message checkout-review" hidden></div>
+                <p id="checkoutSuccess" class="checkout-message checkout-success" role="status" hidden></p>
+                <button type="submit" class="btn-checkout checkout-submit">
+                    <span>Place Pickup Order</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </form>
+        </div>
     </div>
 
-    <!-- CUSTOMER ORDER TRACKING -->
-    <div class="modal-overlay order-modal-overlay" id="trackOrderOverlay">
-        <section class="modal-card order-modal-card" role="dialog" aria-modal="true" aria-labelledby="trackOrderTitle">
-            <button type="button" class="modal-close-btn" id="closeTrackOrderBtn" aria-label="Close order tracking">&times;</button>
-            <div class="order-modal-content">
-                <span class="section-label">Order status</span>
-                <h2 id="trackOrderTitle">Track My Order</h2>
-                <p class="order-intro">Enter your order ID and private access token to view its current status.</p>
-                <form id="trackOrderForm" class="tracking-form">
-                    <div class="form-group">
-                        <label for="trackingOrderId">Order ID</label>
-                        <input id="trackingOrderId" class="form-input" inputmode="numeric" autocomplete="off" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="trackingAccessToken">Order Access Token</label>
-                        <input id="trackingAccessToken" class="form-input" type="password" autocomplete="off" required />
-                    </div>
-                    <p class="order-form-error" id="trackingError" role="alert" hidden></p>
-                    <button type="submit" class="btn-checkout" id="trackOrderSubmitBtn">View Order Status</button>
-                </form>
-                <div id="trackingResult" aria-live="polite"></div>
-            </div>
-        </section>
+    <div class="modal-overlay" id="trackingModal">
+        <div class="modal-card tracking-modal-card" role="dialog" aria-modal="true" aria-labelledby="trackingTitle">
+            <button type="button" class="modal-close-btn" id="closeTrackingBtn" aria-label="Close order tracking">&times;</button>
+            <h3 class="modal-product-title" id="trackingTitle">Track an Order</h3>
+            <form id="trackingForm" class="tracking-form">
+                <label for="trackingTokenInput">Private tracking code</label>
+                <input id="trackingTokenInput" name="tracking_token" type="text" maxlength="256" autocomplete="off" required />
+                <button type="submit" class="btn-checkout"><span>Find Order</span></button>
+                <p id="trackingError" role="alert" hidden></p>
+                <div id="trackingResult" role="status" hidden></div>
+            </form>
+        </div>
     </div>
 
     <!-- PRODUCT QUICK VIEW MODAL -->
@@ -682,7 +700,7 @@
                     <div class="form-group" style="text-align: left;">
                         <label for="customerGmailInput">Gmail Address</label>
                         <input type="email" id="customerGmailInput" class="form-input" placeholder="yourname@gmail.com" required />
-                        <span id="gmailValidationMsg" style="font-size: 0.75rem; color: #ef4444; display: none;">Mangyaring maglagay ng valid na Gmail address (@gmail.com).</span>
+                        <span id="gmailValidationMsg" style="font-size: 0.75rem; color: #ef4444; display: none;">Please enter a valid Gmail address (@gmail.com).</span>
                     </div>
                     <button type="submit" class="btn-submit-contact" style="width: 100%;">Continue &rarr;</button>
                     <p id="gmailSubmitStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534;"></p>
@@ -693,38 +711,24 @@
 
     <!-- TOAST NOTIFICATION -->
     <div class="toast-notice" id="toastNotice">
-        <span>Γ£ô Item added to your shopping cart!</span>
+        <span>✓ Item added to your shopping cart!</span>
     </div>
 
     <!-- ==========================================================================
          CLIENT INTERACTIVITY & SHOPPING LOGIC
          ========================================================================== -->
+    <script src="pickup-date.js"></script>
+    <script src="store-info.js"></script>
+    <script src="pickup-time-display.js"></script>
     <script>
         // --- FEATURED PRODUCTS CAROUSEL DATA ---
         let activeProductCategory = 'all';
         let activeProductSearch = '';
 
-        const API_BASE_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-            ? 'http://localhost:3000'
-            : 'https://maridel-s-store.onrender.com';
-        const MAX_ORDER_ITEM_QUANTITY = 99;
-        const MAX_ORDER_TOTAL_QUANTITY = 200;
-        const audNumberFormatter = new Intl.NumberFormat('en-AU', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
+        const API_BASE_URL = 'https://maridel-s-store.onrender.com';
 
-        function formatAud(amount) {
-            return `A$${audNumberFormatter.format(Number(amount) || 0)}`;
-        }
-
-        function formatAudCents(cents) {
-            return formatAud(cents / 100);
-        }
-
-        function amountToCents(amount) {
-            return Math.round((Number(amount) + Number.EPSILON) * 100);
-        }
+        const audFormatter = new Intl.NumberFormat('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        function formatAud(amount) { return `A$${audFormatter.format(Number(amount) || 0)}`; }
 
         const featuredProducts = [];
 
@@ -735,7 +739,7 @@
             if (featuredProducts.length === 0) return;
             currentFeaturedIndex = (index + featuredProducts.length) % featuredProducts.length;
             const p = featuredProducts[currentFeaturedIndex];
-            
+
             document.getElementById('featuredImg').src = p.image;
             document.getElementById('featuredCategory').textContent = p.category;
             document.getElementById('featuredTitle').textContent = p.title;
@@ -764,7 +768,7 @@
         }
 
         function adjustFeaturedQty(delta) {
-            featuredQuantity = Math.min(MAX_ORDER_ITEM_QUANTITY, Math.max(1, featuredQuantity + delta));
+            featuredQuantity = Math.max(1, featuredQuantity + delta);
             document.getElementById('featuredQty').textContent = featuredQuantity;
         }
 
@@ -814,8 +818,7 @@
                         </div>
                         <div class="cart-item-info">
                             <h4 class="cart-item-title">${escapeHtml(item.title)}</h4>
-                            <div class="cart-item-price">${formatAud(item.price)} each</div>
-                            <div class="cart-item-line-total">Item total: ${formatAudCents(amountToCents(item.price) * item.qty)}</div>
+                            <div class="cart-item-price">${formatAud(item.price)}</div>
                             <div class="cart-item-actions">
                                 <div class="cart-item-qty">
                                     <button type="button" class="cart-qty-btn" data-delta="-1">&minus;</button>
@@ -838,20 +841,13 @@
             }
 
             // Calculations
-            const subtotalCents = cart.reduce((sum, item) => sum + amountToCents(item.price) * item.qty, 0);
-            document.getElementById('cartSubtotal').textContent = formatAudCents(subtotalCents);
-            document.getElementById('cartGrandTotal').textContent = formatAudCents(subtotalCents);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            document.getElementById('cartSubtotal').textContent = formatAud(subtotal);
+            document.getElementById('cartGrandTotal').textContent = formatAud(subtotal);
         }
 
         function addProductToCart(id, title, price, image, btnElement, quantity = 1) {
             const existing = cart.find(i => i.id === id);
-            const requestedTotal = cart.reduce((sum, item) => sum + item.qty, 0) + quantity;
-            if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_ORDER_ITEM_QUANTITY
-                || (existing && existing.qty + quantity > MAX_ORDER_ITEM_QUANTITY)
-                || requestedTotal > MAX_ORDER_TOTAL_QUANTITY) {
-                showToast('Please enter a valid quantity.');
-                return;
-            }
             if (existing) {
                 existing.qty += quantity;
             } else {
@@ -875,13 +871,6 @@
         function updateItemQty(id, delta) {
             const item = cart.find(i => i.id === id);
             if (item) {
-                if (delta > 0 && (
-                    item.qty >= MAX_ORDER_ITEM_QUANTITY
-                    || cart.reduce((sum, cartItem) => sum + cartItem.qty, 0) >= MAX_ORDER_TOTAL_QUANTITY
-                )) {
-                    showToast('Please enter a valid quantity.');
-                    return;
-                }
                 item.qty += delta;
                 if (item.qty <= 0) {
                     cart = cart.filter(i => i.id !== id);
@@ -900,332 +889,505 @@
                 alert('Your cart is empty. Please add items to checkout.');
                 return;
             }
-            renderCheckoutReview();
             document.getElementById('checkoutError').hidden = true;
-            document.getElementById('cartOverlay').classList.remove('open');
-            document.getElementById('checkoutOverlay').classList.add('open');
-            refreshPickupAvailability();
+            document.getElementById('checkoutReview').hidden = true;
+            document.getElementById('checkoutSuccess').hidden = true;
+            document.getElementById('checkoutModal').classList.add('open');
         }
 
-        const checkoutOverlay = document.getElementById('checkoutOverlay');
-        const checkoutForm = document.getElementById('checkoutForm');
-        const scheduledPickupFields = document.getElementById('scheduledPickupFields');
-        const pickupDateInput = document.getElementById('pickupDate');
-        const pickupTimeInput = document.getElementById('pickupTime');
-        const asapPickupInput = document.querySelector('input[name="pickup_type"][value="ASAP"]');
-        const checkoutError = document.getElementById('checkoutError');
-        const orderConfirmationOverlay = document.getElementById('orderConfirmationOverlay');
-        const trackOrderOverlay = document.getElementById('trackOrderOverlay');
-        let mostRecentOrder = null;
-        let inMemoryIdempotency = null;
-
-        function renderCheckoutReview() {
-            const checkoutItems = document.getElementById('checkoutItems');
-            const totalCents = cart.reduce((sum, item) => sum + amountToCents(item.price) * item.qty, 0);
-            checkoutItems.innerHTML = cart.map(item => `
-                <div class="checkout-item-row">
-                    <div>
-                        <strong>${escapeHtml(item.title)}</strong>
-                        <span>${item.qty} × ${formatAud(item.price)}</span>
-                    </div>
-                    <strong>${formatAudCents(amountToCents(item.price) * item.qty)}</strong>
-                </div>
-            `).join('');
-            document.getElementById('checkoutTotal').textContent = formatAudCents(totalCents);
+        function closeCheckout() {
+            document.getElementById('checkoutModal').classList.remove('open');
         }
 
-        function populatePickupTimes() {
-            pickupTimeInput.innerHTML = '<option value="">Select a pickup time</option>';
-            for (let minutes = 7 * 60; minutes <= 17 * 60; minutes += 30) {
-                const hour = Math.floor(minutes / 60);
-                const minute = minutes % 60;
-                const value = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = formatPickupTime(value);
-                pickupTimeInput.append(option);
+        function melbourneTodayISO() {
+            const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Australia/Melbourne', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+            const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+            return `${values.year}-${values.month}-${values.day}`;
+        }
+
+        function formatMelbourneDateDisplay(isoDate) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate || '')) return isoDate || '';
+            const [year, month, day] = isoDate.split('-').map(Number);
+            return new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Melbourne', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(Date.UTC(year, month - 1, day, 12)));
+        }
+
+        let checkoutIdempotencyKey = sessionStorage.getItem('maridelPendingOrderKey') || '';
+        let checkoutFingerprint = sessionStorage.getItem('maridelPendingOrderFingerprint') || '';
+        let checkoutSubmitting = false;
+
+        function pickupChoiceError(date, time) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+                return 'Select a valid pickup date and Melbourne local time.';
             }
-        }
-
-        function updatePickupFields() {
-            const selectedType = checkoutForm.querySelector('input[name="pickup_type"]:checked')?.value;
-            const scheduled = selectedType === 'SCHEDULED';
-            scheduledPickupFields.hidden = !scheduled;
-            pickupDateInput.required = scheduled;
-            pickupTimeInput.required = scheduled;
-        }
-
-        async function refreshPickupAvailability() {
-            const message = document.getElementById('asapAvailabilityMessage');
-            asapPickupInput.disabled = true;
-            message.textContent = 'Checking Melbourne store hours…';
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/pickup/availability`, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`Pickup availability API returned ${response.status}`);
-                const availability = await response.json();
-                if (availability.time_zone !== 'Australia/Melbourne' || !/^\d{4}-\d{2}-\d{2}$/.test(availability.local_date)) {
-                    throw new Error('Pickup availability response was invalid');
-                }
-
-                pickupDateInput.min = availability.local_date;
-                asapPickupInput.disabled = !availability.is_open;
-                message.textContent = availability.is_open
-                    ? `Available now. Melbourne local time: ${formatPickupTime(availability.local_time)}.`
-                    : 'Pickup Now is unavailable while the Melbourne store is closed.';
-                if (!availability.is_open && asapPickupInput.checked) {
-                    asapPickupInput.checked = false;
-                }
-            } catch (error) {
-                console.error('Unable to check pickup availability:', error);
-                message.textContent = 'Pickup Now availability could not be checked. Please try again.';
+            const [year, month, day] = date.split('-').map(Number);
+            const parsedDate = new Date(Date.UTC(year, month - 1, day));
+            if (parsedDate.toISOString().slice(0, 10) !== date) {
+                return 'Select a valid pickup date.';
             }
-        }
-
-        function formatPickupTime(value) {
-            if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return '';
-            const [hour, minute] = value.split(':').map(Number);
-            const period = hour >= 12 ? 'PM' : 'AM';
-            const displayHour = hour % 12 || 12;
-            return `${displayHour}:${String(minute).padStart(2, '0')} ${period}`;
-        }
-
-        function formatPickupDate(value) {
-            if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'To be confirmed';
-            const [year, month, day] = value.split('-').map(Number);
-            return new Intl.DateTimeFormat('en-AU', {
-                timeZone: 'UTC',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            }).format(new Date(Date.UTC(year, month - 1, day, 12)));
-        }
-
-        function createIdempotencyKey() {
-            const bytes = crypto.getRandomValues(new Uint8Array(32));
-            let binary = '';
-            bytes.forEach(byte => { binary += String.fromCharCode(byte); });
-            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-        }
-
-        function getIdempotencyKey(payload) {
-            const signature = JSON.stringify(payload);
-            try {
-                const savedSignature = sessionStorage.getItem('maridelOrderSignature');
-                const savedKey = sessionStorage.getItem('maridelOrderIdempotencyKey');
-                if (savedSignature === signature && savedKey) return savedKey;
-                const key = createIdempotencyKey();
-                sessionStorage.setItem('maridelOrderSignature', signature);
-                sessionStorage.setItem('maridelOrderIdempotencyKey', key);
-                inMemoryIdempotency = { signature, key };
-                return key;
-            } catch (error) {
-                console.warn('Session storage is unavailable; checkout retry protection will last only for this page session.', error);
-                if (inMemoryIdempotency?.signature === signature) return inMemoryIdempotency.key;
-                inMemoryIdempotency = { signature, key: createIdempotencyKey() };
-                return inMemoryIdempotency.key;
+            if (window.StoreInfo && !window.StoreInfo.isWithinOperatingHours(time)) {
+                const info = window.StoreInfo.STORE_INFO;
+                return `Pickup is available from ${info.openLabel} to ${info.closeLabel} Melbourne time, 7 days a week.`;
             }
+            const now = new Date();
+            const today = melbourneTodayISO();
+            const currentTime = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Australia/Melbourne',
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23'
+            }).format(now);
+            if (date < today) return 'Pickup date cannot be in the past.';
+            if (date === today && time <= currentTime) return 'Select a pickup time that has not passed in Melbourne.';
+            return '';
         }
 
-        function clearIdempotencyKey() {
-            inMemoryIdempotency = null;
-            try {
-                sessionStorage.removeItem('maridelOrderSignature');
-                sessionStorage.removeItem('maridelOrderIdempotencyKey');
-            } catch (error) {
-                console.warn('Unable to clear the checkout retry key from session storage.', error);
-            }
+        const checkoutDateInput = document.getElementById('checkoutDate');
+        const checkoutTimeSelect = document.getElementById('checkoutTime');
+        const pickupTimeHint = document.getElementById('pickupTimeHint');
+        const pickupDatePicker = document.getElementById('pickupDatePicker');
+        const openPickupCalendar = document.getElementById('openPickupCalendar');
+        const pickupDateDisplay = document.getElementById('pickupDateDisplay');
+        const pickupDateDraftDisplay = document.getElementById('pickupDateDraftDisplay');
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const pickupDateToday = () => melbourneTodayISO().split('-').map(Number);
+        let pickupDateDraft = null;
+        const pickupDateScrollTimers = new Map();
+        let pickupDateProgrammaticScroll = false;
+        let pickupDateRenderGeneration = 0;
+
+        function pickupDateIso({ year, month, day }) {
+            return `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
 
-        async function readApiJson(response, fallbackMessage) {
-            try {
-                return await response.json();
-            } catch (error) {
-                console.error('The store API returned an invalid response:', error);
-                throw new Error(fallbackMessage);
-            }
+        function daysInPickupMonth(year, month) {
+            return PickupDate.daysInMonth(year, month);
         }
 
-        function renderOrderDetails(order) {
-            const pickupTypeLabel = order.pickup_type === 'ASAP' ? 'Pickup Now / ASAP' : 'Scheduled Pickup';
-            const requestedTime = order.requested_pickup_time
-                ? formatPickupTime(order.requested_pickup_time)
-                : 'ASAP — time to be confirmed';
-            const items = Array.isArray(order.items) ? order.items : [];
-            const statuses = ['Pending', 'Confirmed', 'Preparing', 'Ready for Pickup', 'Completed'];
-            const currentStatusIndex = statuses.indexOf(order.status);
-            const statusMarkup = order.status === 'Cancelled'
-                ? '<span class="order-status-badge cancelled">Cancelled</span>'
-                : `<ol class="order-status-progress">${statuses.map((status, index) => `
-                    <li class="${index < currentStatusIndex ? 'complete' : ''}${index === currentStatusIndex ? ' current' : ''}">
-                        <span class="status-step-dot"></span><span>${escapeHtml(status)}</span>
-                    </li>
-                `).join('')}</ol>`;
-
-            return `
-                <div class="order-summary-card">
-                    <div class="order-summary-heading">
-                        <div><span class="order-detail-label">Order ID</span><strong>#${escapeHtml(order.order_id)}</strong></div>
-                        <span class="order-status-badge">${escapeHtml(order.status)}</span>
-                    </div>
-                    <div class="order-detail-grid">
-                        <div><span class="order-detail-label">Customer</span><strong>${escapeHtml(order.customer_name)}</strong></div>
-                        <div><span class="order-detail-label">Pickup option</span><strong>${pickupTypeLabel}</strong></div>
-                        <div><span class="order-detail-label">Requested pickup date</span><strong>${formatPickupDate(order.requested_pickup_date)}</strong></div>
-                        <div><span class="order-detail-label">Requested pickup time</span><strong>${requestedTime}</strong></div>
-                        ${order.confirmed_pickup_date ? `<div><span class="order-detail-label">Confirmed pickup</span><strong>${formatPickupDate(order.confirmed_pickup_date)}${order.confirmed_pickup_time ? ` · ${formatPickupTime(order.confirmed_pickup_time)}` : ''}</strong></div>` : ''}
-                    </div>
-                    <div class="order-items-summary">
-                        <h3>Order Items</h3>
-                        ${items.map(item => `
-                            <div class="checkout-item-row">
-                                <div><strong>${escapeHtml(item.product_name)}</strong><span>${Number(item.quantity)} × ${formatAud(item.unit_price)}</span></div>
-                                <strong>${formatAud(item.subtotal)}</strong>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="order-total-highlight"><span>Total</span><strong>${formatAud(order.total_amount)}</strong></div>
-                    <div class="order-progress-section"><span class="order-detail-label">Current order status</span>${statusMarkup}</div>
-                </div>
-            `;
+        function formatPickupDate({ year, month, day }) {
+            return `${monthNames[month].slice(0, 3)} ${day}, ${year}`;
         }
 
-        async function submitCheckout(event) {
-            event.preventDefault();
-            if (cart.length === 0) {
-                checkoutError.textContent = 'Your cart is empty.';
-                checkoutError.hidden = false;
+        function isPastPickupDate(date) {
+            const [todayYear, todayMonth, todayDay] = pickupDateToday();
+            return PickupDate.isBefore(date, { year: todayYear, month: todayMonth - 1, day: todayDay });
+        }
+
+        function setPickupDatePart(part, value) {
+            if (!pickupDateDraft) return;
+            if (part === 'month') pickupDateDraft.month = value;
+            if (part === 'day') pickupDateDraft.day = value;
+            if (part === 'year') pickupDateDraft.year = value;
+            pickupDateDraft.day = PickupDate.clampDay(pickupDateDraft.day, pickupDateDraft.year, pickupDateDraft.month);
+            renderPickupDatePicker();
+        }
+
+        function stepPickupDatePart(part, step) {
+            if (!pickupDateDraft) return;
+            if (part === 'month') {
+                const next = new Date(Date.UTC(pickupDateDraft.year, pickupDateDraft.month + step, 1));
+                pickupDateDraft.year = next.getUTCFullYear();
+                pickupDateDraft.month = next.getUTCMonth();
+                pickupDateDraft.day = PickupDate.clampDay(pickupDateDraft.day, pickupDateDraft.year, pickupDateDraft.month);
+                renderPickupDatePicker();
                 return;
             }
-            if (!checkoutForm.reportValidity()) return;
+            if (part === 'year') {
+                const [currentYear] = pickupDateToday();
+                if (pickupDateDraft.year + step < currentYear) return;
+                setPickupDatePart('year', pickupDateDraft.year + step);
+                return;
+            }
+            const nextDay = pickupDateDraft.day + step;
+            if (nextDay < 1 || nextDay > daysInPickupMonth(pickupDateDraft.year, pickupDateDraft.month)) return;
+            const candidate = { ...pickupDateDraft, day: nextDay };
+            if (!isPastPickupDate(candidate)) setPickupDatePart('day', nextDay);
+        }
 
-            const formData = new FormData(checkoutForm);
-            const pickupType = formData.get('pickup_type');
-            const payload = {
-                customer_name: String(formData.get('customer_name') || '').trim(),
-                customer_contact: String(formData.get('customer_contact') || '').trim(),
-                customer_email: String(formData.get('customer_email') || '').trim(),
-                pickup_type: pickupType,
-                items: cart.map(item => ({ product_id: Number(item.id), quantity: item.qty }))
+        function renderPickupDatePicker() {
+            if (!pickupDateDraft) return;
+            pickupDateScrollTimers.forEach(timer => clearTimeout(timer));
+            pickupDateScrollTimers.clear();
+            pickupDateProgrammaticScroll = true;
+            const renderGeneration = ++pickupDateRenderGeneration;
+            pickupDateDraftDisplay.textContent = formatPickupDate(pickupDateDraft);
+            const [currentYear] = pickupDateToday();
+            const lastYear = Math.max(currentYear + 24, pickupDateDraft.year + 12);
+            const valuesByPart = {
+                month: monthNames.map((name, index) => ({ value: index, label: name })),
+                day: Array.from({ length: daysInPickupMonth(pickupDateDraft.year, pickupDateDraft.month) }, (_, index) => ({
+                    value: index + 1,
+                    label: String(index + 1),
+                })),
+                year: Array.from({ length: lastYear - currentYear + 1 }, (_, index) => ({
+                    value: currentYear + index,
+                    label: String(currentYear + index),
+                })),
             };
-            if (pickupType === 'SCHEDULED') {
-                payload.pickup_date = formData.get('pickup_date');
-                payload.pickup_time = formData.get('pickup_time');
+
+            Object.entries(valuesByPart).forEach(([part, values]) => {
+                const column = pickupDatePicker.querySelector(`[data-date-column="${part}"]`);
+                const options = column.querySelector('.pickup-date-options');
+                const selectedValue = pickupDateDraft[part];
+                options.replaceChildren(...values.map(({ value, label }) => {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'pickup-date-option';
+                    option.textContent = label;
+                    option.dataset.value = value;
+                    option.setAttribute('role', 'option');
+                    option.setAttribute('aria-selected', String(value === selectedValue));
+                    if (part === 'day' && isPastPickupDate({ ...pickupDateDraft, day: value })) {
+                        option.disabled = true;
+                    }
+                    option.addEventListener('click', () => setPickupDatePart(part, value));
+                    return option;
+                }));
+                const selectedOption = options.querySelector('[aria-selected="true"]');
+                if (selectedOption) options.scrollTop = selectedOption.offsetTop - (options.clientHeight - selectedOption.offsetHeight) / 2;
+                column.querySelectorAll('.pickup-date-step').forEach(button => {
+                    const step = Number(button.dataset.step);
+                    button.disabled = part === 'year' && selectedValue + step < currentYear;
+                });
+            });
+            document.getElementById('confirmPickupDate').disabled = isPastPickupDate(pickupDateDraft);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (renderGeneration === pickupDateRenderGeneration) pickupDateProgrammaticScroll = false;
+            }));
+        }
+
+        function openPickupDatePicker() {
+            if (checkoutDateInput.value) {
+                const [year, month, day] = checkoutDateInput.value.split('-').map(Number);
+                pickupDateDraft = { year, month: month - 1, day };
+            } else {
+                const [year, month, day] = pickupDateToday();
+                pickupDateDraft = { year, month: month - 1, day };
+            }
+            renderPickupDatePicker();
+            pickupDatePicker.hidden = false;
+            openPickupCalendar.setAttribute('aria-expanded', 'true');
+            pickupDatePicker.querySelector('[data-date-column="month"] .pickup-date-option[aria-selected="true"]').focus({ preventScroll: true });
+        }
+
+        function closePickupDatePicker() {
+            pickupDatePicker.hidden = true;
+            openPickupCalendar.setAttribute('aria-expanded', 'false');
+            openPickupCalendar.focus();
+        }
+
+        openPickupCalendar.addEventListener('click', openPickupDatePicker);
+        document.getElementById('cancelPickupDate').addEventListener('click', closePickupDatePicker);
+        document.getElementById('confirmPickupDate').addEventListener('click', () => {
+            if (!pickupDateDraft || isPastPickupDate(pickupDateDraft)) return;
+            checkoutDateInput.value = pickupDateIso(pickupDateDraft);
+            pickupDateDisplay.textContent = formatPickupDate(pickupDateDraft);
+            closePickupDatePicker();
+            refreshPickupTimeOptions();
+        });
+        pickupDatePicker.addEventListener('click', event => {
+            const stepButton = event.target.closest('.pickup-date-step');
+            if (stepButton) {
+                const column = stepButton.closest('[data-date-column]').dataset.dateColumn;
+                stepPickupDatePart(column, Number(stepButton.dataset.step));
+            }
+        });
+        pickupDatePicker.querySelectorAll('.pickup-date-options').forEach(options => {
+            options.addEventListener('keydown', event => {
+                if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+                event.preventDefault();
+                const column = options.closest('[data-date-column]').dataset.dateColumn;
+                stepPickupDatePart(column, event.key === 'ArrowUp' ? -1 : 1);
+                pickupDatePicker.querySelector(`[data-date-column="${column}"] .pickup-date-options [aria-selected="true"]`)?.focus({ preventScroll: true });
+            });
+            options.addEventListener('scroll', () => {
+                if (pickupDateProgrammaticScroll) return;
+                const column = options.closest('[data-date-column]').dataset.dateColumn;
+                clearTimeout(pickupDateScrollTimers.get(column));
+                pickupDateScrollTimers.set(column, setTimeout(() => {
+                    const midpoint = options.getBoundingClientRect().top + options.clientHeight / 2;
+                    const nearest = [...options.querySelectorAll('.pickup-date-option:not(:disabled)')]
+                        .sort((first, second) =>
+                            Math.abs(first.getBoundingClientRect().top + first.offsetHeight / 2 - midpoint)
+                            - Math.abs(second.getBoundingClientRect().top + second.offsetHeight / 2 - midpoint)
+                        )[0];
+                    if (nearest && Number(nearest.dataset.value) !== pickupDateDraft[column]) {
+                        setPickupDatePart(column, Number(nearest.dataset.value));
+                    }
+                    pickupDateScrollTimers.delete(column);
+                }, 120));
+            }, { passive: true });
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && !pickupDatePicker.hidden) closePickupDatePicker();
+        });
+        document.addEventListener('click', event => {
+            if (!pickupDatePicker.hidden && !event.composedPath().includes(pickupDatePicker.parentElement)) {
+                closePickupDatePicker();
+            }
+        });
+
+        function refreshPickupTimeOptions() {
+            const selectedTime = checkoutTimeSelect.value;
+            const selectedDate = checkoutDateInput.value;
+            const now = new Date();
+            const today = melbourneTodayISO();
+            checkoutDateInput.min = today;
+            const isToday = selectedDate === today;
+            const currentTime = isToday
+                ? new Intl.DateTimeFormat('en-GB', {
+                    timeZone: 'Australia/Melbourne',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hourCycle: 'h23'
+                }).format(now)
+                : '';
+            const times = [];
+            const storeInfo = window.StoreInfo || null;
+            const openMinutes = storeInfo ? storeInfo.STORE_INFO.openMinutes : 10 * 60;
+            const closeMinutes = storeInfo ? storeInfo.STORE_INFO.closeMinutes : 20 * 60;
+            const pickupHoursRange = document.getElementById('pickupHoursRange');
+            const pickupStoreAddress = document.getElementById('pickupStoreAddress');
+            if (storeInfo) {
+                if (pickupHoursRange) {
+                    pickupHoursRange.textContent = `${storeInfo.hoursRangeLabel()}, ${storeInfo.STORE_INFO.operatingDaysLabel.replace(/^Open\s+/i, '')}`;
+                }
+                if (pickupStoreAddress) {
+                    pickupStoreAddress.textContent = `${storeInfo.STORE_INFO.address} · ${storeInfo.STORE_INFO.phone}`;
+                }
             }
 
-            const button = document.getElementById('placeOrderBtn');
-            button.disabled = true;
-            button.querySelector('span').textContent = 'Submitting Order…';
-            checkoutError.hidden = true;
+            for (let minutes = openMinutes; minutes <= closeMinutes; minutes += 1) {
+                const time = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+                if (!isToday || time > currentTime) times.push(time);
+            }
+
+            checkoutTimeSelect.replaceChildren(new Option('Choose a pickup time', '', true, true));
+            checkoutTimeSelect.options[0].disabled = true;
+            times.forEach(time => checkoutTimeSelect.add(new Option(PickupTimeDisplay.formatPickupTime(time), time)));
+
+            if (times.includes(selectedTime)) {
+                checkoutTimeSelect.value = selectedTime;
+            } else {
+                checkoutTimeSelect.value = '';
+            }
+
+            if (times.length === 0) {
+                checkoutTimeSelect.options[0].textContent = 'No pickup times remain today';
+                checkoutTimeSelect.disabled = true;
+                pickupTimeHint.textContent = 'Choose another date to see available pickup times.';
+            } else {
+                checkoutTimeSelect.disabled = false;
+                pickupTimeHint.textContent = selectedDate
+                    ? 'Times shown are Melbourne local time.'
+                    : 'Choose any available minute during pickup hours.';
+            }
+        }
+
+        checkoutTimeSelect.addEventListener('focus', refreshPickupTimeOptions);
+        refreshPickupTimeOptions();
+
+        function createIdempotencyKey() {
+            const bytes = new Uint8Array(32);
+            crypto.getRandomValues(bytes);
+            return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        async function fingerprintOrder(request) {
+            const encoded = new TextEncoder().encode(JSON.stringify(request));
+            const digest = await crypto.subtle.digest('SHA-256', encoded);
+            return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showCheckoutError(message) {
+            const error = document.getElementById('checkoutError');
+            error.textContent = message;
+            error.hidden = false;
+        }
+
+        document.getElementById('checkoutForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (checkoutSubmitting) return;
+            refreshPickupTimeOptions();
+            const name = document.getElementById('checkoutName').value.trim();
+            const contact = document.getElementById('checkoutContact').value.trim();
+            const date = document.getElementById('checkoutDate').value;
+            const time = document.getElementById('checkoutTime').value;
+            const error = document.getElementById('checkoutError');
+            const review = document.getElementById('checkoutReview');
+            const success = document.getElementById('checkoutSuccess');
+            error.hidden = true;
+            success.hidden = true;
+
+            if (name.length === 0 || name.length > 100) {
+                error.textContent = 'Enter your full name (up to 100 characters).';
+                error.hidden = false;
+                return;
+            }
+            if (contact.length < 7 || contact.length > 25) {
+                error.textContent = 'Enter a valid contact number.';
+                error.hidden = false;
+                return;
+            }
+            const scheduleError = pickupChoiceError(date, time);
+            if (scheduleError) {
+                error.textContent = scheduleError;
+                error.hidden = false;
+                return;
+            }
+
+            const request = {
+                customer_name: name,
+                customer_contact: contact,
+                pickup_date: date,
+                pickup_time: time,
+                items: cart.map(item => ({ product_id: item.id, quantity: item.qty }))
+            };
+            let fingerprint;
+            try {
+                fingerprint = await fingerprintOrder(request);
+            } catch {
+                showCheckoutError('Secure order submission is unavailable in this browser context. Open the store over HTTPS and try again.');
+                return;
+            }
+            if (!checkoutIdempotencyKey || checkoutFingerprint !== fingerprint) {
+                checkoutIdempotencyKey = createIdempotencyKey();
+                checkoutFingerprint = fingerprint;
+                sessionStorage.setItem('maridelPendingOrderKey', checkoutIdempotencyKey);
+                sessionStorage.setItem('maridelPendingOrderFingerprint', checkoutFingerprint);
+            }
+
+            checkoutSubmitting = true;
+            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.querySelector('span').textContent = 'Saving Order...';
+            review.hidden = true;
             try {
                 const response = await fetch(`${API_BASE_URL}/api/orders`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Idempotency-Key': getIdempotencyKey(payload)
+                        'Idempotency-Key': checkoutIdempotencyKey
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(request)
                 });
-                const result = await readApiJson(response, 'We couldn’t place your order right now. Please try again.');
-                if (!response.ok) throw new Error(result.error || 'We couldn’t place your order right now. Please try again.');
-                if (!result.customer_access_token || !result.order_id) {
-                    throw new Error('The order response was incomplete. Keep your cart and contact the store before retrying.');
+                const saved = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(saved.error || 'Your order could not be saved. Please try again.');
                 }
 
-                clearIdempotencyKey();
+                const successContent = document.createDocumentFragment();
+                const heading = document.createElement('strong');
+                heading.textContent = `Order ${saved.order_number} saved successfully.`;
+                const summary = document.createElement('p');
+                summary.textContent = `Pickup: ${formatMelbourneDateDisplay(saved.pickup_date)} at ${PickupTimeDisplay.formatPickupTime(saved.pickup_time) || 'Time unavailable'} Melbourne time. Total: ${formatAud(saved.total)}. Status: ${saved.status}.`;
+                const credentialNote = document.createElement('p');
+                credentialNote.textContent = 'Save this private tracking code to check your order status later:';
+                const credential = document.createElement('code');
+                credential.className = 'tracking-credential';
+                credential.textContent = saved.tracking_token;
+                successContent.append(heading, summary, credentialNote, credential);
+                success.replaceChildren(successContent);
+                success.hidden = false;
+                checkoutIdempotencyKey = '';
+                checkoutFingerprint = '';
+                sessionStorage.removeItem('maridelPendingOrderKey');
+                sessionStorage.removeItem('maridelPendingOrderFingerprint');
                 cart = [];
                 renderCart();
-                checkoutForm.reset();
-                updatePickupFields();
-                mostRecentOrder = { order: result, token: result.customer_access_token };
-                document.getElementById('confirmationMessage').textContent = result.pickup_type === 'ASAP'
-                    ? 'Your pickup request has been received. The store will confirm when your order is ready.'
-                    : 'Your requested pickup time is subject to store confirmation.';
-                document.getElementById('confirmationDetails').innerHTML = renderOrderDetails(result);
-                document.getElementById('orderAccessToken').textContent = result.customer_access_token;
-                checkoutOverlay.classList.remove('open');
-                orderConfirmationOverlay.classList.add('open');
-            } catch (error) {
-                console.error('Order submission failed:', error);
-                checkoutError.textContent = error.message || 'We couldn’t place your order right now. Please try again.';
-                checkoutError.hidden = false;
+                document.getElementById('checkoutForm').reset();
+            } catch (submitError) {
+                error.textContent = submitError.message || 'Your order could not be saved. Please try again.';
+                error.hidden = false;
             } finally {
-                button.disabled = false;
-                button.querySelector('span').textContent = 'Place Order';
-            }
-        }
-
-        async function loadTrackedOrder(orderId, token) {
-            const errorElement = document.getElementById('trackingError');
-            const resultContainer = document.getElementById('trackingResult');
-            const button = document.getElementById('trackOrderSubmitBtn');
-            errorElement.hidden = true;
-            resultContainer.replaceChildren();
-            button.disabled = true;
-            button.textContent = 'Loading Order…';
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/orders/${encodeURIComponent(orderId)}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    cache: 'no-store'
-                });
-                const order = await readApiJson(response, 'Order status could not be loaded. Please try again.');
-                if (!response.ok) throw new Error(order.error || 'Order not found or access token is invalid.');
-                resultContainer.innerHTML = renderOrderDetails(order);
-            } catch (error) {
-                console.error('Order lookup failed:', error);
-                errorElement.textContent = error.message || 'Order status could not be loaded. Please try again.';
-                errorElement.hidden = false;
-            } finally {
-                button.disabled = false;
-                button.textContent = 'View Order Status';
-            }
-        }
-
-        function openOrderTracking(orderId = '', token = '') {
-            document.getElementById('trackingOrderId').value = orderId;
-            document.getElementById('trackingAccessToken').value = token;
-            document.getElementById('trackingError').hidden = true;
-            trackOrderOverlay.classList.add('open');
-        }
-
-        populatePickupTimes();
-        checkoutForm.querySelectorAll('input[name="pickup_type"]').forEach(input => {
-            input.addEventListener('change', updatePickupFields);
-        });
-        checkoutForm.addEventListener('submit', submitCheckout);
-        document.getElementById('closeCheckoutBtn').addEventListener('click', () => checkoutOverlay.classList.remove('open'));
-        checkoutOverlay.addEventListener('click', event => {
-            if (event.target === checkoutOverlay) checkoutOverlay.classList.remove('open');
-        });
-        document.getElementById('closeConfirmationBtn').addEventListener('click', () => orderConfirmationOverlay.classList.remove('open'));
-        orderConfirmationOverlay.addEventListener('click', event => {
-            if (event.target === orderConfirmationOverlay) orderConfirmationOverlay.classList.remove('open');
-        });
-        document.getElementById('copyOrderTokenBtn').addEventListener('click', async event => {
-            try {
-                await navigator.clipboard.writeText(document.getElementById('orderAccessToken').textContent);
-                event.currentTarget.textContent = 'Copied';
-            } catch (error) {
-                console.error('Unable to copy order access token:', error);
-                event.currentTarget.textContent = 'Select and copy';
+                checkoutSubmitting = false;
+                submitButton.disabled = false;
+                submitButton.querySelector('span').textContent = 'Place Pickup Order';
             }
         });
-        document.getElementById('trackNewOrderBtn').addEventListener('click', () => {
-            if (!mostRecentOrder) return;
-            orderConfirmationOverlay.classList.remove('open');
-            openOrderTracking(mostRecentOrder.order.order_id, mostRecentOrder.token);
-            loadTrackedOrder(mostRecentOrder.order.order_id, mostRecentOrder.token);
-        });
-        document.getElementById('openTrackOrderBtn').addEventListener('click', () => openOrderTracking());
-        document.getElementById('closeTrackOrderBtn').addEventListener('click', () => trackOrderOverlay.classList.remove('open'));
-        trackOrderOverlay.addEventListener('click', event => {
-            if (event.target === trackOrderOverlay) trackOrderOverlay.classList.remove('open');
-        });
-        document.getElementById('trackOrderForm').addEventListener('submit', event => {
+
+        document.getElementById('trackingForm').addEventListener('submit', async (event) => {
             event.preventDefault();
-            loadTrackedOrder(
-                document.getElementById('trackingOrderId').value.trim(),
-                document.getElementById('trackingAccessToken').value.trim(),
-            );
+            const form = event.currentTarget;
+            const token = document.getElementById('trackingTokenInput').value.trim();
+            const trackingError = document.getElementById('trackingError');
+            const result = document.getElementById('trackingResult');
+            trackingError.hidden = true;
+            result.hidden = true;
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/orders/track`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const order = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(order.error || 'Unable to find this order.');
+                const catalogLoaded = await productCatalogReady;
+
+                const summary = document.createElement('p');
+                summary.textContent = `Order ${order.order_number} — ${order.status}. Pickup ${formatMelbourneDateDisplay(order.pickup_date)} at ${PickupTimeDisplay.formatPickupTime(order.pickup_time) || 'Time unavailable'}. Total ${formatAud(order.total)}.`;
+                const list = document.createElement('ul');
+                const groupedItems = new Map();
+                order.items.forEach(item => {
+                    const productId = item.product_id == null ? null : String(item.product_id);
+                    const key = productId ? `product:${productId}` : `legacy:${normalizeSearchText(item.product_name)}`;
+                    const existing = groupedItems.get(key);
+                    if (existing) {
+                        existing.quantity += Number(item.quantity) || 0;
+                    } else {
+                        groupedItems.set(key, { ...item, product_id: productId, quantity: Number(item.quantity) || 0 });
+                    }
+                });
+
+                const itemsHeading = document.createElement('h4');
+                itemsHeading.textContent = 'Items from this order';
+                groupedItems.forEach(item => {
+                    const entry = document.createElement('li');
+                    const currentProduct = item.product_id
+                        ? storeProducts.find(product => product.id === item.product_id)
+                        : null;
+                    const productName = currentProduct?.title || item.product_name;
+                    const label = document.createElement('span');
+                    label.textContent = `${productName} × ${item.quantity}`;
+                    entry.append(label);
+
+                    const buyAgainButton = document.createElement('button');
+                    buyAgainButton.type = 'button';
+                    buyAgainButton.className = 'tracking-buy-again';
+                    if (!catalogLoaded) {
+                        buyAgainButton.textContent = 'Stock not verified';
+                        buyAgainButton.disabled = true;
+                    } else if (!currentProduct) {
+                        buyAgainButton.textContent = 'Unavailable';
+                        buyAgainButton.disabled = true;
+                    } else {
+                        buyAgainButton.textContent = `Buy again · ${formatAud(currentProduct.price)}`;
+                        buyAgainButton.setAttribute('aria-label', `Add ${productName} to cart at ${formatAud(currentProduct.price)}`);
+                        buyAgainButton.addEventListener('click', () => {
+                            addProductToCart(
+                                currentProduct.id,
+                                currentProduct.title,
+                                currentProduct.price,
+                                currentProduct.image,
+                                buyAgainButton
+                            );
+                        });
+                    }
+                    entry.append(' ', buyAgainButton);
+                    list.append(entry);
+                });
+                result.replaceChildren(summary, itemsHeading, list);
+                result.hidden = false;
+            } catch (trackError) {
+                trackingError.textContent = trackError.message || 'Unable to find this order.';
+                trackingError.hidden = false;
+            }
+        });
+
+        const trackingModal = document.getElementById('trackingModal');
+        document.getElementById('openTrackingBtn').addEventListener('click', () => trackingModal.classList.add('open'));
+        document.getElementById('closeTrackingBtn').addEventListener('click', () => trackingModal.classList.remove('open'));
+        trackingModal.addEventListener('click', event => {
+            if (event.target === trackingModal) trackingModal.classList.remove('open');
         });
 
         // --- CART DRAWER OPEN / CLOSE ---
@@ -1258,9 +1420,39 @@
         });
 
         searchInput.addEventListener('input', () => {
-            activeProductSearch = searchInput.value.trim().toLowerCase();
+            activeProductSearch = normalizeSearchText(searchInput.value);
             searchClearBtn.classList.toggle('visible', activeProductSearch.length > 0);
             applyProductFilters();
+        });
+
+        let searchHighlightTimer = null;
+
+        searchInput.addEventListener('keydown', event => {
+            if (event.key !== 'Enter' || event.isComposing) return;
+            event.preventDefault();
+
+            activeProductSearch = normalizeSearchText(searchInput.value);
+            if (!activeProductSearch) return;
+
+            activeProductCategory = 'all';
+            categoryFilterNav.querySelectorAll('.filter-pill').forEach(button => {
+                button.classList.toggle('active', button.dataset.filter === 'all');
+            });
+            applyProductFilters();
+
+            const firstMatch = [...productGrid.querySelectorAll('.product-card')]
+                .find(card => !card.classList.contains('hidden'));
+            if (!firstMatch) return;
+
+            if (searchHighlightTimer) clearTimeout(searchHighlightTimer);
+            productGrid.querySelectorAll('.product-card.search-match-highlight')
+                .forEach(card => card.classList.remove('search-match-highlight'));
+            firstMatch.classList.add('search-match-highlight');
+            firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            searchHighlightTimer = setTimeout(() => {
+                firstMatch.classList.remove('search-match-highlight');
+                searchHighlightTimer = null;
+            }, 1800);
         });
 
         searchClearBtn.addEventListener('click', () => {
@@ -1283,6 +1475,7 @@
         const productGrid = document.getElementById('productGrid');
         const categoryFilterNav = document.querySelector('.category-filter-nav');
         let storeProducts = [];
+        let productCatalogReady = Promise.resolve(false);
 
         function escapeHtml(value) {
             return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -1296,6 +1489,10 @@
 
         function normalizeProductName(value) {
             return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function normalizeSearchText(value) {
+            return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
         }
 
         function categorySlug(value) {
@@ -1334,7 +1531,6 @@
             if (id === null || id === undefined || !title || !Number.isFinite(price)) return null;
 
             const originalPrice = Number(product.original_price);
-            const stock = Number(product.stock);
             const category = String(product.category || 'Other').trim();
             const apiImage = typeof product.image === 'string' ? product.image.trim() : '';
 
@@ -1347,7 +1543,6 @@
                 oldPrice: Number.isFinite(originalPrice) && originalPrice > price ? originalPrice : null,
                 image: apiImage || fallbackProductImage({ name: title, category }, index),
                 desc: String(product.description || ''),
-                stock: Number.isFinite(stock) ? stock : null,
                 stockLabel: 'In Stock'
             };
         }
@@ -1419,16 +1614,27 @@
         }
 
         function applyProductFilters() {
-            document.querySelectorAll('.product-card').forEach(card => {
+            const cards = [...productGrid.querySelectorAll('.product-card')];
+            let visibleCount = 0;
+            cards.forEach(card => {
                 const categoryMatches = activeProductCategory === 'all'
                     || card.dataset.category === activeProductCategory
                     || (activeProductCategory === 'rice' && /rice|grain/.test(card.dataset.category))
                     || (activeProductCategory === 'sauces' && /sauce|condiment/.test(card.dataset.category))
                     || (activeProductCategory === 'canned' && /canned/.test(card.dataset.category))
                     || (activeProductCategory === 'snacks' && /snack|drink|beverage|noodle/.test(card.dataset.category));
-                const searchText = `${card.dataset.title} ${card.dataset.category}`.toLowerCase();
-                card.classList.toggle('hidden', !categoryMatches || !searchText.includes(activeProductSearch));
+                const searchText = normalizeSearchText(card.dataset.title);
+                const matches = categoryMatches && searchText.includes(activeProductSearch);
+                card.classList.toggle('hidden', !matches);
+                if (matches) visibleCount += 1;
             });
+
+            const searchStatus = document.getElementById('productSearchStatus');
+            const hasSearch = activeProductSearch.length > 0;
+            searchStatus.hidden = !hasSearch || visibleCount > 0;
+            searchStatus.textContent = hasSearch && visibleCount === 0
+                ? `No products match "${searchInput.value.trim()}".`
+                : '';
         }
 
         async function loadProducts() {
@@ -1471,7 +1677,9 @@
                 document.getElementById('featuredPrice').textContent = '';
                 document.getElementById('featuredOldPrice').style.display = 'none';
                 document.getElementById('featuredAddBtn').disabled = true;
+                return false;
             }
+            return true;
         }
 
         let currentQvId = null;
@@ -1490,6 +1698,9 @@
             document.getElementById('qvPrice').textContent = formatAud(p.price);
             document.getElementById('qvDescription').textContent = p.desc;
             document.getElementById('qvQty').textContent = '1';
+            const addButton = document.getElementById('qvAddBtn');
+            addButton.disabled = false;
+            addButton.querySelector('span').textContent = 'Add to Cart';
 
             quickViewModal.classList.add('open');
         }
@@ -1499,7 +1710,7 @@
         }
 
         function adjustQuickViewQty(delta) {
-            qvQtyValue = Math.min(MAX_ORDER_ITEM_QUANTITY, Math.max(1, qvQtyValue + delta));
+            qvQtyValue = Math.max(1, qvQtyValue + delta);
             document.getElementById('qvQty').textContent = qvQtyValue;
         }
 
@@ -1543,7 +1754,7 @@
             };
 
             if (!window.emailjs || Object.values(emailjsConfig).some(v => v.startsWith('YOUR_'))) {
-                status.textContent = 'Salamat! Your Gmail has been noted for store notifications.';
+                status.textContent = 'Thank you! Your Gmail has been noted for store notifications.';
                 setTimeout(() => {
                     input.value = '';
                     status.textContent = '';
@@ -1556,17 +1767,17 @@
                 emailjs.init({ publicKey: emailjsConfig.publicKey });
                 await emailjs.send(emailjsConfig.serviceId, emailjsConfig.templateId, {
                     customer_gmail: input.value.trim(),
-                    submission_time: new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila' }),
+                    submission_time: new Date().toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' }),
                     recipient_email: 'gjalcantara24@gmail.com'
                 });
-                status.textContent = 'Salamat! Matagumpay na naisumite ang iyong Gmail address.';
+                status.textContent = 'Thank you! Your Gmail address has been submitted successfully.';
                 setTimeout(() => {
                     input.value = '';
                     status.textContent = '';
                     closeAuthModal();
                 }, 1800);
             } catch (err) {
-                status.textContent = 'May nangyaring problema. Pakisubukan muli.';
+                status.textContent = 'Something went wrong. Please try again.';
             }
         });
 
@@ -1574,7 +1785,7 @@
         document.getElementById('contactForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const status = document.getElementById('contactStatus');
-            status.textContent = 'Salamat po! Your message has been sent. We will reply promptly.';
+            status.textContent = 'Thank you! Your message has been sent. We will reply promptly.';
             e.target.reset();
             setTimeout(() => { status.textContent = ''; }, 4000);
         });
@@ -1588,6 +1799,8 @@
             clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
         }
+
+        // Countdown timer removed with promotional banner countdown.
 
         // --- MOBILE MENU TOGGLE ---
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
@@ -1604,7 +1817,7 @@
         // --- INITIAL RENDER ---
         window.addEventListener('DOMContentLoaded', () => {
             renderCart();
-            loadProducts();
+            productCatalogReady = loadProducts();
         });
     </script>
 </body>

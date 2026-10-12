@@ -1,70 +1,67 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
-	moneyToCents,
-	normalizeCheckout,
+	amountToCents,
+	normalizeOrderRequest,
 } = require("./order-routes");
 
 function validOrder(overrides = {}) {
 	return {
 		customer_name: "Maridel Customer",
 		customer_contact: "+61 400 123 456",
-		customer_email: "customer@example.com",
-		pickup_type: "SCHEDULED",
-		pickup_date: "2026-10-08",
-		pickup_time: "09:30",
+		pickup_date: "2099-06-15",
+		pickup_time: "13:30",
 		items: [{ product_id: 73, quantity: 2 }],
 		...overrides,
 	};
 }
 
 test("checkout normalization accepts valid customer and product data", () => {
-	const checkout = normalizeCheckout(validOrder());
+	const checkout = normalizeOrderRequest(validOrder());
 	assert.equal(checkout.customerName, "Maridel Customer");
 	assert.equal(checkout.customerContact, "+61 400 123 456");
 	assert.deepEqual(checkout.items, [{ productId: 73, quantity: 2 }]);
-	assert.equal(checkout.pickupType, "SCHEDULED");
+	assert.equal(checkout.pickupDate, "2099-06-15");
+	assert.equal(checkout.pickupTime, "13:30");
 });
 
 test("checkout normalization rejects invalid customer details and empty cart", () => {
-	assert.throws(() => normalizeCheckout(validOrder({ customer_name: "  " })), { code: "INVALID_CUSTOMER_NAME" });
-	assert.throws(() => normalizeCheckout(validOrder({ customer_contact: "x" })), { code: "INVALID_CUSTOMER_CONTACT" });
-	assert.throws(() => normalizeCheckout(validOrder({ customer_email: "not-an-email" })), { code: "INVALID_CUSTOMER_EMAIL" });
-	assert.throws(() => normalizeCheckout(validOrder({ items: [] })), { code: "INVALID_ORDER_ITEMS" });
+	assert.throws(() => normalizeOrderRequest(validOrder({ customer_name: "  " })), { code: "INVALID_CUSTOMER_NAME" });
+	assert.throws(() => normalizeOrderRequest(validOrder({ customer_contact: "x" })), { code: "INVALID_CUSTOMER_CONTACT" });
+	assert.throws(() => normalizeOrderRequest(validOrder({ items: [] })), { code: "INVALID_ITEMS" });
 });
 
 test("checkout normalization rejects invalid products and quantities", () => {
 	assert.throws(
-		() => normalizeCheckout(validOrder({ items: [{ product_id: -1, quantity: 1 }] })),
+		() => normalizeOrderRequest(validOrder({ items: [{ product_id: -1, quantity: 1 }] })),
 		{ code: "INVALID_PRODUCT" },
 	);
 	assert.throws(
-		() => normalizeCheckout(validOrder({ items: [{ product_id: 73, quantity: 0 }] })),
+		() => normalizeOrderRequest(validOrder({ items: [{ product_id: 73, quantity: 0 }] })),
 		{ code: "INVALID_QUANTITY" },
 	);
 	assert.throws(
-		() => normalizeCheckout(validOrder({ items: [{ product_id: 73, quantity: 100 }] })),
+		() => normalizeOrderRequest(validOrder({ items: [{ product_id: 73, quantity: 100 }] })),
 		{ code: "INVALID_QUANTITY" },
 	);
 });
 
-test("checkout normalization consolidates duplicate products within quantity caps", () => {
-	const checkout = normalizeCheckout(validOrder({
-		items: [
-			{ product_id: 74, quantity: 2 },
-			{ product_id: 73, quantity: 3 },
-			{ product_id: 74, quantity: 1 },
-		],
-	}));
-	assert.deepEqual(checkout.items, [
-		{ productId: 73, quantity: 3 },
-		{ productId: 74, quantity: 3 },
-	]);
+test("checkout normalization rejects duplicate products", () => {
+	assert.throws(
+		() => normalizeOrderRequest(validOrder({
+			items: [
+				{ product_id: 74, quantity: 2 },
+				{ product_id: 73, quantity: 3 },
+				{ product_id: 74, quantity: 1 },
+			],
+		})),
+		{ code: "DUPLICATE_PRODUCT" },
+	);
 });
 
 test("AUD product prices are converted to integer cents without floating-point totals", () => {
-	assert.equal(moneyToCents("1.50"), 150);
-	assert.equal(moneyToCents("2"), 200);
-	assert.equal(moneyToCents("12.05"), 1205);
-	assert.throws(() => moneyToCents("1.999"), /valid AUD amount/);
+	assert.equal(amountToCents("1.50"), 150);
+	assert.equal(amountToCents("2"), 200);
+	assert.equal(amountToCents("12.05"), 1205);
+	assert.throws(() => amountToCents("1.999"), /not a valid AUD amount/);
 });

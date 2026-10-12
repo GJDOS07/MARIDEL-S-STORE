@@ -4,21 +4,19 @@ const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
 const { createOrderRouter } = require("./order-routes");
-const { melbourneNow } = require("./pickup-time");
+const { createApiErrorHandler } = require("./api-error-handler");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DATABASE_URL = process.env.DATABASE_URL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const allowedOrigins = new Set([
-	"https://gjdos07.github.io",
-	"http://localhost:5500",
-	"http://127.0.0.1:5500",
-	...(process.env.FRONTEND_ORIGINS || "")
-		.split(",")
-		.map(origin => origin.trim())
-		.filter(Boolean),
-]);
+const configuredOrigins = (process.env.FRONTEND_ORIGINS || "")
+	.split(",")
+	.map(origin => origin.trim())
+	.filter(Boolean);
+const defaultOrigins = process.env.NODE_ENV === "production"
+	? ["https://gjdos07.github.io"]
+	: ["https://gjdos07.github.io", "http://localhost:5500", "http://127.0.0.1:5500"];
+const allowedOrigins = new Set(configuredOrigins.length ? configuredOrigins : defaultOrigins);
 
 if (!DATABASE_URL) {
 	throw new Error("DATABASE_URL is not set. Add your Neon connection string as an environment variable.");
@@ -33,11 +31,11 @@ const pool = new Pool({
 app.set("trust proxy", 1);
 app.use(cors({
 	origin(origin, callback) {
-		if (!origin || allowedOrigins.has(origin)) return callback(null, true);
-		return callback(null, false);
+		if (!origin) return callback(null, false);
+		return callback(null, allowedOrigins.has(origin));
 	},
-	methods: ["GET", "POST", "PATCH", "OPTIONS"],
-	allowedHeaders: ["Authorization", "Content-Type", "Idempotency-Key", "X-CSRF-Token"],
+	methods: ["GET", "POST", "OPTIONS"],
+	allowedHeaders: ["Content-Type", "Idempotency-Key", "X-CSRF-Token"],
 	credentials: true,
 }));
 app.use(express.json({ limit: "32kb" }));
@@ -72,44 +70,7 @@ app.get("/api/products/:id", async (req, res, next) => {
 	}
 });
 
-app.get("/api/pickup/availability", (req, res) => {
-	const now = melbourneNow(new Date());
-	const isOpen = now.minutes >= 7 * 60 && now.minutes < 17 * 60;
-	res.set("Cache-Control", "no-store");
-	res.json({
-		time_zone: "Australia/Melbourne",
-		local_date: now.date,
-		local_time: `${String(now.hour).padStart(2, "0")}:${String(now.minute).padStart(2, "0")}`,
-		is_open: isOpen,
-		pickup_hours: { opens: "07:00", closes: "17:00" },
-	});
-});
-
-app.use("/api", createOrderRouter(pool, {
-	adminPassword: ADMIN_PASSWORD,
-	adminAllowedOrigins: [...allowedOrigins],
-}));
-
-// Temporary read-only diagnostic: which DB host/database is the runtime using?
-// Returns only hostname, database name, and product 73 price. No credentials.
-app.get("/api/debug/db-target", async (req, res, next) => {
-	try {
-		let host = null;
-		let database = null;
-		try {
-			const parsed = new URL(DATABASE_URL);
-			host = parsed.hostname || null;
-			database = (parsed.pathname || "").replace(/^\//, "") || null;
-		} catch {
-			// Keep nulls if parsing fails; do not expose connection string.
-		}
-		const priceResult = await pool.query("SELECT price::text AS price FROM products WHERE id = $1", [73]);
-		const product73Price = priceResult.rows.length > 0 ? priceResult.rows[0].price : null;
-		res.json({ host, database, product73Price });
-	} catch (error) {
-		next(error);
-	}
-});
+app.use("/api", createOrderRouter(pool, { allowedOrigins: [...allowedOrigins] }));
 
 // Return a clear response for routes that do not exist.
 app.use((req, res) => {
@@ -117,16 +78,7 @@ app.use((req, res) => {
 });
 
 // Handle errors raised by API routes without exposing database details to clients.
-app.use((error, req, res, next) => {
-	console.error("API error:", error.code || error.name || "UnknownError");
-	if (error.type === "entity.too.large") {
-		return res.status(413).json({ error: "The request is too large." });
-	}
-	if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
-		return res.status(400).json({ error: "The request body is not valid JSON." });
-	}
-	res.status(500).json({ error: "An internal server error occurred" });
-});
+app.use(createApiErrorHandler());
 
 app.listen(PORT, () => {
 	console.log(`MARIDEL'S STORE backend is running on port ${PORT}`);
