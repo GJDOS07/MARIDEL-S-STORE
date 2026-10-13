@@ -422,8 +422,13 @@ function createOrderRouter(pool, {
 				);
 				orderId = inserted.rows[0].id;
 				trackingToken = trackingTokenForOrder(idempotencyKey, orderId);
+				// order_number is populated here, in the same transaction, using
+				// the same 'MS-<id>' form the API already returns to customers.
+				// It cannot be set by the INSERT because the value depends on the
+				// generated id. The column is never read by application SQL; it
+				// exists for reporting and for the unique index.
 				await client.query(
-					"UPDATE orders SET tracking_token_hash = $1 WHERE id = $2",
+					"UPDATE orders SET tracking_token_hash = $1, order_number = 'MS-' || $2::text WHERE id = $2",
 					[sha256(trackingToken), orderId],
 				);
 
