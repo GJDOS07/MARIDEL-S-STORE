@@ -1,0 +1,499 @@
+"use strict";
+// Browser-level verification of the six owner password visibility toggles.
+//
+// These drive a REAL Chrome against the REAL served dashboard. Nothing is
+// simulated: a Chromium instance loads the page, a human-equivalent click or tap
+// lands on each eye button, and the resulting input `type` is read back from the
+// live DOM.
+//
+// The tests run against the isolated sandbox with a synthetic credential. No
+// production credential, database or environment variable is used, and no password
+// is ever printed: values are compared in memory and only booleans are reported.
+//
+// The stack and the browser are shared across the suite: starting a server and a
+// browser per test makes each test take tens of seconds, and a slow suite is one
+// nobody runs, which is how regressions slip back in.
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { spawn } = require("node:child_process");
+const path = require("node:path");
+
+const { chromium } = require("playwright-core");
+
+const SITE_PORT = 4292;
+// The dashboard hardcodes localhost:3000 when opened from a loopback host, so the
+// sandbox API is started there: that is the actual local deployment shape, and a
+// different port would test a configuration nobody runs.
+const API_PORT = 3000;
+const ORIGIN = `http://localhost:${SITE_PORT}`;
+// Synthetic credentials only. These never reach production and are not the
+// operator's password.
+const TEST_PASSWORD = "Synthetic-Toggle-Check-4471";
+const { hashOwnerPassword } = require("./owner-credentials-tool");
+
+// The six fields, from the login panel through to password recovery.
+const FIELDS = [
+	{ input: "ownerPassword", button: "togglePassword", label: "owner login password" },
+	{ input: "currentPassword", button: "toggleCurrentPassword", label: "current password" },
+	{ input: "newPassword", button: "toggleNewPassword", label: "new password" },
+	{ input: "confirmPassword", button: "toggleConfirmPassword", label: "confirm new password" },
+	{ input: "resetNewPassword", button: "toggleResetNewPassword", label: "reset new password" },
+	{ input: "resetConfirmPassword", button: "toggleResetConfirmPassword", label: "reset confirmation password" },
+];
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+let browser = null;
+let api = null;
+let site = null;
+
+// Guards against a port left bound by an earlier crashed run, which is the usual
+// reason a browser test fails on a second invocation.
+async function portIsFree(port) {
+	try {
+		const probe = await fetch(`http://127.0.0.1:${port}/`);
+		return !probe.ok;
+	} catch {
+		return true;
+	}
+}
+
+test.before(async () => {
+	// Reuse the Chrome already installed on this machine, so no browser download
+	// is needed and the test runs against a real, mainstream engine.
+	for (const port of [SITE_PORT, API_PORT]) {
+		if (!(await portIsFree(port))) {
+			throw new Error(`port ${port} is already in use; stop the other process and re-run`);
+		}
+	}
+
+	api = spawn(process.execPath, [path.join(__dirname, "server.js")], {
+		env: {
+			...process.env,
+			LOCAL_SANDBOX_DB: "1",
+			PORT: String(API_PORT),
+			NODE_ENV: "development",
+			// Synthetic credential, supplied in-memory only.
+			OWNER_PASSWORD_HASH: hashOwnerPassword(TEST_PASSWORD),
+			OWNER_SESSION_SECRET: "browser-toggle-check-secret-0123456789",
+			DOTENV_CONFIG_PATH: path.join(__dirname, "does-not-exist.env"),
+		},
+		stdio: ["ignore", "pipe", "pipe"],
+	});
+	site = spawn(process.execPath, [path.join(__dirname, "serve-local.js")], {
+		env: { ...process.env, SITE_PORT: String(SITE_PORT), DOTENV_CONFIG_PATH: path.join(__dirname, "does-not-exist.env") },
+		stdio: ["ignore", "pipe", "pipe"],
+	});
+
+	const waitFor = async (url, ms = 40000) => {
+		const deadline = Date.now() + ms;
+		while (Date.now() < deadline) {
+			try { if ((await fetch(url)).status === 200) return true; } catch {}
+			await sleep(200);
+		}
+		return false;
+	};
+	const apiUp = await waitFor(`http://127.0.0.1:${API_PORT}/`);
+	const siteUp = await waitFor(`${ORIGIN}/owner-dashboard.html`);
+	if (!apiUp || !siteUp) throw new Error(`stack did not start (api=${apiUp} site=${siteUp})`);
+
+	browser = await chromium.launch({ channel: "chrome", headless: true });
+});
+
+test.after(async () => {
+	if (browser) await browser.close();
+	for (const child of [api, site]) {
+		if (!child) continue;
+		child.kill("SIGTERM");
+	}
+	await sleep(500);
+});
+
+// A fresh context and page per test, so no session cookie leaks between tests.
+// The page is navigated to the dashboard here, because every test needs the real
+// document: a page that was never navigated is at about:blank and has no controls.
+async function newPage({ viewport, hasTouch } = {}) {
+	const context = await browser.newContext({ viewport, hasTouch });
+	const page = await context.newPage();
+	await page.goto(`${ORIGIN}/owner-dashboard.html`, { waitUntil: "networkidle" });
+	// initializeDashboard runs on load and reveals one panel; wait until it settles.
+	await page.waitForSelector("#loginPanel:not([hidden]), #ordersPanel:not([hidden])", { timeout: 20000 });
+	return { context, page };
+}
+
+// Logs the browser in so the account and reset panels become reachable.
+//
+// Waits for the dashboard script to finish initialising, which reveals whichever
+// panel the current session state calls for. A leftover session cookie would
+// otherwise land straight in the dashboard with no login form, so the login form
+// is waited for explicitly and a stale session is logged out first.
+async function loginAndOpenPanels(page) {
+	await page.goto(`${ORIGIN}/owner-dashboard.html`, { waitUntil: "networkidle" });
+	// initializeDashboard runs on load and shows one panel; wait until it settles.
+	await page.waitForSelector("#loginPanel:not([hidden]), #ordersPanel:not([hidden])", { timeout: 20000 });
+
+	// A stale session from an earlier run would skip the login form entirely.
+	const alreadyLoggedIn = await page.locator("#ordersPanel").isVisible();
+	if (alreadyLoggedIn) {
+		await page.click("#logoutButton");
+		await page.waitForSelector("#loginPanel:not([hidden])", { timeout: 15000 });
+	}
+
+	await page.fill("#ownerPassword", TEST_PASSWORD);
+	await page.click("#loginForm button[type=submit]");
+	await page.waitForSelector("#ordersPanel:not([hidden])", { timeout: 20000 });
+	// Account panel.
+	await page.click('#dashboardTabs .tab[data-tab="account"]');
+	await page.waitForSelector("#accountPanel:not([hidden])", { timeout: 15000 });
+}
+
+// Opens the panel that owns a given field. The three password areas live on
+// different panels, and only one panel is visible at a time, so each must be
+// opened before its fields can be touched.
+//
+// "Is a session open?" is not "is the orders panel visible": after switching to
+// the Account or Products tab, ordersPanel is hidden while the session is still
+// live. Checking only the orders panel is why the reset step used to hang: the
+// logout was skipped, the login panel stayed hidden, and #forgotPasswordLink
+// could never be clicked. The login panel being hidden is the reliable signal.
+async function openPanelFor(page, field) {
+	const loginPanelVisible = async () => page.locator("#loginPanel").isVisible();
+
+	// Ends any live session or open recovery panel and returns to the login
+	// panel. "Is the login panel visible?" is the one reliable signal: it is
+	// hidden while a session is open AND while either recovery panel is open, so
+	// checking it alone covers every intermediate state.
+	async function returnToLogin() {
+		if (await loginPanelVisible()) return;
+
+		// A recovery panel is open: step back through it rather than trying to
+		// log out, because the logout button is hidden on those panels.
+		const requestOpen = await page.locator("#resetRequestPanel").isVisible();
+		const passwordOpen = await page.locator("#resetPasswordPanel").isVisible();
+		if (requestOpen || passwordOpen) {
+			const back = page.locator(requestOpen ? "#backToLoginFromRequest" : "#backToLoginFromReset");
+			await back.click();
+			await page.waitForSelector("#loginPanel:not([hidden])", { timeout: 20000 });
+			if (await loginPanelVisible()) return;
+		}
+
+		await page.waitForSelector("#logoutButton:visible", { timeout: 20000 });
+		await page.click("#logoutButton");
+		await page.waitForSelector("#loginPanel:not([hidden])", { timeout: 20000 });
+	}
+
+	// Logs in if no session is live, then opens the account panel.
+	//
+	// This must NOT log out first: a reload keeps the session cookie, so the one
+	// reliable way through the login panel state is to log in and let the
+	// dashboard settle, not to tear the session down.
+	async function openAccount() {
+		const accountVisible = await page.locator("#accountPanel").isVisible();
+		if (accountVisible) return;
+
+		// A recovery panel blocks everything; step out of it without logging out.
+		const requestOpen = await page.locator("#resetRequestPanel").isVisible();
+		const passwordOpen = await page.locator("#resetPasswordPanel").isVisible();
+		if (requestOpen || passwordOpen) {
+			const back = page.locator(requestOpen ? "#backToLoginFromRequest" : "#backToLoginFromReset");
+			await back.click();
+			await page.waitForSelector("#loginPanel:not([hidden])", { timeout: 20000 });
+		}
+
+		// Reload: a live session then opens the dashboard with orders active.
+		await page.goto(`${ORIGIN}/owner-dashboard.html`, { waitUntil: "networkidle" });
+		await page.waitForSelector("#ordersPanel:not([hidden]), #loginPanel:not([hidden])", { timeout: 25000 });
+		if (await page.locator("#loginPanel").isVisible()) {
+			await page.fill("#ownerPassword", TEST_PASSWORD);
+			await page.click("#loginForm button[type=submit]");
+			await page.waitForSelector("#ordersPanel:not([hidden])", { timeout: 25000 });
+		}
+		await page.click('#dashboardTabs .tab[data-tab="account"]');
+		await page.waitForSelector("#accountPanel:not([hidden])", { timeout: 20000 });
+	}
+
+	if (field.input === "ownerPassword") {
+		// The login panel is the default state, so only a live session needs undoing.
+		await returnToLogin();
+		return;
+	}
+
+	if (field.input.startsWith("reset")) {
+		await returnToLogin();
+		// "Forgot password?" opens the request step. Without an email provider
+		// that step is a dead end, so the "I already have a reset token" link is
+		// the only way to reach the password form.
+		await page.click("#forgotPasswordLink");
+		await page.waitForSelector("#resetRequestPanel:not([hidden])", { timeout: 20000 });
+		await page.click("#haveResetTokenLink");
+		await page.waitForSelector("#resetPasswordPanel:not([hidden])", { timeout: 20000 });
+		return;
+	}
+
+	await openAccount();
+}
+
+test("all six password toggles behave correctly in a real browser", async t => {
+	const { context, page } = await newPage();
+	t.after(() => context.close());
+
+	const results = [];
+	for (const field of FIELDS) {
+		await openPanelFor(page, field);
+		const input = page.locator(`#${field.input}`);
+		const button = page.locator(`#${field.button}`);
+
+		// 1. Masked initially.
+		await page.waitForSelector(`#${field.input}`, { state: "attached", timeout: 15000 });
+		const initialType = await input.getAttribute("type", { timeout: 15000 });
+		const initialPressed = await button.getAttribute("aria-pressed");
+		const initialLabel = await button.getAttribute("aria-label");
+
+		// 2. Type a value, then reveal.
+		await input.fill(TEST_PASSWORD);
+		const valueBefore = await input.inputValue();
+		await button.click();
+		const revealedType = await input.getAttribute("type");
+		const revealedPressed = await button.getAttribute("aria-pressed");
+		const revealedLabel = await button.getAttribute("aria-label");
+		const revealedTitle = await button.getAttribute("title");
+		const valueAfterReveal = await input.inputValue();
+
+		// 3. Mask again.
+		await button.click();
+		const maskedAgainType = await input.getAttribute("type");
+		const maskedAgainPressed = await button.getAttribute("aria-pressed");
+
+		// 4. The value survived every toggle.
+		const valueAfterMask = await input.inputValue();
+		const valuePreserved = valueBefore === valueAfterReveal && valueBefore === valueAfterMask;
+
+		results.push({
+			field: field.label,
+			initialType, revealedType, maskedAgainType, valuePreserved,
+		});
+
+		assert.equal(initialType, "password", `${field.label} must start masked`);
+		assert.equal(initialPressed, "false", `${field.label} button must start unpressed`);
+		assert.equal(initialLabel, "Show password", `${field.label} label must start "Show password"`);
+		assert.equal(revealedType, "text", `${field.label} must be revealed after one click`);
+		assert.equal(revealedPressed, "true", `${field.label} must report pressed`);
+		assert.equal(revealedLabel, "Hide password", `${field.label} label must become "Hide password"`);
+		assert.equal(revealedTitle, "Hide password", `${field.label} title must become "Hide password"`);
+		assert.equal(maskedAgainType, "password", `${field.label} must mask again`);
+		assert.equal(maskedAgainPressed, "false", `${field.label} must report unpressed`);
+		assert.ok(valuePreserved, `${field.label} value must survive every toggle`);
+	}
+
+	// The whole matrix, without any value in it.
+	console.log("\n  TOGGLE MATRIX (no values printed)");
+	console.log("  " + "field".padEnd(28) + "initial".padEnd(10) + "revealed".padEnd(10) + "re-masked".padEnd(11) + "value kept");
+	for (const row of results) {
+		console.log("  " + row.field.padEnd(28) + row.initialType.padEnd(10) + row.revealedType.padEnd(10)
+			+ row.maskedAgainType.padEnd(11) + (row.valuePreserved ? "yes" : "NO"));
+	}
+});
+
+test("revealing one field does not affect any other field", async t => {
+	const { context, page } = await newPage();
+	t.after(() => context.close());
+
+	// Fill all six across their panels. Each openPanelFor call moves to the panel
+	// that owns the field, so the fills happen where the field is actually
+	// visible. After a panel switch an earlier panel's fields are hidden but
+	// still hold their values, which is what this test relies on.
+	for (const field of FIELDS) {
+		await openPanelFor(page, field);
+		await page.fill(`#${field.input}`, TEST_PASSWORD);
+	}
+
+	// Return to the account panel and reveal only the new password.
+	await openPanelFor(page, FIELDS[2]);
+	await page.click("#toggleNewPassword");
+
+	assert.equal(await page.locator("#newPassword").getAttribute("type"), "text",
+		"the targeted field must be revealed");
+	for (const field of FIELDS.filter(f => f.input !== "newPassword")) {
+		await openPanelFor(page, field);
+		const type = await page.locator(`#${field.input}`).getAttribute("type");
+		assert.equal(type, "password", `${field.label} must stay masked`);
+	}
+});
+
+test("the eye button never submits the form or changes a password", async t => {
+	const { context, page } = await newPage();
+	t.after(() => context.close());
+	await loginAndOpenPanels(page);
+	await page.fill("#currentPassword", TEST_PASSWORD);
+	await page.fill("#newPassword", "Another-Synthetic-Pass-991");
+	await page.fill("#confirmPassword", "Another-Synthetic-Pass-991");
+
+	// A click on the eye must not fire submit: the dashboard leaves the account
+	// panel on a successful password change, which is the observable signal.
+	await page.click("#toggleNewPassword");
+	await sleep(400);
+	assert.equal(await page.locator("#accountPanel").isVisible(), true,
+		"clicking the eye must not leave the account panel");
+
+	// The typed values are untouched, so nothing was submitted and reset.
+	assert.equal(await page.inputValue("#newPassword"), "Another-Synthetic-Pass-991");
+	assert.equal(await page.inputValue("#confirmPassword"), "Another-Synthetic-Pass-991");
+
+	// The button is type=button, so it cannot submit natively.
+	assert.equal(await page.locator("#toggleNewPassword").getAttribute("type"), "button");
+});
+
+test("keyboard activation reveals and masks the field", async t => {
+	const { context, page } = await newPage();
+	t.after(() => context.close());
+	await loginAndOpenPanels(page);
+	await page.fill("#newPassword", TEST_PASSWORD);
+
+	// Focus the toggle and activate it with the keyboard, as an assistive-tech
+	// user would. Enter on a focused button fires click.
+	await page.focus("#toggleNewPassword");
+	await page.keyboard.press("Enter");
+	await page.waitForTimeout(150);
+	assert.equal(await page.locator("#newPassword").getAttribute("type"), "text",
+		"Enter must reveal the field");
+
+	await page.keyboard.press("Enter");
+	await page.waitForTimeout(150);
+	assert.equal(await page.locator("#newPassword").getAttribute("type"), "password",
+		"Enter must mask it again");
+});
+
+test("the password-match hint updates correctly and never echoes a password", async t => {
+	const { context, page } = await newPage();
+	t.after(() => context.close());
+	await loginAndOpenPanels(page);
+
+	// Empty: hidden.
+	assert.equal(await page.locator("#passwordMatch").isHidden(), true, "no hint when both are empty");
+
+	// Differing: hint visible, says they do not match, and echoes neither value.
+	await page.fill("#newPassword", "First-Synthetic-Pass-1");
+	await page.fill("#confirmPassword", "Different-Synthetic-Pass-2");
+	await page.waitForTimeout(150);
+	const differing = await page.locator("#passwordMatch").textContent();
+	assert.match(differing, /do not match/i);
+	assert.ok(!differing.includes("First-Synthetic-Pass-1"), "the hint must not echo a password");
+	assert.ok(!differing.includes("Different-Synthetic-Pass-2"), "the hint must not echo a password");
+
+	// Matching: hint updates.
+	await page.fill("#confirmPassword", "First-Synthetic-Pass-1");
+	await page.waitForTimeout(150);
+	const matching = await page.locator("#passwordMatch").textContent();
+	assert.match(matching, /match/i);
+	assert.ok(!matching.includes("First-Synthetic-Pass-1"), "the hint must not echo a password");
+
+	// Clearing both hides it again.
+	await page.fill("#newPassword", "");
+	await page.fill("#confirmPassword", "");
+	await page.waitForTimeout(150);
+	assert.equal(await page.locator("#passwordMatch").isHidden(), true);
+});
+
+test("the toggle matrix holds on a mobile viewport", async t => {
+	const { context, page } = await newPage({
+		viewport: { width: 390, height: 844 },
+		hasTouch: true,
+	});
+	t.after(() => context.close());
+
+	for (const field of FIELDS) {
+		await openPanelFor(page, field);
+		const button = page.locator(`#${field.button}`);
+		// On a narrow viewport a control below the fold has no box, so bring it
+		// into view before measuring: that is what a thumb would do.
+		await button.scrollIntoViewIfNeeded();
+		const box = await button.boundingBox();
+		assert.ok(box, `${field.label} toggle must be visible on mobile`);
+		assert.ok(box.width >= 24 && box.height >= 24,
+			`${field.label} touch target must be at least 24px, got ${box.width}x${box.height}`);
+		// Tap rather than click, so the touch path is what is exercised.
+		await button.tap();
+		await page.waitForTimeout(80);
+		assert.equal(await page.locator(`#${field.input}`).getAttribute("type"), "text",
+			`${field.label} must reveal on tap`);
+		await button.tap();
+		await page.waitForTimeout(80);
+		assert.equal(await page.locator(`#${field.input}`).getAttribute("type"), "password",
+			`${field.label} must mask on second tap`);
+	}
+});
+
+test("the toggle matrix holds on a desktop viewport", async t => {
+	const { context, page } = await newPage({ viewport: { width: 1280, height: 800 } });
+	t.after(() => context.close());
+
+	// All six buttons must sit inside their field, and the inputs must keep a
+	// usable width rather than shrinking behind the icon.
+	for (const field of FIELDS) {
+		await openPanelFor(page, field);
+		const inputBox = await page.locator(`#${field.input}`).boundingBox();
+		const buttonBox = await page.locator(`#${field.button}`).boundingBox();
+		assert.ok(inputBox && buttonBox, `${field.label} must be laid out`);
+		assert.ok(
+			buttonBox.x + buttonBox.width <= inputBox.x + inputBox.width + 1,
+			`${field.label} toggle must sit inside the field`,
+		);
+		assert.ok(inputBox.width > 120, `${field.label} must keep a usable width`);
+	}
+});
+
+// --- the SameSite root cause -------------------------------------------------
+// The dashboard is on one origin and the API on another, so every owner request is
+// cross-origin. A SameSite=Lax cookie is NOT sent on a cross-origin POST, which is
+// why the CSRF cookie never reached the login route: the owner was locked out of
+// the dashboard while every same-origin test passed, and the failure was invisible
+// outside a real browser.
+
+test("the owner cookies are set so a cross-origin browser POST will carry them", async t => {
+	const { serializeCookie, sameSiteFor } = require("./order-routes");
+	assert.equal(sameSiteFor(true), "None", "a secure deployment must allow cross-origin cookies");
+	assert.equal(sameSiteFor(false), "Lax", "without Secure the browser would reject None anyway");
+
+	const header = serializeCookie("maridel_owner_session", "synthetic", {
+		maxAge: 28800, httpOnly: true, secure: true,
+	});
+	assert.match(header, /SameSite=None/);
+	assert.match(header, /Secure/);
+	assert.match(header, /HttpOnly/);
+});
+
+test("a sandbox deployment marks its cookies Secure, because 127.0.0.1 is a secure context", async t => {
+	const { createOrderRouter } = require("./order-routes");
+	const { createSandboxDatabase } = require("./local-sandbox-database");
+	const { createPoolAdapter } = require("./pglite-pool");
+	const express = require("express");
+
+	const previous = process.env.LOCAL_SANDBOX_DB;
+	process.env.LOCAL_SANDBOX_DB = "1";
+	process.env.OWNER_SESSION_SECRET = "x".repeat(43);
+	try {
+		const sandbox = await createSandboxDatabase();
+		t.after(() => sandbox.close());
+		const app = express();
+		app.use(express.json());
+		app.use("/api", createOrderRouter(createPoolAdapter(sandbox.db), {
+			allowedOrigins: ["http://localhost:4173"],
+			isOriginAllowed: origin => origin === "http://localhost:4173",
+		}));
+		const server = app.listen(0, "127.0.0.1");
+		t.after(() => new Promise(resolve => server.close(resolve)));
+		await new Promise(resolve => server.once("listening", resolve));
+
+		const csrf = await fetch(`http://127.0.0.1:${server.address().port}/api/owner/csrf`, {
+			headers: { Origin: "http://localhost:4173" },
+		});
+		const cookie = csrf.headers.getSetCookie().find(c => c.startsWith("maridel_owner_csrf="));
+		assert.ok(cookie, "the CSRF cookie must be set");
+		assert.match(cookie, /SameSite=None/, "the cookie must travel cross-origin");
+		assert.match(cookie, /Secure/, "and be marked Secure, which None requires");
+	} finally {
+		if (previous === undefined) delete process.env.LOCAL_SANDBOX_DB;
+		else process.env.LOCAL_SANDBOX_DB = previous;
+	}
+});

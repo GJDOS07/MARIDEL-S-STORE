@@ -1,3 +1,31 @@
+-- ============================================================================
+-- SUPERSEDED — DO NOT APPLY.  Kept for history only.
+--
+-- Verified by read-only inspection of the production schema, this migration
+-- was never applied: none of its columns exist (orders.requested_pickup_date,
+-- orders.requested_pickup_time, orders.confirmed_pickup_*, 
+-- orders.customer_access_token_hash, orders.idempotency_key_hash,
+-- orders.request_fingerprint, order_items.product_name_snapshot).
+--
+-- It must not be applied, for three independent reasons:
+--   1. It rewrites the price of 18 approved products (the DO $$ block near the
+--      end of this file). That is a destructive data change to live catalog
+--      pricing and needs its own explicit approval; it is not a schema fix.
+--   2. Its column design conflicts with the application. order-routes.js reads
+--      and writes idempotency_key, tracking_token_hash, idempotency_fingerprint,
+--      cancellation_reason, order_number, owner_sessions and
+--      owner_login_attempts. This file creates none of those, so the current
+--      application would still fail if only this migration ran.
+--   3. It defines a constraint named orders_status_values_check with a value
+--      list that omits 'picked up', which the owner status API writes. The
+--      same constraint name is defined, correctly, by
+--      production-order-system.sql, so applying both files would fail on the
+--      collision check in this file.
+--
+-- The authoritative migration for the current code is
+-- production-order-system.sql. Use that instead.
+-- ============================================================================
+
 BEGIN;
 
 DO $$

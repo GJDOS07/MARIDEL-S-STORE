@@ -1,2 +1,25 @@
 node_modules/
 .env
+render-owner-secrets.local.txt
+
+e2e-manifest.json
+
+# Scratch copy of the storefront used while debugging the page.
+index_check.txt
+
+# Locally uploaded product photos (development only).
+local-uploads/
+
+# Local scratch files: server logs, error dumps and debugging helpers.
+api-err.txt
+api-log.txt
+e.txt
+o.txt
+site-err.txt
+site-log.txt
+browser-test-out.txt
+inspect-*.png
+verify-*.png
+check-lines.js
+fix-login3.js
+run-verify.js

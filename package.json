@@ -5,6 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:local": "node server.js",
+    "serve": "node serve-local.js",
+    "set-owner-password": "node set-owner-credentials.js",
+    "check-owner-config": "node owner-config-check.js",
+    "verify-local-login": "node verify-local-login.js",
+    "verify:admin": "node e2e-owner-admin.js",
     "test": "node --test"
   },
   "keywords": [],
@@ -18,6 +24,7 @@
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.9"
+    "@electric-sql/pglite": "^0.5.9",
+    "playwright-core": "^1.64.1"
   }
 }

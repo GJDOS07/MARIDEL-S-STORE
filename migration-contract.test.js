@@ -24,11 +24,63 @@ const { ALLOWED_STATUSES } = require("./order-routes");
 
 const root = __dirname;
 const migration = fs.readFileSync(path.join(root, "production-order-system.sql"), "utf8");
+const ownerMigration = fs.readFileSync(path.join(root, "owner-account-and-products.sql"), "utf8");
 const orderRoutes = fs.readFileSync(path.join(root, "order-routes.js"), "utf8");
 const legacyMigration = fs.readFileSync(
 	path.join(root, "migrations", "001_customer_orders_and_aud_prices.sql"),
 	"utf8",
 );
+
+function addedColumns(sql, table) {
+	const pattern = new RegExp(`ALTER\\s+TABLE\\s+(?:public\\.)?${table}\\s+ADD\\s+COLUMN\\s+IF\\s+NOT\\s+EXISTS\\s+([a-z_][a-z0-9_]*)`, "gi");
+	return new Set([...sql.matchAll(pattern)].map(match => match[1]));
+}
+
+function createdTables(sql) {
+	return new Set(
+		[...sql.matchAll(/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+(?:public\.)?([a-z_][a-z0-9_]*)/gi)].map(match => match[1]),
+	);
+}
+
+function stripSqlComments(sql) {
+	return sql.replace(/--[^\n]*/g, "");
+}
+
+function ownerBlocks(sql) {
+	const blocks = [];
+	const pattern = /DO \$\$\s*(?:DECLARE\s*([\s\S]*?)\s*)?BEGIN\s*([\s\S]*?)^\s*END;?\s*\$\$;/gim;
+	let match;
+	while ((match = pattern.exec(sql)) !== null) {
+		blocks.push({ declares: match[1] || "", body: match[2], index: match.index });
+	}
+	return blocks;
+}
+
+function ownerDeclaredNames(declaresSection, body) {
+	const names = new Set();
+	for (const m of declaresSection.matchAll(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+[A-Za-z]/gm)) {
+		names.add(m[1]);
+	}
+	for (const m of declaresSection.matchAll(/^\s*FOREACH\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+IN\s+ARRAY/gim)) {
+		names.add(m[1]);
+	}
+	if (body) {
+		for (const m of body.matchAll(/^\s*DECLARE\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+[A-Za-z]+/gm)) {
+			names.add(m[1]);
+		}
+		for (const m of body.matchAll(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+[A-Za-z_][a-zA-Z0-9_]*\s*;/gm)) {
+			names.add(m[1]);
+		}
+	}
+	return names;
+}
+
+function ownerAssignedVariableNames(body) {
+	const names = new Set();
+	for (const m of body.matchAll(/\bINTO\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi)) names.add(m[1]);
+	for (const m of body.matchAll(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:=/gm)) names.add(m[1]);
+	return names;
+}
 
 function addedOrderColumns(sql) {
 	return new Set(
@@ -221,10 +273,6 @@ test("the migration documents a rollback plan that preserves order history", () 
 // production from a test. These checks catch the structural mistakes that would
 // otherwise only surface at run time: an unclosed DO block, unbalanced
 // parentheses, or an unbalanced string literal.
-
-function stripSqlComments(sql) {
-	return sql.replace(/--[^\n]*/g, "");
-}
 
 test("verification does not depend on a fixed row count", () => {
 	// Regression guard: the verification block once asserted exact product and
@@ -502,8 +550,25 @@ test(".env.example holds placeholders only, never a generated credential", () =>
 	const example = fs.readFileSync(path.join(root, ".env.example"), "utf8");
 	assert.doesNotMatch(example, /scrypt\$[a-f0-9]{16,}\$[a-f0-9]{64,}/i, "a real scrypt hash must never be committed");
 	assert.doesNotMatch(example, /^OWNER_PASSWORD_HASH=scrypt\$/im, "OWNER_PASSWORD_HASH must be a placeholder");
-	assert.match(example, /^OWNER_PASSWORD_HASH=REPLACE_WITH_SCRYPT_HASH_FROM_hash-owner-password\.js$/m);
-	assert.match(example, /^OWNER_SESSION_SECRET=REPLACE_WITH_64_HEX_CHARS_FROM_CRYPTO_RANDOMBYTES$/m);
+	// Placeholders are the distinguishing feature, so assert that directly rather
+	// than by shape: a "looks like a secret" pattern would also match the
+	// placeholder text itself.
+	assert.doesNotMatch(example, /^OWNER_SESSION_SECRET=(?!REPLACE_WITH_)[A-Za-z0-9_\-]{32,}$/im, "OWNER_SESSION_SECRET must be a placeholder");
+	// The placeholders must name the command that produces real values, so the
+	// file is documentation and not just a checklist.
+	assert.match(example, /^OWNER_PASSWORD_HASH=REPLACE_WITH_/m);
+	assert.match(example, /npm run set-owner-password/, "the example must point at the supported command");
+	assert.match(example, /^OWNER_SESSION_SECRET=REPLACE_WITH_/m);
+	// It must not tell anyone to paste a value into the example file itself.
+	assert.doesNotMatch(example, /--write-env[^\n]*\b(?:\.env\.example)\b/, "the command writes .env, never the example");
+});
+
+test(".env.example never carries a real database connection string", () => {
+	const example = fs.readFileSync(path.join(root, ".env.example"), "utf8");
+	const line = example.split(/\r?\n/).find(candidate => candidate.startsWith("DATABASE_URL="));
+	assert.ok(line, "DATABASE_URL must be documented");
+	assert.match(line, /^DATABASE_URL=REPLACE_WITH_/, "the connection string must be a placeholder");
+	assert.doesNotMatch(line, /postgres(?:ql)?:\/\/\S+:\S+@/, "no credentials may appear in the example");
 });
 
 test("the local secrets file stays ignored so it cannot be committed", () => {
@@ -519,4 +584,267 @@ test("the schema migration script is not hidden from version control", () => {
 		/migrate-owner-tables\.js/,
 		"a schema-mutating script must stay visible to version control",
 	);
+});
+
+// --- owner-account-and-products.sql contract ---------------------------------
+//
+// Guards the contract between the application in order-routes.js / public-product-routes.js
+// and the second production migration. These tests are static file checks; they never
+// open a database connection. They protect against the same failure mode as the first
+// migration: a schema object the application queries that is absent from the live
+// database, which surfaces as HTTP 500 INTERNAL_ERROR.
+
+test("owner-account-and-products.sql creates every owner table the application queries", () => {
+	const applicationTables = [
+		"owner_credentials",
+		"owner_reset_tokens",
+		"owner_contact",
+	];
+	const created = createdTables(ownerMigration);
+	for (const table of applicationTables) {
+		assert.ok(
+			created.has(table),
+			`owner-account-and-products.sql must create public.${table}`,
+		);
+		assert.match(
+			ownerMigration,
+			new RegExp(`CREATE\\s+TABLE\\s+IF\\s+NOT\\s+EXISTS\\s+public\\.${table}\\b`, "i"),
+			`creation of ${table} must use IF NOT EXISTS so the migration is rerunnable`,
+		);
+	}
+});
+
+test("the owner_credentials table has the password_hash column with the scrypt CHECK", () => {
+	assert.match(
+		ownerMigration,
+		/password_hash\s+TEXT\s+NOT\s+NULL\s+CHECK\s*\(\s*password_hash\s+~\s*'[^']*scrypt/i,
+		"password_hash must carry the same scrypt format CHECK the application parses",
+	);
+	assert.match(
+		ownerMigration,
+		new RegExp("password_hash\\s+~\\s*'\\^scrypt", "i"),
+		"password_hash CHECK pattern must anchor to ^scrypt",
+	);
+});
+
+test("the owner_reset_tokens table has token_hash, expires_at and consumed_at columns", () => {
+	assert.match(
+		ownerMigration,
+		/token_hash\s+CHAR\(64\)\s+PRIMARY\s+KEY\s+CHECK\s*\(\s*token_hash\s+~\s*'[^']*\[[^\]]+\]/i,
+		"token_hash must be CHAR(64) with a hex CHECK matching hashResetToken output",
+	);
+	assert.match(ownerMigration, /expires_at\s+TIMESTAMPTZ\s+NOT\s+NULL/i);
+	assert.match(ownerMigration, /consumed_at\s+TIMESTAMPTZ/i);
+	assert.match(
+		ownerMigration,
+		/created_at\s+TIMESTAMPTZ\s+NOT\s+NULL\s+DEFAULT\s+CURRENT_TIMESTAMP/i,
+	);
+});
+
+test("owner_reset_tokens has an index on expires_at for the cleanup sweep", () => {
+	assert.match(
+		ownerMigration,
+		/CREATE INDEX IF NOT EXISTS owner_reset_tokens_expires_at_idx/i,
+		"an index on expires_at supports DELETE ... WHERE expires_at <= CURRENT_TIMESTAMP",
+	);
+});
+
+test("owner_contact holds the owner email the reset flow reads", () => {
+	assert.match(
+		ownerMigration,
+		/CREATE TABLE IF NOT EXISTS public.owner_contact\s*\(\s*singleton\s+BOOLEAN\s+PRIMARY\s+KEY\s+DEFAULT\s+true,\s*email\s+TEXT/i,
+		"owner_contact must have a nullable email column",
+	);
+});
+
+test("the migration adds products.is_published as a NOT NULL BOOLEAN defaulting to true", () => {
+	const added = addedColumns(ownerMigration, "products");
+	assert.ok(added.has("is_published"), "products.is_published must be added");
+	const columnDefinition = /ADD COLUMN IF NOT EXISTS is_published\s+BOOLEAN\s+NOT\s+NULL\s+DEFAULT\s+true/i;
+	assert.match(
+		ownerMigration,
+		columnDefinition,
+		"is_published must be BOOLEAN NOT NULL DEFAULT true so every existing product stays published",
+	);
+});
+
+test("the owner migration is a single transaction so a failure rolls everything back", () => {
+	const executable = stripSqlComments(ownerMigration);
+	assert.match(executable, /^\s*BEGIN\s*;/im, "must open a transaction");
+	assert.match(executable, /COMMIT\s*;/im, "must close the transaction at the end");
+	assert.equal(
+		(executable.match(/^\s*BEGIN\s*;/gim) || []).length,
+		1,
+		"exactly one BEGIN",
+	);
+	assert.equal(
+		(executable.match(/COMMIT\s*;/gi) || []).length,
+		1,
+		"exactly one COMMIT",
+	);
+});
+
+test("the owner migration is additive and cannot destroy existing rows", () => {
+	const executable = stripSqlComments(ownerMigration);
+	assert.doesNotMatch(
+		executable,
+		/\bDROP\s+(TABLE|COLUMN|CONSTRAINT|INDEX)\b/i,
+		"no DROP TABLE/COLUMN/CONSTRAINT/INDEX",
+	);
+	assert.doesNotMatch(executable, /\bTRUNCATE\b/i, "no TRUNCATE");
+	assert.doesNotMatch(executable, /\bDELETE\s+FROM\b/i, "no DELETE FROM");
+});
+
+test("the owner migration preflight runs before any DDL", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	const firstDdl = ownerMigration.search(
+		/CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS\s+public\.owner_credentials/i,
+	);
+	assert.ok(firstDdl !== -1, "expected at least one CREATE TABLE");
+	const preflight = blocks.find(block => block.body.includes("to_regclass"));
+	assert.ok(preflight, "expected a preflight DO block");
+	assert.ok(preflight.index < firstDdl, "preflight must run before the first DDL");
+	assert.match(
+		preflight.body,
+		/RAISE\s+EXCEPTION/i,
+		"preflight must fail fast with an explicit message",
+	);
+});
+
+test("the owner migration preflight requires production-order-system.sql to run first", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	const preflight = blocks.find(block => block.body.includes("to_regclass"));
+	assert.ok(preflight, "expected a preflight DO block");
+	assert.match(
+		preflight.body,
+		/to_regclass\('public\.owner_sessions'\)/i,
+		"preflight must check for owner_sessions",
+	);
+	assert.match(
+		preflight.body,
+		/to_regclass\('public\.owner_login_attempts'\)/i,
+		"preflight must check for owner_login_attempts",
+	);
+	assert.match(
+		preflight.body,
+		/apply production-order-system\.sql/i,
+		"preflight must name the prerequisite migration",
+	);
+});
+
+test("the owner migration preflight rejects a non-boolean is_published", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	const preflight = blocks.find(block => block.body.includes("is_published"));
+	assert.ok(preflight, "expected is_published in the preflight");
+	assert.match(preflight.body, /data_type/i, "preflight must read the existing data_type");
+	assert.match(
+		preflight.body,
+		/expected boolean/i,
+		"preflight must reject a non-boolean is_published",
+	);
+});
+
+test("the owner migration verification checks every required object", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	const verification = blocks[blocks.length - 1];
+	assert.ok(verification, "expected a verification DO block");
+	const body = verification.body;
+	for (const object of [
+		"owner_credentials",
+		"owner_reset_tokens",
+		"owner_contact",
+		"is_published",
+	]) {
+		assert.match(
+			body,
+			new RegExp(object.replace(/_/g, "[-_]"), "i"),
+			`verification must check ${object}`,
+		);
+	}
+	assert.match(body, /RAISE\s+EXCEPTION/i, "verification must raise so the transaction rolls back");
+});
+
+test("the owner migration verification checks is_published is NOT NULL DEFAULT true", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	const verification = blocks[blocks.length - 1];
+	assert.ok(verification, "expected a verification DO block");
+	const body = verification.body;
+	assert.match(body, /column_default/i, "verification must read column_default");
+	assert.match(body, /is_nullable/i, "verification must read is_nullable");
+	assert.match(
+		body,
+		/IS DISTINCT FROM 'true'/i,
+		"verification must require a true default",
+	);
+	assert.match(body, /IS DISTINCT FROM 'NO'/i, "verification must require NOT NULL");
+});
+
+test("every DO block in the owner migration declares the variables it assigns", () => {
+	const blocks = ownerBlocks(ownerMigration);
+	for (const block of blocks) {
+		const declared = ownerDeclaredNames(block.declares, block.body);
+		for (const name of ownerAssignedVariableNames(block.body)) {
+			assert.ok(
+				declared.has(name),
+				`a DO block assigns to undeclared variable "${name}"`,
+			);
+		}
+	}
+});
+
+test("the owner migration preflight handles a nested DECLARE for the type check variable", () => {
+	// Regression guard: the preflight block declares existing_type inside a
+	// nested BEGIN...END block (not in the outer DECLARE section). A DO block
+	// that assigns to undeclared variable would be rejected by PostgreSQL at
+	// run time. Verify the nested DECLARE is recognised as a declaration.
+	const blocks = ownerBlocks(ownerMigration);
+	const preflight = blocks.find(block => block.body.includes("to_regclass"));
+	assert.ok(preflight, "expected a preflight DO block");
+	const declared = ownerDeclaredNames(preflight.declares, preflight.body);
+	assert.ok(
+		declared.has("existing_type"),
+		"the nested DECLARE existing_type must be recognised as declared",
+	);
+	const assigned = ownerAssignedVariableNames(preflight.body);
+	assert.ok(
+		assigned.has("existing_type"),
+		"SELECT data_type INTO existing_type must be recognised as an assignment",
+	);
+	assert.ok(
+		declared.has("existing_type"),
+		"every variable assigned via INTO must be declared, including nested DECLARE variables",
+	);
+});
+
+test("every DO block in the owner migration is closed", () => {
+	const executable = stripSqlComments(ownerMigration);
+	const openings = (executable.match(/DO\s+\$\$/gi) || []).length;
+	const closings = (executable.match(/\$\$\s*;/g) || []).length;
+	assert.equal(openings, closings, "$$ delimiters must be paired");
+	assert.equal(openings, 2, "expected two DO blocks: preflight and verification");
+});
+
+test("parentheses and string literals in the owner migration are balanced outside comments", () => {
+	const executable = stripSqlComments(ownerMigration);
+	let depth = 0;
+	let inString = false;
+	let line = 1;
+	for (const character of executable) {
+		if (character === "\n") line += 1;
+		if (inString) {
+			if (character === "'") inString = false;
+			continue;
+		}
+		if (character === "'") {
+			inString = true;
+			continue;
+		}
+		if (character === "(") depth += 1;
+		if (character === ")") depth -= 1;
+		if (depth < 0) {
+			assert.fail(`unbalanced ')' on line ${line}`);
+		}
+	}
+	assert.equal(depth, 0, "all parentheses must be balanced");
+	assert.equal(inString, false, "all single-quoted string literals must be closed");
 });

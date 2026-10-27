@@ -163,7 +163,17 @@ function createFakePool({
 					rowCount: 1,
 				};
 			}
-			throw new Error(`Unexpected test query: ${statement}`);
+			// Stock is deducted per item inside the order transaction, and a
+			// cancelled order returns it. The fake acknowledges both writes
+			// without modelling real quantities.
+			if (statement.startsWith("UPDATE products SET stock")) {
+				return { rows: [{ stock: 100 }], rowCount: 1 };
+			}
+			// The owner_credentials table does not exist in this fake database.
+			// A real PostgreSQL reports that as SQLSTATE 42P01 (undefined_table),
+			// and the credential lookup only falls back to the configured password
+			// for exactly that error.
+			throw Object.assign(new Error(`Unexpected test query: ${statement}`), { code: "42P01" });
 		},
 		release() {},
 	};
@@ -237,7 +247,11 @@ function createFakePool({
 				ownerState.loginAttempts = 0;
 				return { rows: [], rowCount: 1 };
 			}
-			throw new Error(`Unexpected test pool query: ${statement}`);
+			// The owner_credentials table does not exist in this fake database.
+			// A real PostgreSQL reports that as SQLSTATE 42P01 (undefined_table),
+			// and the credential lookup only falls back to the configured password
+			// for exactly that error.
+			throw Object.assign(new Error(`Unexpected test pool query: ${statement}`), { code: "42P01" });
 		},
 		ownerState,
 		events,

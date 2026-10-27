@@ -161,10 +161,13 @@ CREATE UNIQUE INDEX orders_customer_access_token_uidx ON public.orders (customer
 const LEGACY_TOKEN_SUFFIX = "0000000000000000000000000000000001";
 
 async function seedLegacyData(db) {
-	await db.query("INSERT INTO products (id, name, category, price, image, description) VALUES ($1, $2, $3, $4, $5, $6)",
-		[1, "Pocari Sweat 330ml", "Drinks", "2.50", null, "Ion supply drink."]);
-	await db.query("INSERT INTO products (id, name, category, price, image, description) VALUES ($1, $2, $3, $4, $5, $6)",
-		[2, "Jufran Banana Sauce 560g", "Sauces", "2.00", null, "Banana sauce."]);
+	// Stock mirrors what the stock migration would leave behind: a legacy row
+	// without a tracked quantity is 0, and the seed gives the two catalog
+	// products real stock so checkout still succeeds.
+	await db.query("INSERT INTO products (id, name, category, price, image, description, stock) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		[1, "Pocari Sweat 330ml", "Drinks", "2.50", null, "Ion supply drink.", 25]);
+	await db.query("INSERT INTO products (id, name, category, price, image, description, stock) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		[2, "Jufran Banana Sauce 560g", "Sauces", "2.00", null, "Banana sauce.", 25]);
 
 	await db.query("INSERT INTO customers (id, gmail) VALUES ($1, $2)", [1, "customer-one@example.test"]);
 	await db.query("INSERT INTO customers (id, gmail) VALUES ($1, $2)", [2, "customer-two@example.test"]);

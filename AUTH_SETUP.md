@@ -1,38 +1,29 @@
-# Gmail Notification Setup
+# Gmail Notification Setup (removed)
 
-The website now uses a manual Gmail input. It does not use Google OAuth, Google Sign-In, a Google icon, or a password field.
+The Gmail notification feature has been removed from this project.
 
-The form calls EmailJS only after a valid address ending in `@gmail.com` is entered. The recipient is configured in the EmailJS template as `gjalcantara24@gmail.com`. No success message is shown when the EmailJS configuration is missing or the request fails.
+It used to collect a customer's Gmail address from a "Customer Access" dialog in
+the header and forward it through EmailJS. Nothing ever stored or used the
+collected addresses, the EmailJS script was never loaded by the page, and its
+configuration was left as placeholders, so the feature could not work and only
+collected personal data.
 
-## Configure EmailJS
+The header account button, the sign-in modal and all of its JavaScript have been
+removed. The customer account flow now lives in the owner dashboard only; the
+public storefront has no customer accounts.
 
-1. Create an account at EmailJS and verify the owner email address.
-2. Create an email service connected to the mailbox that will send the notification.
-3. Create an email template with these values:
+## Contact form
 
-   - To email: `gjalcantara24@gmail.com`
-   - Subject: `New Customer Gmail Submission`
-   - Body:
+The contact form in the "Contact" section is delivered by Formspree instead. It
+is configured in one place, at the top of the inline script in `index.html`:
 
-```text
-      A customer has submitted their Gmail address on the website.
+```js
+const CONTACT_FORM_ID = 'FORMSPREE_FORM_ID';
+```
 
-      Customer Gmail: {{customer_gmail}}
-      Date/Time: {{submission_time}}
-      ```
+Replace `FORMSPREE_FORM_ID` with the id of a real Formspree form to enable it.
+While the placeholder value is still in place the form refuses to claim that a
+message was sent and tells the customer to call the store instead.
 
-4. Copy the EmailJS public key, service ID, and template ID.
-5. In `index.html`, replace the three `YOUR_EMAILJS_*` values in `emailjsConfig`.
-
-The EmailJS public key is intended for browser use. Do not put private API keys or server secrets in this file. For stronger control, move the send call to a backend endpoint and keep provider secrets in environment variables.
-
-## Test the notification
-
-1. Serve the folder from a real local web server or deploy it to the authorized EmailJS domain.
-2. Open the login form and enter a real address such as `customer@gmail.com`.
-3. Click `Continue`.
-4. Confirm the success message appears only after EmailJS returns successfully.
-5. Check the inbox and spam folder of `gjalcantara24@gmail.com` for `New Customer Gmail Submission`.
-6. Test an invalid address such as `customer@yahoo.com`; it must show `Please enter a valid Gmail address.` and must not call EmailJS.
-
-The current workspace cannot verify delivery until the owner supplies the EmailJS configuration. Without it, the site truthfully shows `An error occurred. Please try again.`.
+The form id is a public identifier, not a secret. Do not put private API keys or
+server secrets in this file.
