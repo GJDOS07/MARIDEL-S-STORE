@@ -1,10 +1,19 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Asian Store Australia - Authentic Asian Groceries & Everyday Essentials</title>
-    <meta name="description" content="Simple essentials for a happy home in Australia. Authentic Asian groceries, household needs, and pantry staples." />
+    <title>Maridel's Store | Asian Grocery in Stawell, Victoria</title>
+    <meta name="description" content="Simple essentials for a happy home in Australia. Authentic Asian groceries, household needs, and pantry staples in Stawell, Victoria." />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Maridel's Store | Asian Grocery in Stawell, Victoria" />
+    <meta property="og:description" content="Simple essentials for a happy home in Australia. Authentic Asian groceries, household needs, and pantry staples in Stawell, Victoria." />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Maridel's Store" />
+
+    <!-- Favicon: the MS mark on a green circle, inline so it needs no request. -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%2314532d'/%3E%3Ctext x='32' y='43' font-family='Arial,sans-serif' font-size='26' font-weight='bold' fill='%23ffffff' text-anchor='middle'%3EMS%3C/text%3E%3C/svg%3E" />
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -47,6 +56,11 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg>
                     Categories
                 </a>
+                <a href="#wishlist" class="nav-link" id="wishlistNavLink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                    Wishlist
+                    <span class="nav-count-badge" id="wishlistNavBadge" hidden>0</span>
+                </a>
                 <a href="#about" class="nav-link">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
                     About Us
@@ -66,11 +80,13 @@
                     <button type="button" class="search-clear" id="searchClearBtn" aria-label="Clear search">&times;</button>
                 </div>
 
-                <!-- Account Icon -->
-                <button type="button" class="action-btn" id="openAuthBtn" aria-label="User Account">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </button>
                 <button type="button" class="track-order-btn" id="openTrackingBtn">Track Order</button>
+
+                <!-- Wishlist Button with Live Badge -->
+                <button type="button" class="action-btn" id="openWishlistBtn" aria-label="Wishlist" aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                    <span class="cart-badge wishlist-badge" id="wishlistBadge" hidden>0</span>
+                </button>
 
                 <!-- Cart Button with Live Badge -->
                 <button type="button" class="action-btn" id="openCartBtn" aria-label="Shopping Cart">
@@ -141,7 +157,12 @@
                                 <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                                 <span>FEATURED PRODUCT</span>
                             </div>
-                            <img id="featuredImg" src="" alt="" />
+                            <!-- No src attribute on purpose: an empty src makes the browser fire an
+                                 error event while the page is still being parsed, before the script
+                                 at the bottom of the body has declared PRODUCT_IMAGE_PLACEHOLDER,
+                                 so the onerror fallback below threw a ReferenceError. The real
+                                 source is set from the catalog once it has loaded. -->
+                            <img id="featuredImg" alt="" onerror="this.onerror=null;this.src=PRODUCT_IMAGE_PLACEHOLDER;" />
                         </div>
 
                         <!-- Details container -->
@@ -404,20 +425,26 @@
             <div class="contact-form-card">
                 <h3>Send Us a Message</h3>
                 <form class="contact-form" id="contactForm">
+                    <!-- Honeypot. Real people never see or fill this; Formspree drops
+                         any submission that arrives with it filled in. -->
+                    <div aria-hidden="true" style="position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden;">
+                        <label for="contactGotcha">Leave this field empty</label>
+                        <input type="text" id="contactGotcha" name="_gotcha" tabindex="-1" autocomplete="off" aria-hidden="true" />
+                    </div>
                     <div class="form-group">
                         <label for="contactName">Your Name</label>
-                        <input type="text" id="contactName" class="form-input" placeholder="e.g. Maria Santos" required />
+                        <input type="text" id="contactName" name="contactName" class="form-input" placeholder="e.g. Maria Santos" required />
                     </div>
                     <div class="form-group">
                         <label for="contactEmail">Email Address</label>
-                        <input type="email" id="contactEmail" class="form-input" placeholder="you@example.com" required />
+                        <input type="email" id="contactEmail" name="contactEmail" class="form-input" placeholder="you@example.com" required />
                     </div>
                     <div class="form-group">
                         <label for="contactMessage">How can we help?</label>
-                        <textarea id="contactMessage" class="form-textarea" rows="4" placeholder="Ask about restocks, pickup, or special requests..." required></textarea>
+                        <textarea id="contactMessage" name="contactMessage" class="form-textarea" rows="4" placeholder="Ask about restocks, pickup, or special requests..." required></textarea>
                     </div>
                     <button type="submit" class="btn-submit-contact">Send Message &rarr;</button>
-                    <p id="contactStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-top: 8px;"></p>
+                    <p id="contactStatus" role="status" aria-live="polite" style="font-size: 0.85rem; font-weight: 600; color: #166534; margin-top: 8px;"></p>
                 </form>
             </div>
         </section>
@@ -474,7 +501,7 @@
             <div class="footer-bottom-row">
                 <p>&copy; 2026 Maridel's Store. All rights reserved. Made with love for families across Australia.</p>
                 <div style="display: flex; gap: 14px; font-weight: 600;">
-                    <span>≡ƒöÆ Safe &amp; Secure Checkout</span>
+                    <span>🔒 Safe &amp; Secure Checkout</span>
                     <span>Pickup Only</span>
                 </div>
             </div>
@@ -513,10 +540,36 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-checkout" onclick="proceedToCheckout()">
+                <button type="button" class="btn-checkout" id="cartCheckoutBtn" onclick="proceedToCheckout()">
                     <span>Proceed to Checkout</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 18px; height: 18px;"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- SLIDE-OVER WISHLIST DRAWER -->
+    <div class="cart-drawer-overlay" id="wishlistOverlay">
+        <aside class="cart-drawer wishlist-drawer" id="wishlist" aria-label="Wishlist">
+            <!-- Wishlist Header -->
+            <div class="cart-header">
+                <h3>
+                    <span>Your Wishlist</span>
+                    <span class="cart-count-pill" id="wishlistDrawerCount">0 items</span>
+                </h3>
+                <button type="button" class="btn-close-drawer" id="closeWishlistBtn" aria-label="Close wishlist">&times;</button>
+            </div>
+
+            <!-- Wishlist Items List -->
+            <div class="cart-items-list" id="wishlistItemsContainer">
+                <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Wishlist Footer -->
+            <div class="cart-footer">
+                <p class="pickup-only-note">Saved in this browser. No account needed.</p>
+                <button type="button" class="btn-checkout" id="wishlistAddAllBtn"><span>Add all to cart</span></button>
+                <button type="button" class="btn-wishlist-continue" id="wishlistContinueBtn"><span>Continue shopping</span></button>
             </div>
         </aside>
     </div>
@@ -554,68 +607,40 @@
                             <input id="checkoutContact" name="customer_contact" type="tel" minlength="7" maxlength="25" required autocomplete="tel" />
                         </div>
                     </div>
-                    <div class="checkout-field">
-                        <label for="openPickupCalendar">Preferred pickup date</label>
-                        <div class="checkout-input-wrap pickup-date-picker">
-                            <button type="button" class="checkout-picker-trigger" id="openPickupCalendar"
-                                aria-label="Choose preferred pickup date" aria-haspopup="dialog"
-                                aria-expanded="false" aria-controls="pickupDatePicker">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18" stroke-linecap="round"/></svg>
-                                <span id="pickupDateDisplay">Select a date</span>
-                            </button>
+                    <section class="pickup-chooser" aria-labelledby="pickupChooserEyebrow">
+                        <span class="pickup-eyebrow" id="pickupChooserEyebrow">PICKUP</span>
+                        <div class="pickup-step">
+                            <span class="pickup-step-title" id="pickupDayHeading">
+                                <span class="pickup-step-index" aria-hidden="true">1</span>
+                                Choose a day
+                            </span>
                             <input id="checkoutDate" name="pickup_date" type="hidden" />
-                            <section class="pickup-date-popover" id="pickupDatePicker" role="dialog"
-                                aria-label="Select pickup date" hidden>
-                                <p class="pickup-date-selected" id="pickupDateDraftDisplay" aria-live="polite"></p>
-                                <div class="pickup-date-columns">
-                                    <div class="pickup-date-column" data-date-column="month">
-                                        <span class="pickup-date-column-label">Month</span>
-                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous month">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
-                                        </button>
-                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Month"></div>
-                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next month">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                                        </button>
-                                    </div>
-                                    <div class="pickup-date-column" data-date-column="day">
-                                        <span class="pickup-date-column-label">Day</span>
-                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous day">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
-                                        </button>
-                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Day"></div>
-                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next day">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                                        </button>
-                                    </div>
-                                    <div class="pickup-date-column" data-date-column="year">
-                                        <span class="pickup-date-column-label">Year</span>
-                                        <button type="button" class="pickup-date-step" data-step="-1" aria-label="Previous year">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
-                                        </button>
-                                        <div class="pickup-date-options" tabindex="0" role="listbox" aria-label="Year"></div>
-                                        <button type="button" class="pickup-date-step" data-step="1" aria-label="Next year">
-                                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="pickup-date-actions">
-                                    <button type="button" class="pickup-date-cancel" id="cancelPickupDate">Cancel</button>
-                                    <button type="button" class="pickup-date-confirm" id="confirmPickupDate">Use this date</button>
-                                </div>
-                            </section>
+                            <div id="pickupDayGroups" class="pickup-day-groups" role="radiogroup"
+                                aria-labelledby="pickupDayHeading"></div>
+                            <button type="button" class="pickup-earliest" id="pickupEarliestBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <span>Earliest available</span>
+                            </button>
                         </div>
-                    </div>
-                    <div class="checkout-field">
-                        <label for="checkoutTime">Preferred pickup time <span>(Melbourne time)</span></label>
-                        <div class="checkout-input-wrap">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            <select id="checkoutTime" name="pickup_time" required aria-describedby="pickupTimeHint">
-                                <option value="" selected disabled>Choose a pickup time</option>
-                            </select>
+                        <div class="pickup-step">
+                            <label class="pickup-step-title" for="checkoutTime">
+                                <span class="pickup-step-index" aria-hidden="true">2</span>
+                                Choose a time
+                            </label>
+                            <div class="checkout-input-wrap pickup-time-select">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                <select id="checkoutTime" name="pickup_time" required aria-describedby="pickupTimeHint" disabled>
+                                    <option value="" selected disabled>Choose a day first</option>
+                                </select>
+                            </div>
+                            <small id="pickupTimeHint" class="checkout-field-hint">Pickup times are every 15 minutes, Melbourne time.</small>
                         </div>
-                        <small id="pickupTimeHint" class="checkout-field-hint">Choose any available minute during pickup hours.</small>
-                    </div>
+                        <p class="pickup-summary" id="pickupSummary" aria-live="polite">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span class="pickup-summary-text" id="pickupSummaryText">Choose a day and time</span>
+                            <span class="pickup-summary-zone" id="pickupSummaryZone" hidden>Melbourne time</span>
+                        </p>
+                    </section>
                 </div>
                 <aside class="checkout-hours-card" aria-label="Pickup hours">
                     <span class="checkout-hours-icon" aria-hidden="true">
@@ -629,12 +654,82 @@
                 </aside>
                 <p id="checkoutError" class="checkout-message checkout-error" role="alert" hidden></p>
                 <div id="checkoutReview" class="checkout-message checkout-review" hidden></div>
-                <p id="checkoutSuccess" class="checkout-message checkout-success" role="status" hidden></p>
                 <button type="submit" class="btn-checkout checkout-submit">
                     <span>Place Pickup Order</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
             </form>
+        </div>
+    </div>
+
+    <!-- ORDER SUCCESS MODAL -->
+    <div class="modal-overlay" id="orderSuccessModal">
+        <div class="modal-card order-success-card" role="dialog" aria-modal="true" aria-labelledby="orderSuccessTitle">
+            <button type="button" class="modal-close-btn" onclick="closeOrderSuccess()" aria-label="Close order confirmation">&times;</button>
+
+            <header class="order-success-hero">
+                <div class="order-success-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="order-success-badge">Pickup Only &mdash; No Delivery</span>
+                <h3 id="orderSuccessTitle">Your order has been placed!</h3>
+                <p class="order-success-lede">Thank you. We have your order and will have it ready for the pickup time you chose.</p>
+            </header>
+
+            <dl class="order-success-facts">
+                <div class="order-success-fact">
+                    <dt>Order number</dt>
+                    <dd id="orderSuccessNumber"></dd>
+                </div>
+                <div class="order-success-fact">
+                    <dt>Status</dt>
+                    <dd id="orderSuccessStatus"></dd>
+                </div>
+                <div class="order-success-fact">
+                    <dt>Pickup</dt>
+                    <dd id="orderSuccessPickup"></dd>
+                </div>
+                <div class="order-success-fact">
+                    <dt>Total</dt>
+                    <dd id="orderSuccessTotal"></dd>
+                </div>
+            </dl>
+
+            <section class="order-success-section">
+                <h4>Order summary</h4>
+                <ul class="order-success-items" id="orderSuccessItems"></ul>
+            </section>
+
+            <section class="order-success-section order-success-store">
+                <h4>Pickup location</h4>
+                <p class="order-success-address" id="orderSuccessAddress"></p>
+                <p class="order-success-hours" id="orderSuccessHours"></p>
+                <p class="order-success-phone" id="orderSuccessPhone"></p>
+            </section>
+
+            <section class="order-success-section">
+                <h4>What happens next</h4>
+                <ol class="order-success-steps">
+                    <li>We prepare your order for the pickup time you selected.</li>
+                    <li>Bring your tracking code, or your order number with your contact number.</li>
+                    <li>Pay and collect at the store during pickup hours.</li>
+                </ol>
+            </section>
+
+            <section class="order-success-section">
+                <h4>Your private tracking code</h4>
+                <p class="order-success-credential-note">Keep this code secret. It is the only way to look up this order without signing in.</p>
+                <div class="order-success-credential">
+                    <code id="orderSuccessCredential" class="tracking-credential"></code>
+                    <button type="button" id="copyTrackingCode" class="order-success-copy">Copy</button>
+                </div>
+                <p id="copyFeedback" class="order-success-copy-feedback" role="status" hidden></p>
+            </section>
+
+            <div class="order-success-actions">
+                <button type="button" class="btn-checkout" id="trackMyOrderBtn">Track My Order</button>
+                <button type="button" class="order-success-continue" id="continueShoppingBtn">Continue Shopping</button>
+            </div>
         </div>
     </div>
 
@@ -658,7 +753,8 @@
             <button type="button" class="modal-close-btn" onclick="closeQuickView()">&times;</button>
             <div class="quick-view-grid">
                 <div class="modal-product-img">
-                    <img id="qvImage" src="" alt="Product View" />
+                    <!-- No src attribute on purpose, same reason as the featured image above. -->
+                    <img id="qvImage" alt="Product View" onerror="this.onerror=null;this.src=PRODUCT_IMAGE_PLACEHOLDER;" />
                 </div>
                 <div class="modal-product-details">
                     <span class="modal-product-category" id="qvCategory">Category</span>
@@ -679,32 +775,12 @@
                         <button type="button" class="btn-card-add" id="qvAddBtn" onclick="addQuickViewToCart()">
                             <span>Add to Cart</span>
                         </button>
+                        <button type="button" class="btn-quick-wishlist" id="qvWishlistBtn" aria-pressed="false" aria-label="Save to wishlist">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                            <span id="qvWishlistLabel">Save</span>
+                        </button>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CUSTOMER ACCOUNT / SIGN-IN MODAL (Preserves EmailJS Gmail notification) -->
-    <div class="modal-overlay" id="authModal">
-        <div class="modal-card" style="max-width: 440px;">
-            <button type="button" class="modal-close-btn" onclick="closeAuthModal()">&times;</button>
-            <div class="auth-modal-content">
-                <div class="auth-modal-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 30px; height: 30px;"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-                <h3>Customer Access</h3>
-                <p>Enter your Gmail address to receive order updates, exclusive store discounts, and restock notifications.</p>
-
-                <form id="customerGmailForm" class="contact-form" style="gap: 14px;">
-                    <div class="form-group" style="text-align: left;">
-                        <label for="customerGmailInput">Gmail Address</label>
-                        <input type="email" id="customerGmailInput" class="form-input" placeholder="yourname@gmail.com" required />
-                        <span id="gmailValidationMsg" style="font-size: 0.75rem; color: #ef4444; display: none;">Please enter a valid Gmail address (@gmail.com).</span>
-                    </div>
-                    <button type="submit" class="btn-submit-contact" style="width: 100%;">Continue &rarr;</button>
-                    <p id="gmailSubmitStatus" style="font-size: 0.85rem; font-weight: 600; color: #166534;"></p>
-                </form>
             </div>
         </div>
     </div>
@@ -717,15 +793,35 @@
     <!-- ==========================================================================
          CLIENT INTERACTIVITY & SHOPPING LOGIC
          ========================================================================== -->
-    <script src="pickup-date.js"></script>
     <script src="store-info.js"></script>
     <script src="pickup-time-display.js"></script>
+    <script src="wishlist.js"></script>
     <script>
         // --- FEATURED PRODUCTS CAROUSEL DATA ---
         let activeProductCategory = 'all';
         let activeProductSearch = '';
 
-        const API_BASE_URL = 'https://maridel-s-store.onrender.com';
+        // The storefront is a static page, and the API is a separate service. When
+        // this page is opened from a local web server it must talk to the local
+        // backend, not to the deployed one: a hardcoded production URL makes the
+        // local storefront always fetch from Render, which is neither what local
+        // development needs nor reproducible offline.
+        //
+        // This mirrors the owner dashboard's own selection exactly, so both pages
+        // resolve the backend the same way from the same signal.
+        const API_BASE_URL = ["localhost", "127.0.0.1"].includes(window.location.hostname)
+            ? "http://localhost:3000"
+            : "https://maridel-s-store.onrender.com";
+
+        // An uploaded product photo is stored by the API and its image value is a
+        // path beginning "/product-images/products/". This page is static and the
+        // API is a separate origin, so a bare path would resolve against the
+        // page's own host and fail to load. Only that one shape is rewritten;
+        // an absolute URL, an empty string and anything else are returned as-is.
+        function resolveProductImageUrl(src) {
+            if (typeof src !== 'string' || !src.startsWith('/product-images/products/')) return src;
+            return API_BASE_URL + src;
+        }
 
         const audFormatter = new Intl.NumberFormat('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         function formatAud(amount) { return `A$${audFormatter.format(Number(amount) || 0)}`; }
@@ -749,14 +845,27 @@
             featuredOldPrice.textContent = p.oldPrice ? formatAud(p.oldPrice) : '';
             featuredOldPrice.style.display = p.oldPrice ? '' : 'none';
             document.querySelector('.card-stock-badge').textContent = p.stockLabel || 'In Stock';
-            
-            featuredQuantity = 1;
-            document.getElementById('featuredQty').textContent = '1';
+
+            featuredQuantity = Math.max(1, Math.min(1, featuredStockCap(p)));
+            document.getElementById('featuredQty').textContent = featuredQuantity;
+
+            // A sold-out hero product says so right on its own button.
+            const featuredAddButton = document.getElementById('featuredAddBtn');
+            featuredAddButton.disabled = p.stock === 0;
+            featuredAddButton.querySelector('span').textContent = p.stock === 0 ? 'Sold out' : 'Add to Cart';
 
             // Update dots
             document.querySelectorAll('.dot-indicator').forEach((dot, idx) => {
                 dot.classList.toggle('active', idx === currentFeaturedIndex);
             });
+        }
+
+        // Largest quantity a steppable product allows right now. Unknown stock
+        // stays unlimited up to the order cap.
+        function featuredStockCap(product) {
+            return product && product.stock !== null && Number.isInteger(product.stock) && product.stock >= 0
+                ? Math.max(1, Math.min(product.stock, MAX_CART_QUANTITY))
+                : MAX_CART_QUANTITY;
         }
 
         function nextFeaturedSlide() {
@@ -768,7 +877,7 @@
         }
 
         function adjustFeaturedQty(delta) {
-            featuredQuantity = Math.max(1, featuredQuantity + delta);
+            featuredQuantity = Math.max(1, Math.min(featuredQuantity + delta, featuredStockCap(featuredProducts[currentFeaturedIndex])));
             document.getElementById('featuredQty').textContent = featuredQuantity;
         }
 
@@ -779,7 +888,7 @@
             
             const btn = document.getElementById('featuredAddBtn');
             btn.classList.add('added');
-            btn.querySelector('span').textContent = 'Added Γ£ô';
+            btn.querySelector('span').textContent = 'Added \u2713';
             setTimeout(() => {
                 btn.classList.remove('added');
                 btn.querySelector('span').textContent = 'Add to Cart';
@@ -787,13 +896,69 @@
         }
 
         // --- SHOPPING CART STATE & MANAGEMENT ---
-        // Initial state pre-populated with 2 items matching the screenshot badge "2"
-        let cart = [];
+        // The cart lives in localStorage so a page refresh never loses it.
+        // Anything unreadable, malformed or of the wrong shape in storage is
+        // treated as an empty cart, so a bad value can never break the page.
+        function loadCart() {
+            try {
+                const raw = localStorage.getItem('maridelCartV1');
+                if (!raw) return [];
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed)) return [];
+                return mergeCartItems(parsed.filter(item =>
+                    item && typeof item === 'object' &&
+                    typeof item.id === 'string' && item.id.length > 0 &&
+                    typeof item.title === 'string' &&
+                    typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0 &&
+                    typeof item.image === 'string' &&
+                    Number.isInteger(item.qty) && item.qty >= 1 && item.qty <= 99
+                ).slice(0, 50).map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    image: item.image,
+                    qty: item.qty
+                })));
+            } catch {
+                return [];
+            }
+        }
+
+        // One row per product, always: a stale or hand-edited storage value must
+        // never send the same product_id twice in an order payload, which the
+        // backend rejects. Quantities are summed, then the usual per-item cap
+        // applies. The stored format itself is unchanged.
+        function mergeCartItems(items) {
+            const merged = new Map();
+            items.forEach(item => {
+                const existing = merged.get(item.id);
+                if (existing) {
+                    existing.qty = Math.min(MAX_CART_QUANTITY, existing.qty + item.qty);
+                } else {
+                    merged.set(item.id, { ...item });
+                }
+            });
+            return [...merged.values()];
+        }
+
+        function saveCart() {
+            try {
+                localStorage.setItem('maridelCartV1', JSON.stringify(cart));
+            } catch {
+                // Quota exceeded or private mode; ignore silently.
+            }
+        }
+
+        let cart = loadCart();
+
+        // Transient per-item note lines ("Only N available"). They live until the
+        // item is successfully changed, removed or the cart is re-clamped.
+        const cartItemNotes = new Map();
 
         function renderCart() {
             const container = document.getElementById('cartItemsContainer');
             const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-            
+
             // Update badges
             const cartBadge = document.getElementById('cartBadge');
             cartBadge.textContent = totalQty;
@@ -801,6 +966,10 @@
             setTimeout(() => cartBadge.classList.remove('bump'), 200);
 
             document.getElementById('cartDrawerCount').textContent = `${totalQty} item${totalQty === 1 ? '' : 's'}`;
+
+            // Checkout is pointless on an empty cart and its button says so.
+            const checkoutButton = document.getElementById('cartCheckoutBtn');
+            if (checkoutButton) checkoutButton.disabled = cart.length === 0;
 
             if (cart.length === 0) {
                 container.innerHTML = `
@@ -814,7 +983,7 @@
                 container.innerHTML = cart.map(item => `
                     <div class="cart-item" data-id="${escapeHtml(item.id)}">
                         <div class="cart-item-thumb">
-                            <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" />
+                            <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" onerror="this.onerror=null;this.src=PRODUCT_IMAGE_PLACEHOLDER;" />
                         </div>
                         <div class="cart-item-info">
                             <h4 class="cart-item-title">${escapeHtml(item.title)}</h4>
@@ -827,12 +996,24 @@
                                 </div>
                                 <button type="button" class="btn-remove-item">Remove</button>
                             </div>
+                            <p class="cart-item-note" data-note hidden></p>
                         </div>
                     </div>
                 `).join('');
 
                 container.querySelectorAll('.cart-item').forEach(cartItem => {
                     const id = cartItem.dataset.id;
+                    const note = cartItem.querySelector('[data-note]');
+                    if (note) {
+                        const noteText = cartItemNotes.get(id);
+                        if (noteText) {
+                            note.textContent = noteText;
+                            note.hidden = false;
+                        } else {
+                            note.textContent = '';
+                            note.hidden = true;
+                        }
+                    }
                     cartItem.querySelectorAll('.cart-qty-btn').forEach(button => {
                         button.addEventListener('click', () => updateItemQty(id, Number(button.dataset.delta)));
                     });
@@ -844,20 +1025,43 @@
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
             document.getElementById('cartSubtotal').textContent = formatAud(subtotal);
             document.getElementById('cartGrandTotal').textContent = formatAud(subtotal);
+            saveCart();
         }
 
         function addProductToCart(id, title, price, image, btnElement, quantity = 1) {
+            const stock = stockForProductId(id);
+            const wanted = Math.min(quantity, MAX_CART_QUANTITY);
             const existing = cart.find(i => i.id === id);
-            if (existing) {
-                existing.qty += quantity;
+            const currentQty = existing ? existing.qty : 0;
+            const cap = stock === null ? MAX_CART_QUANTITY : stock;
+            // Never past the shelf: the product's own stock wins over whatever
+            // the stepper added up. Duplicate product rows are impossible here
+            // because an existing entry is incremented in place.
+            const targetQty = Math.min(currentQty + wanted, cap);
+
+            if (targetQty <= currentQty) {
+                // The limit was reached with no change to show.
+                cartItemNotes.set(id, `Only ${cap} available`);
+                renderCart();
+                showToast(`Only ${cap} of "${title}" available.`);
+                return;
+            }
+            if (targetQty < currentQty + wanted) {
+                cartItemNotes.set(id, `Only ${cap} available`);
             } else {
-                cart.push({ id, title, price, image, qty: quantity });
+                cartItemNotes.delete(id);
+            }
+
+            if (existing) {
+                existing.qty = targetQty;
+            } else {
+                cart.push({ id, title, price, image, qty: targetQty });
             }
 
             if (btnElement) {
                 btnElement.classList.add('added');
                 const origHtml = btnElement.innerHTML;
-                btnElement.innerHTML = 'Added Γ£ô';
+                btnElement.innerHTML = 'Added \u2713';
                 setTimeout(() => {
                     btnElement.classList.remove('added');
                     btnElement.innerHTML = origHtml;
@@ -870,28 +1074,204 @@
 
         function updateItemQty(id, delta) {
             const item = cart.find(i => i.id === id);
-            if (item) {
-                item.qty += delta;
-                if (item.qty <= 0) {
-                    cart = cart.filter(i => i.id !== id);
+            if (!item) return;
+            if (delta > 0) {
+                const stock = stockForProductId(id);
+                const cap = stock === null ? MAX_CART_QUANTITY : Math.min(stock, MAX_CART_QUANTITY);
+                if (item.qty >= cap) {
+                    cartItemNotes.set(id, `Only ${cap} available`);
+                    renderCart();
+                    return;
                 }
-                renderCart();
             }
+            cartItemNotes.delete(id);
+            item.qty += delta;
+            if (item.qty <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            }
+            renderCart();
         }
 
         function removeCartItem(id) {
             cart = cart.filter(i => i.id !== id);
+            cartItemNotes.delete(id);
             renderCart();
         }
 
-        function proceedToCheckout() {
+        // Applies every cart item to the catalog's stock: sold-out products are
+        // removed, quantities above stock are reduced to it. Returns true when
+        // the cart changed in a way the customer must be told about.
+        function clampCartToStock() {
+            let changed = false;
+            cart = cart.filter(item => {
+                const stock = stockForProductId(item.id);
+                if (stock === 0) {
+                    changed = true;
+                    cartItemNotes.delete(item.id);
+                    return false;
+                }
+                if (stock !== null && stock < item.qty) {
+                    item.qty = stock;
+                    changed = true;
+                    cartItemNotes.delete(item.id);
+                }
+                return true;
+            });
+            return changed;
+        }
+
+        // --- ORDER SUCCESS MODAL ---
+        // Renders the confirmation for an order the backend just accepted. Every
+        // value comes from the API response or from StoreInfo; nothing is
+        // invented here. Called with the object returned by POST /api/orders.
+        function renderOrderSuccess(saved) {
+            if (!saved || typeof saved !== 'object') return;
+
+            const items = Array.isArray(saved.items) ? saved.items : [];
+            document.getElementById('orderSuccessNumber').textContent = saved.order_number || 'Unavailable';
+            document.getElementById('orderSuccessStatus').textContent = saved.status || 'Pending';
+
+            const pickupTime = PickupTimeDisplay.formatPickupTime(saved.pickup_time) || saved.pickup_time || 'time to be confirmed';
+            const pickupDate = formatMelbourneDateDisplay(saved.pickup_date) || saved.pickup_date || 'date to be confirmed';
+            document.getElementById('orderSuccessPickup').textContent = `${pickupDate} at ${pickupTime}`;
+            document.getElementById('orderSuccessTotal').textContent = formatAud(saved.total);
+
+            const info = (window.StoreInfo && window.StoreInfo.STORE_INFO) || {};
+            document.getElementById('orderSuccessAddress').textContent = info.address || '';
+            document.getElementById('orderSuccessHours').textContent = window.StoreInfo
+                ? `${window.StoreInfo.hoursRangeLabel()}, ${info.operatingDaysLabel || ''}`.trim()
+                : '';
+            document.getElementById('orderSuccessPhone').textContent = info.phone ? ` ${info.phone}` : '';
+
+            const itemsList = document.getElementById('orderSuccessItems');
+            if (items.length === 0) {
+                itemsList.replaceChildren();
+                const empty = document.createElement('li');
+                empty.className = 'order-success-items-empty';
+                empty.textContent = 'Your order items are on their way — ask in store if you need a printed list.';
+                itemsList.append(empty);
+            } else {
+                itemsList.replaceChildren(...items.map(item => {
+                    const entry = document.createElement('li');
+                    entry.className = 'order-success-item';
+                    const name = document.createElement('span');
+                    name.className = 'order-success-item-name';
+                    name.textContent = item.product_name || 'Product';
+                    const qty = document.createElement('span');
+                    qty.className = 'order-success-item-qty';
+                    qty.textContent = `× ${item.quantity}`;
+                    const subtotal = document.createElement('span');
+                    subtotal.className = 'order-success-item-subtotal';
+                    subtotal.textContent = formatAud(item.subtotal);
+                    entry.append(name, qty, subtotal);
+                    return entry;
+                }));
+            }
+
+            // The credential is a bearer secret: shown only on this modal, never
+            // in a URL, and never logged.
+            const credential = document.getElementById('orderSuccessCredential');
+            credential.textContent = saved.tracking_token || '';
+            resetCopyFeedback();
+        }
+
+        function resetCopyFeedback() {
+            const feedback = document.getElementById('copyFeedback');
+            feedback.hidden = true;
+            feedback.textContent = '';
+            feedback.className = 'order-success-copy-feedback';
+        }
+
+        async function copyTrackingCode() {
+            const credential = document.getElementById('orderSuccessCredential').textContent;
+            const feedback = document.getElementById('copyFeedback');
+            resetCopyFeedback();
+            if (!credential) {
+                feedback.textContent = 'No tracking code is available to copy.';
+                feedback.className = 'order-success-copy-feedback is-error';
+                feedback.hidden = false;
+                return;
+            }
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(credential);
+                } else {
+                    // Fallback for non-secure contexts: a temporary, off-screen
+                    // selection. The code is never placed in the URL or a prompt.
+                    const helper = document.createElement('textarea');
+                    helper.value = credential;
+                    helper.setAttribute('readonly', '');
+                    helper.setAttribute('aria-hidden', 'true');
+                    helper.className = 'order-success-clipboard-helper';
+                    document.body.append(helper);
+                    helper.select();
+                    const copied = document.execCommand('copy');
+                    helper.remove();
+                    if (!copied) throw new Error('Copy command was rejected');
+                }
+                feedback.textContent = 'Tracking code copied to your clipboard.';
+                feedback.className = 'order-success-copy-feedback is-success';
+            } catch (copyError) {
+                feedback.textContent = 'Could not copy automatically. Select the code above and copy it manually.';
+                feedback.className = 'order-success-copy-feedback is-error';
+            }
+            feedback.hidden = false;
+        }
+
+        function openOrderSuccess() {
+            document.getElementById('orderSuccessModal').classList.add('open');
+        }
+
+        function closeOrderSuccess() {
+            document.getElementById('orderSuccessModal').classList.remove('open');
+            resetCopyFeedback();
+        }
+
+        // Stock used for checkout decisions is verified against the live API at
+        // the moment checkout opens, not just trusted from the page load: an
+        // owner can sell out while the customer has the page sitting open. Only
+        // the stock numbers are updated here; a full reload stays the job of the
+        // existing quiet refresh. A failed or slow call is ignored — the stock
+        // currently in productDetails is then the best known truth, and the
+        // checkout itself re-checks every item server-side anyway.
+        let checkoutStockInFlight = false;
+        async function refreshCheckoutStock() {
+            if (checkoutStockInFlight) return;
+            checkoutStockInFlight = true;
+            try {
+                const controller = typeof AbortController === 'function' ? new AbortController() : null;
+                const timer = controller ? setTimeout(() => controller.abort(), PRODUCTS_REQUEST_TIMEOUT_MS) : null;
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/products`, controller ? { signal: controller.signal } : undefined);
+                    if (timer) clearTimeout(timer);
+                    if (!response.ok) return;
+                    const rows = await response.json();
+                    if (!Array.isArray(rows)) return;
+                    rows.forEach(row => {
+                        const details = productDetails[String(row?.id)];
+                        if (details) details.stock = apiStockToNumber(row.stock);
+                    });
+                } catch (error) {
+                    if (timer) clearTimeout(timer);
+                    console.warn('Stock refresh for checkout failed:', error);
+                }
+            } finally {
+                checkoutStockInFlight = false;
+            }
+        }
+
+        async function proceedToCheckout() {
+            await refreshCheckoutStock();
+            if (clampCartToStock()) {
+                renderCart();
+                showToast('Some items in your cart were updated because stock changed.');
+            }
             if (cart.length === 0) {
                 alert('Your cart is empty. Please add items to checkout.');
                 return;
             }
             document.getElementById('checkoutError').hidden = true;
             document.getElementById('checkoutReview').hidden = true;
-            document.getElementById('checkoutSuccess').hidden = true;
             document.getElementById('checkoutModal').classList.add('open');
         }
 
@@ -941,212 +1321,264 @@
             return '';
         }
 
+        // --- PICKUP DAY + TIME CHOOSER ---
+        // The chooser only writes the values the existing checkout submit flow
+        // already reads: pickup_date as YYYY-MM-DD and pickup_time as HH:MM, both
+        // for Melbourne. All date arithmetic below stays in UTC so the browser's
+        // own time zone can never move a pickup day.
+        const PICKUP_MAX_DAYS_AHEAD = 14;
+        const PICKUP_LEAD_MINUTES = 30;
+        const PICKUP_SLOT_MINUTES = 15;
+        const PICKUP_WEEKDAY_ABBR = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const PICKUP_WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const PICKUP_MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const PICKUP_MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
         const checkoutDateInput = document.getElementById('checkoutDate');
         const checkoutTimeSelect = document.getElementById('checkoutTime');
         const pickupTimeHint = document.getElementById('pickupTimeHint');
-        const pickupDatePicker = document.getElementById('pickupDatePicker');
-        const openPickupCalendar = document.getElementById('openPickupCalendar');
-        const pickupDateDisplay = document.getElementById('pickupDateDisplay');
-        const pickupDateDraftDisplay = document.getElementById('pickupDateDraftDisplay');
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        const pickupDateToday = () => melbourneTodayISO().split('-').map(Number);
-        let pickupDateDraft = null;
-        const pickupDateScrollTimers = new Map();
-        let pickupDateProgrammaticScroll = false;
-        let pickupDateRenderGeneration = 0;
+        const pickupDayGroups = document.getElementById('pickupDayGroups');
+        const pickupEarliestBtn = document.getElementById('pickupEarliestBtn');
+        const pickupSummary = document.getElementById('pickupSummary');
+        const pickupSummaryText = document.getElementById('pickupSummaryText');
+        const pickupSummaryZone = document.getElementById('pickupSummaryZone');
+        const pickupHoursRange = document.getElementById('pickupHoursRange');
+        const pickupStoreAddress = document.getElementById('pickupStoreAddress');
+        let renderedPickupToday = '';
 
-        function pickupDateIso({ year, month, day }) {
-            return `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        function pickupDateFromIso(isoDate) {
+            const [year, month, day] = String(isoDate || '').split('-').map(Number);
+            return new Date(Date.UTC(year, month - 1, day));
         }
 
-        function daysInPickupMonth(year, month) {
-            return PickupDate.daysInMonth(year, month);
+        function pickupIsoFromDate(date) {
+            return date.toISOString().slice(0, 10);
         }
 
-        function formatPickupDate({ year, month, day }) {
-            return `${monthNames[month].slice(0, 3)} ${day}, ${year}`;
+        function pickupAddDays(isoDate, days) {
+            const date = pickupDateFromIso(isoDate);
+            date.setUTCDate(date.getUTCDate() + days);
+            return pickupIsoFromDate(date);
         }
 
-        function isPastPickupDate(date) {
-            const [todayYear, todayMonth, todayDay] = pickupDateToday();
-            return PickupDate.isBefore(date, { year: todayYear, month: todayMonth - 1, day: todayDay });
+        function pickupMondayOfWeek(isoDate) {
+            const date = pickupDateFromIso(isoDate);
+            const daysSinceMonday = (date.getUTCDay() + 6) % 7;
+            date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+            return pickupIsoFromDate(date);
         }
 
-        function setPickupDatePart(part, value) {
-            if (!pickupDateDraft) return;
-            if (part === 'month') pickupDateDraft.month = value;
-            if (part === 'day') pickupDateDraft.day = value;
-            if (part === 'year') pickupDateDraft.year = value;
-            pickupDateDraft.day = PickupDate.clampDay(pickupDateDraft.day, pickupDateDraft.year, pickupDateDraft.month);
-            renderPickupDatePicker();
+        function formatPickupSummaryDate(isoDate) {
+            const date = pickupDateFromIso(isoDate);
+            return `${PICKUP_WEEKDAY_ABBR[date.getUTCDay()]} ${date.getUTCDate()} ${PICKUP_MONTH_ABBR[date.getUTCMonth()]}`;
         }
 
-        function stepPickupDatePart(part, step) {
-            if (!pickupDateDraft) return;
-            if (part === 'month') {
-                const next = new Date(Date.UTC(pickupDateDraft.year, pickupDateDraft.month + step, 1));
-                pickupDateDraft.year = next.getUTCFullYear();
-                pickupDateDraft.month = next.getUTCMonth();
-                pickupDateDraft.day = PickupDate.clampDay(pickupDateDraft.day, pickupDateDraft.year, pickupDateDraft.month);
-                renderPickupDatePicker();
-                return;
-            }
-            if (part === 'year') {
-                const [currentYear] = pickupDateToday();
-                if (pickupDateDraft.year + step < currentYear) return;
-                setPickupDatePart('year', pickupDateDraft.year + step);
-                return;
-            }
-            const nextDay = pickupDateDraft.day + step;
-            if (nextDay < 1 || nextDay > daysInPickupMonth(pickupDateDraft.year, pickupDateDraft.month)) return;
-            const candidate = { ...pickupDateDraft, day: nextDay };
-            if (!isPastPickupDate(candidate)) setPickupDatePart('day', nextDay);
+        function formatPickupWeekStart(isoDate) {
+            const date = pickupDateFromIso(isoDate);
+            return `${date.getUTCDate()} ${PICKUP_MONTH_ABBR[date.getUTCMonth()]}`;
         }
 
-        function renderPickupDatePicker() {
-            if (!pickupDateDraft) return;
-            pickupDateScrollTimers.forEach(timer => clearTimeout(timer));
-            pickupDateScrollTimers.clear();
-            pickupDateProgrammaticScroll = true;
-            const renderGeneration = ++pickupDateRenderGeneration;
-            pickupDateDraftDisplay.textContent = formatPickupDate(pickupDateDraft);
-            const [currentYear] = pickupDateToday();
-            const lastYear = Math.max(currentYear + 24, pickupDateDraft.year + 12);
-            const valuesByPart = {
-                month: monthNames.map((name, index) => ({ value: index, label: name })),
-                day: Array.from({ length: daysInPickupMonth(pickupDateDraft.year, pickupDateDraft.month) }, (_, index) => ({
-                    value: index + 1,
-                    label: String(index + 1),
-                })),
-                year: Array.from({ length: lastYear - currentYear + 1 }, (_, index) => ({
-                    value: currentYear + index,
-                    label: String(currentYear + index),
-                })),
-            };
-
-            Object.entries(valuesByPart).forEach(([part, values]) => {
-                const column = pickupDatePicker.querySelector(`[data-date-column="${part}"]`);
-                const options = column.querySelector('.pickup-date-options');
-                const selectedValue = pickupDateDraft[part];
-                options.replaceChildren(...values.map(({ value, label }) => {
-                    const option = document.createElement('button');
-                    option.type = 'button';
-                    option.className = 'pickup-date-option';
-                    option.textContent = label;
-                    option.dataset.value = value;
-                    option.setAttribute('role', 'option');
-                    option.setAttribute('aria-selected', String(value === selectedValue));
-                    if (part === 'day' && isPastPickupDate({ ...pickupDateDraft, day: value })) {
-                        option.disabled = true;
-                    }
-                    option.addEventListener('click', () => setPickupDatePart(part, value));
-                    return option;
-                }));
-                const selectedOption = options.querySelector('[aria-selected="true"]');
-                if (selectedOption) options.scrollTop = selectedOption.offsetTop - (options.clientHeight - selectedOption.offsetHeight) / 2;
-                column.querySelectorAll('.pickup-date-step').forEach(button => {
-                    const step = Number(button.dataset.step);
-                    button.disabled = part === 'year' && selectedValue + step < currentYear;
-                });
-            });
-            document.getElementById('confirmPickupDate').disabled = isPastPickupDate(pickupDateDraft);
-            requestAnimationFrame(() => requestAnimationFrame(() => {
-                if (renderGeneration === pickupDateRenderGeneration) pickupDateProgrammaticScroll = false;
-            }));
+        function pickupRelativeDay(isoDate, today) {
+            if (isoDate === today) return 'Today';
+            if (isoDate === pickupAddDays(today, 1)) return 'Tomorrow';
+            return PICKUP_WEEKDAY_ABBR[pickupDateFromIso(isoDate).getUTCDay()];
         }
 
-        function openPickupDatePicker() {
-            if (checkoutDateInput.value) {
-                const [year, month, day] = checkoutDateInput.value.split('-').map(Number);
-                pickupDateDraft = { year, month: month - 1, day };
-            } else {
-                const [year, month, day] = pickupDateToday();
-                pickupDateDraft = { year, month: month - 1, day };
-            }
-            renderPickupDatePicker();
-            pickupDatePicker.hidden = false;
-            openPickupCalendar.setAttribute('aria-expanded', 'true');
-            pickupDatePicker.querySelector('[data-date-column="month"] .pickup-date-option[aria-selected="true"]').focus({ preventScroll: true });
+        function pickupDateAccessibleLabel(isoDate, relativeDay) {
+            const date = pickupDateFromIso(isoDate);
+            const dateLabel = `${PICKUP_WEEKDAY_FULL[date.getUTCDay()]} ${date.getUTCDate()} ${PICKUP_MONTH_FULL[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+            return relativeDay === 'Today' || relativeDay === 'Tomorrow'
+                ? `${relativeDay}, ${dateLabel}`
+                : dateLabel;
         }
 
-        function closePickupDatePicker() {
-            pickupDatePicker.hidden = true;
-            openPickupCalendar.setAttribute('aria-expanded', 'false');
-            openPickupCalendar.focus();
+        function melbourneMinutesNow() {
+            const parts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Australia/Melbourne',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23'
+            }).formatToParts(new Date());
+            const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+            return Number(values.hour) * 60 + Number(values.minute) + Number(values.second) / 60;
         }
 
-        openPickupCalendar.addEventListener('click', openPickupDatePicker);
-        document.getElementById('cancelPickupDate').addEventListener('click', closePickupDatePicker);
-        document.getElementById('confirmPickupDate').addEventListener('click', () => {
-            if (!pickupDateDraft || isPastPickupDate(pickupDateDraft)) return;
-            checkoutDateInput.value = pickupDateIso(pickupDateDraft);
-            pickupDateDisplay.textContent = formatPickupDate(pickupDateDraft);
-            closePickupDatePicker();
-            refreshPickupTimeOptions();
-        });
-        pickupDatePicker.addEventListener('click', event => {
-            const stepButton = event.target.closest('.pickup-date-step');
-            if (stepButton) {
-                const column = stepButton.closest('[data-date-column]').dataset.dateColumn;
-                stepPickupDatePart(column, Number(stepButton.dataset.step));
-            }
-        });
-        pickupDatePicker.querySelectorAll('.pickup-date-options').forEach(options => {
-            options.addEventListener('keydown', event => {
-                if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-                event.preventDefault();
-                const column = options.closest('[data-date-column]').dataset.dateColumn;
-                stepPickupDatePart(column, event.key === 'ArrowUp' ? -1 : 1);
-                pickupDatePicker.querySelector(`[data-date-column="${column}"] .pickup-date-options [aria-selected="true"]`)?.focus({ preventScroll: true });
-            });
-            options.addEventListener('scroll', () => {
-                if (pickupDateProgrammaticScroll) return;
-                const column = options.closest('[data-date-column]').dataset.dateColumn;
-                clearTimeout(pickupDateScrollTimers.get(column));
-                pickupDateScrollTimers.set(column, setTimeout(() => {
-                    const midpoint = options.getBoundingClientRect().top + options.clientHeight / 2;
-                    const nearest = [...options.querySelectorAll('.pickup-date-option:not(:disabled)')]
-                        .sort((first, second) =>
-                            Math.abs(first.getBoundingClientRect().top + first.offsetHeight / 2 - midpoint)
-                            - Math.abs(second.getBoundingClientRect().top + second.offsetHeight / 2 - midpoint)
-                        )[0];
-                    if (nearest && Number(nearest.dataset.value) !== pickupDateDraft[column]) {
-                        setPickupDatePart(column, Number(nearest.dataset.value));
-                    }
-                    pickupDateScrollTimers.delete(column);
-                }, 120));
-            }, { passive: true });
-        });
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && !pickupDatePicker.hidden) closePickupDatePicker();
-        });
-        document.addEventListener('click', event => {
-            if (!pickupDatePicker.hidden && !event.composedPath().includes(pickupDatePicker.parentElement)) {
-                closePickupDatePicker();
-            }
-        });
+        function pickupStoreInfo() {
+            if (typeof StoreInfo !== 'undefined' && StoreInfo) return StoreInfo;
+            return window.StoreInfo || null;
+        }
 
-        function refreshPickupTimeOptions() {
-            const selectedTime = checkoutTimeSelect.value;
-            const selectedDate = checkoutDateInput.value;
-            const now = new Date();
+        function pickupTimesForDate(isoDate) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate || '')) return [];
             const today = melbourneTodayISO();
-            checkoutDateInput.min = today;
-            const isToday = selectedDate === today;
-            const currentTime = isToday
-                ? new Intl.DateTimeFormat('en-GB', {
-                    timeZone: 'Australia/Melbourne',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hourCycle: 'h23'
-                }).format(now)
-                : '';
-            const times = [];
-            const storeInfo = window.StoreInfo || null;
+            if (isoDate < today) return [];
+
+            const storeInfo = pickupStoreInfo();
             const openMinutes = storeInfo ? storeInfo.STORE_INFO.openMinutes : 10 * 60;
             const closeMinutes = storeInfo ? storeInfo.STORE_INFO.closeMinutes : 20 * 60;
-            const pickupHoursRange = document.getElementById('pickupHoursRange');
-            const pickupStoreAddress = document.getElementById('pickupStoreAddress');
+            let earliestMinutes = openMinutes;
+
+            if (isoDate === today) {
+                const leadTime = melbourneMinutesNow() + PICKUP_LEAD_MINUTES;
+                const roundedLeadTime = Math.ceil(leadTime / PICKUP_SLOT_MINUTES) * PICKUP_SLOT_MINUTES;
+                earliestMinutes = Math.max(openMinutes, roundedLeadTime);
+            }
+
+            const times = [];
+            for (let minutes = openMinutes; minutes <= closeMinutes; minutes += PICKUP_SLOT_MINUTES) {
+                if (minutes < earliestMinutes) continue;
+                times.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`);
+            }
+            return times;
+        }
+
+        function pickupDateIsInWindow(isoDate) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate || '')) return false;
+            const today = melbourneTodayISO();
+            return isoDate >= today && isoDate <= pickupAddDays(today, PICKUP_MAX_DAYS_AHEAD - 1);
+        }
+
+        function syncPickupDayChips() {
+            const chips = Array.from(pickupDayGroups.querySelectorAll('.pickup-day-chip'));
+            const selectedDate = checkoutDateInput.value;
+            let focusableChip = null;
+
+            chips.forEach(chip => {
+                const isSelected = chip.dataset.pickupDate === selectedDate && !chip.disabled;
+                chip.setAttribute('aria-checked', String(isSelected));
+                chip.tabIndex = isSelected ? 0 : -1;
+                if (isSelected) focusableChip = chip;
+            });
+
+            if (!focusableChip) {
+                focusableChip = chips.find(chip => !chip.disabled) || null;
+                if (focusableChip) focusableChip.tabIndex = 0;
+            }
+        }
+
+        function createPickupDayChip(isoDate, today) {
+            const date = pickupDateFromIso(isoDate);
+            const relativeDay = pickupRelativeDay(isoDate, today);
+            const hasSlots = pickupTimesForDate(isoDate).length > 0;
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'pickup-day-chip';
+            chip.dataset.pickupDate = isoDate;
+            chip.setAttribute('role', 'radio');
+            chip.setAttribute('aria-checked', 'false');
+            chip.disabled = !hasSlots;
+            chip.setAttribute('aria-label', hasSlots
+                ? pickupDateAccessibleLabel(isoDate, relativeDay)
+                : `${pickupDateAccessibleLabel(isoDate, relativeDay)}, closed for today`);
+
+            const weekday = document.createElement('span');
+            weekday.className = 'pickup-day-weekday';
+            weekday.textContent = relativeDay;
+            const dayNumber = document.createElement('span');
+            dayNumber.className = 'pickup-day-number';
+            dayNumber.textContent = String(date.getUTCDate());
+            const month = document.createElement('span');
+            month.className = 'pickup-day-month';
+            month.textContent = PICKUP_MONTH_ABBR[date.getUTCMonth()];
+            const check = document.createElement('span');
+            check.className = 'pickup-day-check';
+            check.setAttribute('aria-hidden', 'true');
+            check.textContent = '✓';
+            chip.append(weekday, dayNumber, month, check);
+
+            if (!hasSlots) {
+                const closed = document.createElement('span');
+                closed.className = 'pickup-day-closed';
+                closed.textContent = 'Closed for today';
+                chip.append(closed);
+            }
+            return chip;
+        }
+
+        function renderPickupDayGroups() {
+            const today = melbourneTodayISO();
+            renderedPickupToday = today;
+            const currentMonday = pickupMondayOfWeek(today);
+            const weekGroups = new Map();
+
+            for (let offset = 0; offset < PICKUP_MAX_DAYS_AHEAD; offset += 1) {
+                const isoDate = pickupAddDays(today, offset);
+                const weekStart = pickupMondayOfWeek(isoDate);
+                if (!weekGroups.has(weekStart)) weekGroups.set(weekStart, []);
+                weekGroups.get(weekStart).push(isoDate);
+            }
+
+            let groupIndex = 0;
+            const groups = [];
+            weekGroups.forEach((dates, weekStart) => {
+                const weekOffset = Math.round(
+                    (pickupDateFromIso(weekStart).getTime() - pickupDateFromIso(currentMonday).getTime())
+                    / (7 * 24 * 60 * 60 * 1000)
+                );
+                const headingId = `pickupWeekHeading${groupIndex}`;
+                const section = document.createElement('section');
+                section.className = 'pickup-week';
+                section.setAttribute('role', 'group');
+                section.setAttribute('aria-labelledby', headingId);
+
+                const heading = document.createElement('h4');
+                heading.className = 'pickup-week-heading';
+                heading.id = headingId;
+                heading.textContent = weekOffset === 0
+                    ? 'This week'
+                    : weekOffset === 1
+                        ? 'Next week'
+                        : `Week of ${formatPickupWeekStart(weekStart)}`;
+                heading.hidden = !dates.some(isoDate => pickupTimesForDate(isoDate).length > 0);
+
+                const grid = document.createElement('div');
+                grid.className = 'pickup-day-grid';
+                dates.forEach(isoDate => grid.append(createPickupDayChip(isoDate, today)));
+                section.append(heading, grid);
+                groups.push(section);
+                groupIndex += 1;
+            });
+
+            pickupDayGroups.replaceChildren(...groups);
+            syncPickupDayChips();
+        }
+
+        function updatePickupSummary() {
+            const selectedDate = checkoutDateInput.value;
+            const selectedTime = checkoutTimeSelect.value;
+            const hasCompleteChoice = Boolean(selectedDate && selectedTime);
+            const timeLabel = hasCompleteChoice && typeof PickupTimeDisplay !== 'undefined'
+                ? PickupTimeDisplay.formatPickupTime(selectedTime)
+                : selectedTime;
+            const nextText = hasCompleteChoice
+                ? `Pickup · ${formatPickupSummaryDate(selectedDate)} · ${timeLabel}`
+                : 'Choose a day and time';
+
+            if (pickupSummaryText.textContent !== nextText) {
+                pickupSummaryText.textContent = nextText;
+                pickupSummary.classList.remove('is-refreshing');
+                void pickupSummary.offsetWidth;
+                pickupSummary.classList.add('is-refreshing');
+            }
+            pickupSummaryZone.hidden = !hasCompleteChoice;
+        }
+
+        function refreshPickupTimeOptions(preferredTime) {
+            const today = melbourneTodayISO();
+            checkoutDateInput.min = today;
+            if (renderedPickupToday !== today) renderPickupDayGroups();
+
+            let selectedDate = checkoutDateInput.value;
+            if (selectedDate && (!pickupDateIsInWindow(selectedDate)
+                || (selectedDate === today && pickupTimesForDate(today).length === 0))) {
+                checkoutDateInput.value = '';
+                selectedDate = '';
+                syncPickupDayChips();
+            }
+
+            const selectedTime = preferredTime === undefined ? checkoutTimeSelect.value : preferredTime;
+            const storeInfo = pickupStoreInfo();
             if (storeInfo) {
                 if (pickupHoursRange) {
                     pickupHoursRange.textContent = `${storeInfo.hoursRangeLabel()}, ${storeInfo.STORE_INFO.operatingDaysLabel.replace(/^Open\s+/i, '')}`;
@@ -1156,34 +1588,92 @@
                 }
             }
 
-            for (let minutes = openMinutes; minutes <= closeMinutes; minutes += 1) {
-                const time = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-                if (!isToday || time > currentTime) times.push(time);
+            if (!selectedDate) {
+                checkoutTimeSelect.replaceChildren(new Option('Choose a day first', '', true, true));
+                checkoutTimeSelect.options[0].disabled = true;
+                checkoutTimeSelect.value = '';
+                checkoutTimeSelect.disabled = true;
+                pickupTimeHint.textContent = 'Pickup times are every 15 minutes, Melbourne time.';
+                updatePickupSummary();
+                return;
             }
 
-            checkoutTimeSelect.replaceChildren(new Option('Choose a pickup time', '', true, true));
+            const times = pickupTimesForDate(selectedDate);
+            checkoutTimeSelect.replaceChildren(new Option(
+                times.length > 0 ? 'Choose a pickup time' : 'No pickup times remain today',
+                '',
+                true,
+                true
+            ));
             checkoutTimeSelect.options[0].disabled = true;
             times.forEach(time => checkoutTimeSelect.add(new Option(PickupTimeDisplay.formatPickupTime(time), time)));
 
-            if (times.includes(selectedTime)) {
-                checkoutTimeSelect.value = selectedTime;
-            } else {
-                checkoutTimeSelect.value = '';
-            }
+            checkoutTimeSelect.disabled = times.length === 0;
+            checkoutTimeSelect.value = times.includes(selectedTime) ? selectedTime : '';
+            pickupTimeHint.textContent = 'Pickup times are every 15 minutes, Melbourne time.';
+            updatePickupSummary();
+        }
 
-            if (times.length === 0) {
-                checkoutTimeSelect.options[0].textContent = 'No pickup times remain today';
-                checkoutTimeSelect.disabled = true;
-                pickupTimeHint.textContent = 'Choose another date to see available pickup times.';
-            } else {
-                checkoutTimeSelect.disabled = false;
-                pickupTimeHint.textContent = selectedDate
-                    ? 'Times shown are Melbourne local time.'
-                    : 'Choose any available minute during pickup hours.';
+        function selectPickupDate(isoDate) {
+            if (!pickupDateIsInWindow(isoDate) || pickupTimesForDate(isoDate).length === 0) return;
+            const previousDate = checkoutDateInput.value;
+            checkoutDateInput.value = isoDate;
+            if (previousDate !== isoDate) checkoutTimeSelect.value = '';
+            syncPickupDayChips();
+            refreshPickupTimeOptions();
+        }
+
+        function selectEarliestPickup() {
+            const today = melbourneTodayISO();
+            for (let offset = 0; offset < PICKUP_MAX_DAYS_AHEAD; offset += 1) {
+                const isoDate = pickupAddDays(today, offset);
+                const times = pickupTimesForDate(isoDate);
+                if (times.length === 0) continue;
+                checkoutDateInput.value = isoDate;
+                syncPickupDayChips();
+                refreshPickupTimeOptions(times[0]);
+                return;
             }
         }
 
+        pickupDayGroups.addEventListener('click', event => {
+            const chip = event.target.closest('.pickup-day-chip');
+            if (!chip || chip.disabled) return;
+            selectPickupDate(chip.dataset.pickupDate);
+        });
+
+        pickupDayGroups.addEventListener('keydown', event => {
+            const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+            if (!keys.includes(event.key)) return;
+            const chip = event.target.closest('.pickup-day-chip');
+            if (!chip) return;
+
+            const chips = Array.from(pickupDayGroups.querySelectorAll('.pickup-day-chip:not(:disabled)'));
+            if (chips.length === 0) return;
+            event.preventDefault();
+            const currentIndex = Math.max(0, chips.indexOf(chip));
+            let nextIndex = currentIndex;
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + chips.length) % chips.length;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % chips.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = chips.length - 1;
+
+            const nextChip = chips[nextIndex];
+            selectPickupDate(nextChip.dataset.pickupDate);
+            nextChip.focus({ preventScroll: true });
+        });
+
+        pickupEarliestBtn.addEventListener('click', selectEarliestPickup);
+        checkoutTimeSelect.addEventListener('change', updatePickupSummary);
         checkoutTimeSelect.addEventListener('focus', refreshPickupTimeOptions);
+        document.getElementById('checkoutForm').addEventListener('reset', () => {
+            checkoutDateInput.value = '';
+            checkoutTimeSelect.value = '';
+            syncPickupDayChips();
+            refreshPickupTimeOptions();
+        });
+
+        renderPickupDayGroups();
         refreshPickupTimeOptions();
 
         function createIdempotencyKey() {
@@ -1204,7 +1694,57 @@
             error.hidden = false;
         }
 
+        // Cart-level recovery from order rejections. A 409 insufficient_stock
+        // names the product and its real availability: the cart is corrected to
+        // that truth (the item is removed at zero), a specific message replaces
+        // the generic error, and the products list refreshes in the background.
+        // The two known 400 shape codes (duplicates, bad quantities) cannot
+        // happen for a merged cart, but if one ever arrives the same tidy-up
+        // applies. Both leave the idempotency rules alone: the next submit of
+        // the changed order computes a new fingerprint, which gets a new key,
+        // while an unchanged retry keeps the key it had.
+        function handleStockCheckoutFailure(status, payload) {
+            if (status === 409 && payload && payload.error === 'insufficient_stock') {
+                const name = String(payload.product_name || 'the product');
+                const available = Number(payload.available);
+                const item = cart.find(i => i.id === String(payload.product_id));
+                if (!item || !Number.isInteger(available) || available < 0) {
+                    showCheckoutError(`Sorry, ${name} did not have enough stock. Please review your cart and try again.`);
+                    return true;
+                }
+                const productId = String(payload.product_id);
+                const details = productDetails[productId];
+                if (details) {
+                    details.stock = available;
+                    details.stockLabel = stockLabelFor(available);
+                }
+                cartItemNotes.delete(productId);
+                if (available === 0) {
+                    cart = cart.filter(i => i.id !== productId);
+                } else {
+                    item.qty = available;
+                }
+                renderCart();
+                refreshProductsQuietly();
+                showCheckoutError(available === 0
+                    ? `Sorry, ${name} just sold out. It was removed from your cart. Please review and try again.`
+                    : `Sorry, only ${available} left of ${name}. We updated your cart, please review and try again.`);
+                return true;
+            }
+            if (status === 400 && payload && (payload.code === 'DUPLICATE_PRODUCT' || payload.code === 'INVALID_QUANTITY')) {
+                cart = mergeCartItems(cart.map(item => ({ ...item, qty: Math.min(item.qty, MAX_CART_QUANTITY) })));
+                clampCartToStock();
+                renderCart();
+                showCheckoutError('We tidied up your cart to match our order limits. Please review your cart and try again.');
+                return true;
+            }
+            return false;
+        }
+
         document.getElementById('checkoutForm').addEventListener('submit', async (event) => {
+            // event.currentTarget is null once the handler awaits, so the form is
+            // captured here, before the first await.
+            const form = event.currentTarget;
             event.preventDefault();
             if (checkoutSubmitting) return;
             refreshPickupTimeOptions();
@@ -1214,9 +1754,7 @@
             const time = document.getElementById('checkoutTime').value;
             const error = document.getElementById('checkoutError');
             const review = document.getElementById('checkoutReview');
-            const success = document.getElementById('checkoutSuccess');
             error.hidden = true;
-            success.hidden = true;
 
             if (name.length === 0 || name.length > 100) {
                 error.textContent = 'Enter your full name (up to 100 characters).';
@@ -1257,7 +1795,7 @@
             }
 
             checkoutSubmitting = true;
-            const submitButton = event.currentTarget.querySelector('button[type="submit"]');
+            const submitButton = form.querySelector('button[type="submit"]');
             submitButton.disabled = true;
             submitButton.querySelector('span').textContent = 'Saving Order...';
             review.hidden = true;
@@ -1272,22 +1810,13 @@
                 });
                 const saved = await response.json().catch(() => ({}));
                 if (!response.ok) {
+                    if (handleStockCheckoutFailure(response.status, saved)) return;
                     throw new Error(saved.error || 'Your order could not be saved. Please try again.');
                 }
 
-                const successContent = document.createDocumentFragment();
-                const heading = document.createElement('strong');
-                heading.textContent = `Order ${saved.order_number} saved successfully.`;
-                const summary = document.createElement('p');
-                summary.textContent = `Pickup: ${formatMelbourneDateDisplay(saved.pickup_date)} at ${PickupTimeDisplay.formatPickupTime(saved.pickup_time) || 'Time unavailable'} Melbourne time. Total: ${formatAud(saved.total)}. Status: ${saved.status}.`;
-                const credentialNote = document.createElement('p');
-                credentialNote.textContent = 'Save this private tracking code to check your order status later:';
-                const credential = document.createElement('code');
-                credential.className = 'tracking-credential';
-                credential.textContent = saved.tracking_token;
-                successContent.append(heading, summary, credentialNote, credential);
-                success.replaceChildren(successContent);
-                success.hidden = false;
+                renderOrderSuccess(saved);
+                closeCheckout();
+                openOrderSuccess();
                 checkoutIdempotencyKey = '';
                 checkoutFingerprint = '';
                 sessionStorage.removeItem('maridelPendingOrderKey');
@@ -1305,10 +1834,10 @@
             }
         });
 
-        document.getElementById('trackingForm').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const form = event.currentTarget;
-            const token = document.getElementById('trackingTokenInput').value.trim();
+        // Looks an order up by tracking credential. Shared by the tracking modal
+        // form and the "Track My Order" button on the order success modal, so the
+        // customer never has to retype a code they were just given.
+        async function lookupOrderByToken(token) {
             const trackingError = document.getElementById('trackingError');
             const result = document.getElementById('trackingResult');
             trackingError.hidden = true;
@@ -1381,6 +1910,30 @@
                 trackingError.textContent = trackError.message || 'Unable to find this order.';
                 trackingError.hidden = false;
             }
+        }
+
+        document.getElementById('trackingForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            await lookupOrderByToken(document.getElementById('trackingTokenInput').value.trim());
+        });
+
+        const orderSuccessModal = document.getElementById('orderSuccessModal');
+        orderSuccessModal.addEventListener('click', event => {
+            if (event.target === orderSuccessModal) closeOrderSuccess();
+        });
+        document.getElementById('copyTrackingCode').addEventListener('click', copyTrackingCode);
+        document.getElementById('trackMyOrderBtn').addEventListener('click', async () => {
+            const credential = document.getElementById('orderSuccessCredential').textContent;
+            closeOrderSuccess();
+            document.getElementById('trackingTokenInput').value = credential;
+            await lookupOrderByToken(credential);
+        });
+        document.getElementById('continueShoppingBtn').addEventListener('click', () => {
+            closeOrderSuccess();
+            document.getElementById('shop').scrollIntoView({ behavior: 'smooth' });
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && orderSuccessModal.classList.contains('open')) closeOrderSuccess();
         });
 
         const trackingModal = document.getElementById('trackingModal');
@@ -1463,10 +2016,259 @@
             searchInput.focus();
         });
 
-        // --- WISHLIST TOGGLE ---
-        function toggleWishlist(btn) {
-            btn.classList.toggle('active');
-            showToast(btn.classList.contains('active') ? 'Saved to your wishlist!' : 'Removed from wishlist');
+        // --- WISHLIST ---
+        // Guest wishlist, persisted in this browser only. This project has no
+        // customer accounts and no server-side wishlist storage (the only login
+        // is the owner API), so nothing is sent to the server and no
+        // credentials, names or contact details are written to browser storage.
+        // The store logic lives in wishlist.js and is covered by wishlist.test.js.
+        const wishlistOverlay = document.getElementById('wishlistOverlay');
+        const wishlistItemsContainer = document.getElementById('wishlistItemsContainer');
+        const wishlistBadge = document.getElementById('wishlistBadge');
+        const wishlistNavBadge = document.getElementById('wishlistNavBadge');
+        const wishlistDrawerCount = document.getElementById('wishlistDrawerCount');
+        const wishlistAddAllBtn = document.getElementById('wishlistAddAllBtn');
+        const wishlistContinueBtn = document.getElementById('wishlistContinueBtn');
+        const wishlistStorageKey = window.Wishlist ? window.Wishlist.STORAGE_KEY : 'maridelWishlist';
+
+        // In-memory fallback so a missing or blocked wishlist.js degrades the
+        // feature instead of throwing on every product card click.
+        const memoryWishlist = new Set();
+        const wishlistStore = window.Wishlist
+            ? window.Wishlist.createWishlistStore({ storage: window.localStorage })
+            : null;
+
+        function wishlistIds() {
+            return wishlistStore ? wishlistStore.read() : [...memoryWishlist];
+        }
+
+        function isWishlisted(productId) {
+            const id = String(productId);
+            return wishlistStore ? wishlistStore.has(id) : memoryWishlist.has(id);
+        }
+
+        function toggleWishlist(productId) {
+            const id = String(productId);
+            let active;
+            if (wishlistStore) {
+                active = wishlistStore.toggle(id).active;
+            } else {
+                active = !memoryWishlist.has(id);
+                if (active) memoryWishlist.add(id);
+                else memoryWishlist.delete(id);
+            }
+            syncWishlistUI();
+
+            const product = productDetails[id];
+            const label = product ? product.title : 'that item';
+            showToast(active ? `Saved "${label}" to your wishlist!` : `Removed "${label}" from your wishlist`);
+            return active;
+        }
+
+        // Called by the product-card hearts and the Quick View button, which
+        // pass the product id rather than the button itself.
+        function handleWishlistClick(productId) {
+            return toggleWishlist(productId);
+        }
+
+        function updateWishlistBadges() {
+            const count = wishlistIds().length;
+            const label = count > 99 ? '99+' : String(count);
+
+            [wishlistBadge, wishlistNavBadge].forEach(badge => {
+                if (!badge) return;
+                badge.textContent = label;
+                badge.hidden = count === 0;
+                if (count > 0 && badge === wishlistBadge) {
+                    // Restart the pop animation the same way the cart badge does.
+                    badge.classList.remove('bump');
+                    void badge.offsetWidth;
+                    badge.classList.add('bump');
+                    setTimeout(() => badge.classList.remove('bump'), 200);
+                }
+            });
+
+            if (wishlistDrawerCount) {
+                wishlistDrawerCount.textContent = `${count} item${count === 1 ? '' : 's'}`;
+            }
+            if (wishlistAddAllBtn) wishlistAddAllBtn.disabled = count === 0;
+        }
+
+        // Keeps every heart on the page in step with the stored list.
+        function syncWishlistHearts() {
+            document.querySelectorAll('[data-wish-id]').forEach(control => {
+                const active = isWishlisted(control.dataset.wishId);
+                control.classList.toggle('active', active);
+                if (control.hasAttribute('aria-pressed')) {
+                    control.setAttribute('aria-pressed', active ? 'true' : 'false');
+                }
+                if (control.hasAttribute('aria-label')) {
+                    control.setAttribute('aria-label', active ? 'Remove from wishlist' : 'Add to wishlist');
+                }
+            });
+        }
+
+        function syncWishlistUI() {
+            updateWishlistBadges();
+            syncWishlistHearts();
+            if (wishlistOverlay && wishlistOverlay.classList.contains('open')) renderWishlistItems();
+        }
+
+        // Drops saved ids that the catalog no longer offers. Only runs with a
+        // non-empty catalog so a failed fetch can never wipe the saved list.
+        function pruneWishlist() {
+            if (!wishlistStore || storeProducts.length === 0) return;
+            const removed = wishlistStore.prune(storeProducts.map(product => product.id));
+            if (removed.length > 0) {
+                showToast(`Removed ${removed.length} saved item${removed.length === 1 ? '' : 's'} no longer available.`);
+            }
+            syncWishlistUI();
+        }
+
+        function renderWishlistItems() {
+            if (!wishlistItemsContainer) return;
+
+            const ids = wishlistIds();
+            if (ids.length > 0 && Object.keys(productDetails).length === 0) {
+                // The catalog is still loading; the list refreshes itself as
+                // soon as loadProducts() finishes and syncs the open drawer.
+                wishlistItemsContainer.innerHTML = `
+                    <div class="cart-empty-state">
+                        <p role="status" style="font-weight: 700; color: #111827;">Loading your wishlist&hellip;</p>
+                    </div>
+                `;
+                if (wishlistAddAllBtn) wishlistAddAllBtn.disabled = true;
+                return;
+            }
+
+            const entries = ids
+                .map(id => ({ id, product: productDetails[id] }))
+                .filter(entry => entry.product);
+
+            if (entries.length === 0) {
+                wishlistItemsContainer.innerHTML = `
+                    <div class="cart-empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                        <p style="font-weight: 700; color: #111827; margin-bottom: 6px;">Your wishlist is empty</p>
+                        <p style="font-size: 0.85rem;">Tap the heart on any product to save it for later.</p>
+                    </div>
+                `;
+                if (wishlistAddAllBtn) wishlistAddAllBtn.disabled = true;
+                return;
+            }
+
+            wishlistItemsContainer.innerHTML = entries.map(({ id, product }) => `
+                <div class="cart-item wishlist-item" data-id="${escapeHtml(id)}">
+<div class="cart-item-thumb">
+                        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" onerror="this.onerror=null;this.src=PRODUCT_IMAGE_PLACEHOLDER;" />
+                    </div>
+                    <div class="cart-item-info">
+                    <h4 class="cart-item-title">${escapeHtml(product.title)}</h4>
+                    <div class="cart-item-price">${formatAud(product.price)}</div>
+                    <span class="wishlist-item-stock">${escapeHtml(product.stockLabel || 'In Stock')}</span>
+                        <div class="wishlist-item-actions">
+                            <button type="button" class="btn-wishlist-add" data-wish-add="${escapeHtml(id)}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002 1.61L23 6H6"/></svg>
+                                Add to Cart
+                            </button>
+                            <button type="button" class="btn-remove-item" data-wish-remove="${escapeHtml(id)}" aria-label="Remove ${escapeHtml(product.title)} from wishlist">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            wishlistItemsContainer.querySelectorAll('[data-wish-add]').forEach(button => {
+                button.addEventListener('click', event => {
+                    const product = productDetails[event.currentTarget.dataset.wishAdd];
+                    if (!product) return;
+                    addProductToCart(product.id, product.title, product.price, product.image, event.currentTarget);
+                });
+            });
+
+            wishlistItemsContainer.querySelectorAll('[data-wish-remove]').forEach(button => {
+                button.addEventListener('click', event => {
+                    toggleWishlist(event.currentTarget.dataset.wishRemove);
+                });
+            });
+
+            if (wishlistAddAllBtn) wishlistAddAllBtn.disabled = false;
+        }
+
+        function openWishlist() {
+            if (!wishlistOverlay) return;
+            renderWishlistItems();
+            updateWishlistBadges();
+            wishlistOverlay.classList.add('open');
+            const closeButton = document.getElementById('closeWishlistBtn');
+            if (closeButton) closeButton.focus();
+        }
+
+        function closeWishlist() {
+            if (wishlistOverlay) wishlistOverlay.classList.remove('open');
+        }
+
+        // Another tab changed the saved list; keep this view in step.
+        window.addEventListener('storage', event => {
+            if (!event.key || event.key !== wishlistStorageKey) return;
+            syncWishlistUI();
+        });
+
+        function syncQuickViewWishlist() {
+            const button = document.getElementById('qvWishlistBtn');
+            const label = document.getElementById('qvWishlistLabel');
+            if (!button) return;
+            const active = currentQvId ? isWishlisted(currentQvId) : false;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            button.setAttribute('aria-label', active ? 'Remove from wishlist' : 'Save to wishlist');
+            if (label) label.textContent = active ? 'Saved' : 'Save';
+        }
+
+        // --- WISHLIST VIEW WIRING ---
+        // Bound after the declarations above so every reference is initialised.
+        if (wishlistOverlay) {
+            const openWishlistBtn = document.getElementById('openWishlistBtn');
+            if (openWishlistBtn) openWishlistBtn.addEventListener('click', openWishlist);
+            const closeWishlistBtn = document.getElementById('closeWishlistBtn');
+            if (closeWishlistBtn) closeWishlistBtn.addEventListener('click', closeWishlist);
+            wishlistOverlay.addEventListener('click', (e) => {
+                if (e.target === wishlistOverlay) closeWishlist();
+            });
+            const wishlistNavLink = document.getElementById('wishlistNavLink');
+            if (wishlistNavLink) {
+                wishlistNavLink.addEventListener('click', (e) => {
+                    // #wishlist is the drawer itself, not a scroll target.
+                    e.preventDefault();
+                    openWishlist();
+                });
+            }
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && wishlistOverlay.classList.contains('open')) closeWishlist();
+            });
+        }
+        if (wishlistAddAllBtn) {
+            wishlistAddAllBtn.addEventListener('click', () => {
+                wishlistIds().forEach(id => {
+                    const product = productDetails[id];
+                    if (product) addProductToCart(product.id, product.title, product.price, product.image, null);
+                });
+                showToast('Wishlist items added to your cart!');
+            });
+        }
+        if (wishlistContinueBtn) {
+            wishlistContinueBtn.addEventListener('click', () => {
+                closeWishlist();
+                const shopSection = document.getElementById('shop');
+                if (shopSection) shopSection.scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+        const qvWishlistBtn = document.getElementById('qvWishlistBtn');
+        if (qvWishlistBtn) {
+            qvWishlistBtn.addEventListener('click', () => {
+                if (!currentQvId) return;
+                toggleWishlist(currentQvId);
+                syncQuickViewWishlist();
+            });
         }
 
         // --- QUICK VIEW MODAL ---
@@ -1499,29 +2301,55 @@
             return String(value || 'other').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'other';
         }
 
-        const productImageByName = {
-            'pocarisweat330ml': 'https://www.philvending.com.ph/wp-content/uploads/2017/04/ITPOCA002A-scaled.jpg',
-            'thaicocococonutjuice': 'https://www.topgrocer.com/images/product/8850227021171.jpeg',
-            'jufranbananasauce560g': 'https://pinoywarehouse.com.au/wp-content/uploads/2026/03/jufran-banana-sauce-560g-1.jpg',
-            'angelevaporatedfilledmilk370ml': 'https://smmarkets.ph/media/catalog/product/1/0/10142764-PC-1_1.jpg',
-            'angelkremdensada410ml': 'https://tse3.mm.bing.net/th/id/OIP.Q_4zawXIpVo2ru1Mqa1LUgHaHa?r=0&pid=Api',
-            'angelallpurposecreamer370ml': 'https://kitchenangel.com.ph/wp-content/uploads/2024/08/Product-All-Purpose-Creamer.png',
-            'magnoliagoldlabelmacapunoubeswirl': 'https://cdn.shopify.com/s/files/1/0729/0322/9681/files/b8c455bd-95f3-4b9b-a0a2-e90fde9acad4_size3840x3598_cropCenter_7ef437f9-e301-417b-ad9f-9d0bb1dd820d.jpg?v=1758805261',
-            'ficpinoysorbetesubequesodebola460ml': 'https://static.wixstatic.com/media/87c66c_5621b5c723fb4a758a00bccf97547467~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_5621b5c723fb4a758a00bccf97547467~mv2.jpg',
-            'ficpinoysorbetesbukopandan460ml': 'https://static.wixstatic.com/media/87c66c_1ecdbb94d9b949f59a9d5c59761fd76b~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_1ecdbb94d9b949f59a9d5c59761fd76b~mv2.jpg',
-            'ficpinoysorbetesmango460ml': 'https://m.media-amazon.com/images/I/71TpBjQ+0zL._AC_SX425_.jpg',
-            'ficpinoysorbetesubemacapuno460ml': 'https://static.wixstatic.com/media/87c66c_6be50ea6b5f94f37b1ae4daea927234f~mv2.jpg/v1/fill/w_498,h_373,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/87c66c_6be50ea6b5f94f37b1ae4daea927234f~mv2.jpg',
-            'cookedpeanut500g': 'https://almerepinoystore.com/wp-content/uploads/2025/02/Peanuts-Whole-Cooked-500g.png',
-            'specialodong12packs': 'https://sukli.com/cdn/shop/products/GoldenTower-SpecialOdong-Noodles-12Pack-240G.jpg?v=1749670230&width=352',
-            'drkoreanslicedkimchi': 'https://tse1.mm.bing.net/th/id/OIP.3lbLZBPcMOtacBlyrJ3LnwHaJ4?r=0&pid=Api',
-            'renoliverspread85g': 'https://tse1.mm.bing.net/th/id/OIP.22uB3d5f31VsVXHwlAdgfAHaHa?r=0&pid=Api',
-            'purefoodsliverspread85g': 'https://tse1.mm.bing.net/th/id/OIP.h8EwXOLaIaezkL64QNlgwAHaHa?r=0&pid=Api',
-            'luckymepancitcantonchilimansi60gx6': 'https://smmarkets.ph/media/catalog/product/2/0/20100139-PK6-4_3.png',
-            'cocomamafreshgata': 'https://tse1.mm.bing.net/th/id/OIP.PBK6zuPUJXSpfrRpskbOxAHaHa?r=0&pid=Api'
-        };
+        // Product image fallbacks. The catalog is seeded from a live database that
+        // may not carry an image URL for every product, so the storefront needs a
+        // safe placeholder. The previous implementation pointed at a hand-curated
+        // map of third-party image URLs. Those hosts are outside this project's
+        // control: they can go down, change their markup, or serve something the
+        // store cannot guarantee. A broken third-party image also triggered a
+        // browser retry loop on every page load. The placeholder is a
+        // self-contained inline SVG, so it needs no network request and cannot
+        // break.
+        const PRODUCT_IMAGE_PLACEHOLDER =
+            "data:image/svg+xml;utf8," +
+            encodeURIComponent(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">' +
+                '<rect width="400" height="400" fill="#f1f5f9"/>' +
+                '<rect x="40" y="120" width="320" height="200" rx="12" fill="#e2e8f0"/>' +
+                '<circle cx="200" cy="90" r="38" fill="#cbd5e1"/>' +
+                '<path d="M120 320 L180 250 L240 300 L280 240 L280 360 L120 360 Z" fill="#cbd5e1"/>' +
+                '<text x="200" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#94a3b8">No image</text>' +
+                '</svg>'
+            );
 
-        function fallbackProductImage(product) {
-            return productImageByName[normalizeProductName(product.name)] || '';
+        function fallbackProductImage() {
+            return PRODUCT_IMAGE_PLACEHOLDER;
+        }
+
+        // Stock comes straight from the public API as an integer. A missing or
+        // malformed value is stored as null, which means "no stock information":
+        // pre-migration databases do not answer this at all, and those must keep
+        // behaving exactly as before (no badge, no quantity limit).
+        const LOW_STOCK_LABEL_LIMIT = 5;
+        const MAX_CART_QUANTITY = 99;
+
+        function apiStockToNumber(value) {
+            return Number.isInteger(value) && value >= 0 ? value : null;
+        }
+
+        function stockLabelFor(stock) {
+            if (stock === 0) return 'Sold out';
+            if (stock !== null && stock <= LOW_STOCK_LABEL_LIMIT) return `Only ${stock} left`;
+            return 'In Stock';
+        }
+
+        // The stock of a product the catalog knows about. Returns null when the
+        // catalog has not loaded, the product is unknown, or the API reported no
+        // stock information.
+        function stockForProductId(id) {
+            const details = productDetails[id];
+            if (!details) return null;
+            return typeof details.stock === 'number' && details.stock >= 0 ? details.stock : null;
         }
 
         function mapApiProduct(product, index) {
@@ -1532,7 +2360,12 @@
 
             const originalPrice = Number(product.original_price);
             const category = String(product.category || 'Other').trim();
-            const apiImage = typeof product.image === 'string' ? product.image.trim() : '';
+            // Resolved here, at the one point where an API product becomes a
+            // storefront product, so the cards, the featured product, quick view,
+            // the cart and the saved cart all hold the absolute URL. The fallback
+            // below still only applies when there is no image at all.
+            const apiImage = resolveProductImageUrl(typeof product.image === 'string' ? product.image.trim() : '');
+            const stock = apiStockToNumber(product.stock);
 
             return {
                 id: String(id),
@@ -1541,9 +2374,10 @@
                 categoryKey: categorySlug(category),
                 price,
                 oldPrice: Number.isFinite(originalPrice) && originalPrice > price ? originalPrice : null,
-                image: apiImage || fallbackProductImage({ name: title, category }, index),
+                image: apiImage || fallbackProductImage(),
                 desc: String(product.description || ''),
-                stockLabel: 'In Stock'
+                stock,
+                stockLabel: stockLabelFor(stock)
             };
         }
 
@@ -1573,13 +2407,13 @@
 
         function renderProductCards(products) {
             productGrid.innerHTML = products.map(product => `
-                <article class="product-card" data-category="${escapeHtml(product.categoryKey)}" data-id="${escapeHtml(product.id)}" data-title="${escapeHtml(product.title)}" data-price="${product.price}">
+                <article class="product-card${product.stock === 0 ? ' card-sold-out' : ''}" data-category="${escapeHtml(product.categoryKey)}" data-id="${escapeHtml(product.id)}" data-title="${escapeHtml(product.title)}" data-price="${product.price}">
                     <div class="product-thumb-box">
-                        <span class="badge-tag badge-popular">${escapeHtml(product.stockLabel)}</span>
-                        <button type="button" class="btn-wishlist" aria-label="Add to wishlist">
+                        <span class="badge-tag badge-popular${product.stock === 0 ? ' badge-sold-out' : ''}${product.stock > 0 && product.stock <= LOW_STOCK_LABEL_LIMIT ? ' badge-low-stock' : ''}">${escapeHtml(product.stockLabel)}</span>
+                        <button type="button" class="btn-wishlist" aria-label="Add to wishlist" data-wish-id="${escapeHtml(product.id)}" aria-pressed="false">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
                         </button>
-                        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" />
+                        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}" onerror="this.onerror=null;this.src=PRODUCT_IMAGE_PLACEHOLDER;" />
                         <div class="product-hover-actions">
                             <button type="button" class="btn-quick-view">Quick View</button>
                         </div>
@@ -1594,9 +2428,9 @@
                                 <span class="price-main">${formatAud(product.price)}</span>
                                 <span class="price-del"${product.oldPrice ? '' : ' style="display:none"'}>${product.oldPrice ? formatAud(product.oldPrice) : ''}</span>
                             </div>
-                            <button type="button" class="btn-quick-add">
+                            <button type="button" class="btn-quick-add"${product.stock === 0 ? ' disabled' : ''}>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Add
+                                ${product.stock === 0 ? 'Sold out' : 'Add'}
                             </button>
                         </div>
                     </div>
@@ -1605,7 +2439,7 @@
 
             productGrid.querySelectorAll('.product-card').forEach(card => {
                 const product = productDetails[card.dataset.id];
-                card.querySelector('.btn-wishlist').addEventListener('click', event => toggleWishlist(event.currentTarget));
+                card.querySelector('.btn-wishlist').addEventListener('click', event => handleWishlistClick(product.id, event.currentTarget));
                 card.querySelector('.btn-quick-view').addEventListener('click', () => openQuickView(product.id));
                 card.querySelector('.btn-quick-add').addEventListener('click', event => {
                     addProductToCart(product.id, product.title, product.price, product.image, event.currentTarget);
@@ -1637,13 +2471,47 @@
                 : '';
         }
 
-        async function loadProducts() {
-            featuredProducts.splice(0, featuredProducts.length);
-            document.getElementById('featuredAddBtn').disabled = true;
-            productGrid.innerHTML = '<p role="status" style="grid-column: 1 / -1; text-align: center;">Loading products...</p>';
+        // The free Render server can take up to a minute to wake up, so the very
+        // first products request can hang for a long time. Say so after a few
+        // seconds, and give the request itself a hard limit.
+        const PRODUCTS_LOADING_TEXT = 'Loading products...';
+        const PRODUCTS_WAKE_UP_TEXT = 'Loading products... the store server may take up to a minute to wake up.';
+        const PRODUCTS_SLOW_NOTICE_MS = 4000;
+        const PRODUCTS_REQUEST_TIMEOUT_MS = 70000;
+
+        async function loadProducts(options = {}) {
+            const quiet = options.quiet === true;
+            if (!quiet) {
+                featuredProducts.splice(0, featuredProducts.length);
+                document.getElementById('featuredAddBtn').disabled = true;
+                productGrid.innerHTML = `<p role="status" style="grid-column: 1 / -1; text-align: center;">${PRODUCTS_LOADING_TEXT}</p>`;
+            }
+
+            // Updates the loading notice wherever it is shown, but only while it
+            // still reads "Loading products...", so a real error is never
+            // overwritten by a slow-server message.
+            function showLoadingNotice(text) {
+                const notice = productGrid.querySelector('p[role="status"]');
+                if (notice && notice.textContent === PRODUCTS_LOADING_TEXT) notice.textContent = text;
+                const featuredTitle = document.getElementById('featuredTitle');
+                if (featuredTitle && featuredTitle.textContent === PRODUCTS_LOADING_TEXT) featuredTitle.textContent = text;
+            }
+
+            // AbortController is missing in a few non-browser sandboxes. Where it
+            // exists the request gets a hard 70 second limit; where it does not,
+            // the request is simply left to run.
+            const controller = typeof AbortController === 'function' ? new AbortController() : null;
+            const abortTimer = controller
+                ? setTimeout(() => controller.abort(), PRODUCTS_REQUEST_TIMEOUT_MS)
+                : null;
+            const slowNoticeTimer = quiet ? null : setTimeout(() => showLoadingNotice(PRODUCTS_WAKE_UP_TEXT), PRODUCTS_SLOW_NOTICE_MS);
 
             try {
-                const response = await fetch(`${API_BASE_URL}/api/products`);
+                const response = await fetch(
+                    `${API_BASE_URL}/api/products`,
+                    controller ? { signal: controller.signal } : undefined
+                );
+                clearTimeout(slowNoticeTimer);
                 if (!response.ok) throw new Error(`Products API returned ${response.status}`);
                 const rows = await response.json();
                 if (!Array.isArray(rows)) throw new Error('Products API response was not a list');
@@ -1651,6 +2519,43 @@
                 storeProducts = rows.map(mapApiProduct).filter(Boolean);
                 Object.keys(productDetails).forEach(id => delete productDetails[id]);
                 storeProducts.forEach(product => { productDetails[product.id] = product; });
+
+                // Reconcile the stored cart with the live catalog: titles, prices
+                // and images can change after the cart was saved, and the server
+                // recalculates totals from the database anyway. Items whose
+                // product no longer exists are dropped. An empty catalog is
+                // treated as "no information" rather than "nothing exists", so a
+                // failed or empty API response can never wipe the saved cart.
+                if (storeProducts.length > 0 && cart.length > 0) {
+                    let needsRender = false;
+                    let needsNotice = false;
+                    let needsStockNotice = false;
+                    if (clampCartToStock()) {
+                        needsRender = true;
+                        needsStockNotice = true;
+                    }
+                    cart = cart.filter(cartItem => {
+                        const current = productDetails[cartItem.id];
+                        if (!current) {
+                            needsRender = true;
+                            needsNotice = true;
+                            return false;
+                        }
+                        const priceChanged = current.price !== cartItem.price;
+                        const titleChanged = current.title !== cartItem.title;
+                        const imageChanged = current.image !== cartItem.image;
+                        if (priceChanged || titleChanged || imageChanged) needsRender = true;
+                        if (priceChanged) needsNotice = true;
+                        cartItem.title = current.title;
+                        cartItem.price = current.price;
+                        cartItem.image = current.image;
+                        return true;
+                    });
+                    if (needsRender) renderCart();
+                    if (needsStockNotice) showToast('Some items in your cart were updated because stock changed.');
+                    else if (needsNotice) showToast('Some cart items were updated to match current store prices.');
+                }
+
                 featuredProducts.splice(0, featuredProducts.length, ...storeProducts.slice(0, 4).map(product => ({
                     ...product,
                     category: product.category.toUpperCase(),
@@ -1658,32 +2563,105 @@
                 })));
 
                 renderCategoryFilters(storeProducts);
+                if (quiet) {
+                    // The pills were rebuilt with "All Products" active, so re-mark
+                    // the customer's category, or drop it if that category no longer
+                    // has any products.
+                    const activePill = [...categoryFilterNav.querySelectorAll('.filter-pill')]
+                        .find(button => button.dataset.filter === activeProductCategory);
+                    if (activePill) {
+                        categoryFilterNav.querySelectorAll('.filter-pill')
+                            .forEach(button => button.classList.toggle('active', button === activePill));
+                    } else {
+                        activeProductCategory = 'all';
+                    }
+                }
                 if (storeProducts.length > 0) {
                     renderProductCards(storeProducts);
                     updateFeaturedSlide(0);
                     document.getElementById('featuredAddBtn').disabled = false;
                 } else {
                     productGrid.innerHTML = '<p role="status" style="grid-column: 1 / -1; text-align: center;">No products are currently available.</p>';
+                    // A quiet refresh skipped the reset above, so retire the button
+                    // when the catalog it used to point at is now empty.
+                    if (quiet) document.getElementById('featuredAddBtn').disabled = true;
                 }
                 applyProductFilters();
+                pruneWishlist();
+                syncWishlistHearts();
             } catch (error) {
+                clearTimeout(slowNoticeTimer);
+                if (quiet) {
+                    // A background refresh must leave the page exactly as it was:
+                    // the products already on screen stay, with no error shown.
+                    console.warn('Quiet product refresh failed:', error);
+                    return false;
+                }
                 console.error('Unable to load products:', error);
                 productDetails && Object.keys(productDetails).forEach(id => delete productDetails[id]);
                 featuredProducts.splice(0, featuredProducts.length);
                 renderCategoryFilters([]);
-                productGrid.innerHTML = '<p role="alert" style="grid-column: 1 / -1; text-align: center;">Products could not be loaded. Please check that the store server is running and try again.</p>';
+                productGrid.innerHTML = '<p role="alert" style="grid-column: 1 / -1; text-align: center;">Products could not be loaded. Please check that the store server is running and try again.<br /><button type="button" class="btn-card-add" id="retryProductsBtn" style="margin-top: 12px;">Try again</button></p>';
+                const retryButton = document.getElementById('retryProductsBtn');
+                if (retryButton) {
+                    retryButton.addEventListener('click', () => { productCatalogReady = loadProducts(); });
+                }
                 document.getElementById('featuredTitle').textContent = 'Products unavailable';
                 document.getElementById('featuredCategory').textContent = '';
                 document.getElementById('featuredPrice').textContent = '';
                 document.getElementById('featuredOldPrice').style.display = 'none';
                 document.getElementById('featuredAddBtn').disabled = true;
                 return false;
+            } finally {
+                if (abortTimer) clearTimeout(abortTimer);
+                clearTimeout(slowNoticeTimer);
             }
             return true;
         }
 
+        // The storefront can sit in a background tab while the owner changes prices
+        // or hides products in the dashboard. When the tab becomes visible again (or
+        // the window regains focus), reload quietly so the change appears without a
+        // manual refresh and without disturbing what the customer is looking at.
+        // Throttled to one refresh per 10 seconds, never two at once, and never
+        // before the first normal load has finished.
+        const QUIET_REFRESH_MIN_INTERVAL_MS = 10 * 1000;
+        let quietRefreshInFlight = false;
+        let lastQuietRefreshAt = 0;
+
+        async function refreshProductsQuietly() {
+            // Wait for the normal load, and do nothing if it never succeeded: the
+            // error message and its Try again button remain the way back.
+            const catalogLoaded = await productCatalogReady;
+            if (!catalogLoaded) return;
+            if (quietRefreshInFlight) return;
+            if (Date.now() - lastQuietRefreshAt < QUIET_REFRESH_MIN_INTERVAL_MS) return;
+            quietRefreshInFlight = true;
+            lastQuietRefreshAt = Date.now();
+            try {
+                await loadProducts({ quiet: true });
+            } catch (error) {
+                // loadProducts reports its own quiet failures; this catch only
+                // guarantees an event handler can never throw.
+                console.warn('Quiet product refresh failed:', error);
+            } finally {
+                quietRefreshInFlight = false;
+            }
+        }
+
+        if (typeof document.addEventListener === 'function') {
+            document.addEventListener('visibilitychange', () => {
+                if (typeof document.visibilityState !== 'string' || document.visibilityState !== 'visible') return;
+                refreshProductsQuietly();
+            });
+        }
+        if (typeof window.addEventListener === 'function') {
+            window.addEventListener('focus', () => { refreshProductsQuietly(); });
+        }
+
         let currentQvId = null;
         let qvQtyValue = 1;
+        let qvStock = null;
         const quickViewModal = document.getElementById('quickViewModal');
 
         function openQuickView(id) {
@@ -1691,7 +2669,8 @@
             if (!p) return;
             currentQvId = id;
             qvQtyValue = 1;
-            
+            qvStock = featuredStockCap(p);
+
             document.getElementById('qvImage').src = p.image;
             document.getElementById('qvCategory').textContent = p.category;
             document.getElementById('qvTitle').textContent = p.title;
@@ -1699,9 +2678,15 @@
             document.getElementById('qvDescription').textContent = p.desc;
             document.getElementById('qvQty').textContent = '1';
             const addButton = document.getElementById('qvAddBtn');
-            addButton.disabled = false;
-            addButton.querySelector('span').textContent = 'Add to Cart';
+            if (p.stock === 0) {
+                addButton.disabled = true;
+                addButton.querySelector('span').textContent = 'Sold out';
+            } else {
+                addButton.disabled = false;
+                addButton.querySelector('span').textContent = 'Add to Cart';
+            }
 
+            syncQuickViewWishlist();
             quickViewModal.classList.add('open');
         }
 
@@ -1710,7 +2695,7 @@
         }
 
         function adjustQuickViewQty(delta) {
-            qvQtyValue = Math.max(1, qvQtyValue + delta);
+            qvQtyValue = Math.max(1, Math.min(qvQtyValue + delta, qvStock));
             document.getElementById('qvQty').textContent = qvQtyValue;
         }
 
@@ -1725,69 +2710,75 @@
             if (e.target === quickViewModal) closeQuickView();
         });
 
-        // --- AUTH / GMAIL NOTIFICATION MODAL ---
-        const authModal = document.getElementById('authModal');
-        document.getElementById('openAuthBtn').addEventListener('click', () => authModal.classList.add('open'));
-        function closeAuthModal() { authModal.classList.remove('open'); }
-        authModal.addEventListener('click', (e) => {
-            if (e.target === authModal) closeAuthModal();
-        });
+        // --- CONTACT FORM SUBMISSION ---
+        // The storefront form is delivered by Formspree. Only this id has to be
+        // replaced to point the form at a real Formspree form; while it is still
+        // the placeholder the form refuses to pretend that anything was sent.
+        const CONTACT_FORM_ID = 'xkjolqny';
+        const CONTACT_FORM_ENDPOINT = `https://formspree.io/f/${CONTACT_FORM_ID}`;
+        const CONTACT_STATUS_LIFETIME_MS = 8000;
 
-        document.getElementById('customerGmailForm').addEventListener('submit', async (e) => {
+        let contactStatusTimer;
+
+        function showContactStatus(status, message, isError) {
+            status.textContent = message;
+            status.style.color = isError ? '#b91c1c' : '#166534';
+            clearTimeout(contactStatusTimer);
+            contactStatusTimer = setTimeout(() => { status.textContent = ''; }, CONTACT_STATUS_LIFETIME_MS);
+        }
+
+        function contactStorePhone() {
+            const info = (window.StoreInfo && window.StoreInfo.STORE_INFO) || null;
+            return info && info.phone ? String(info.phone).trim() : '';
+        }
+
+        document.getElementById('contactForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const input = document.getElementById('customerGmailInput');
-            const valMsg = document.getElementById('gmailValidationMsg');
-            const status = document.getElementById('gmailSubmitStatus');
-            const isGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(input.value.trim());
+            const form = e.target;
+            const status = document.getElementById('contactStatus');
+            const submitBtn = form.querySelector('button[type="submit"]');
 
-            if (!isGmail) {
-                valMsg.style.display = 'block';
+            // The required attributes on the three fields do the validation.
+            if (!form.reportValidity()) return;
+
+            // Nothing has been configured yet, so there is nowhere to send the
+            // message. Say so instead of pretending it was delivered.
+            if (CONTACT_FORM_ID === 'FORMSPREE_FORM_ID') {
+                showContactStatus(status, 'The contact form is not available right now. Please call the store.', true);
                 return;
             }
-            valMsg.style.display = 'none';
 
-            // EmailJS configuration support from AUTH_SETUP.md
-            const emailjsConfig = {
-                publicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
-                serviceId: 'YOUR_EMAILJS_SERVICE_ID',
-                templateId: 'YOUR_EMAILJS_TEMPLATE_ID'
-            };
-
-            if (!window.emailjs || Object.values(emailjsConfig).some(v => v.startsWith('YOUR_'))) {
-                status.textContent = 'Thank you! Your Gmail has been noted for store notifications.';
-                setTimeout(() => {
-                    input.value = '';
-                    status.textContent = '';
-                    closeAuthModal();
-                }, 1800);
-                return;
-            }
+            clearTimeout(contactStatusTimer);
+            status.textContent = '';
+            status.style.color = '#166534';
 
             try {
-                emailjs.init({ publicKey: emailjsConfig.publicKey });
-                await emailjs.send(emailjsConfig.serviceId, emailjsConfig.templateId, {
-                    customer_gmail: input.value.trim(),
-                    submission_time: new Date().toLocaleString('en-AU', { timeZone: 'Australia/Melbourne' }),
-                    recipient_email: 'gjalcantara24@gmail.com'
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+                const response = await fetch(CONTACT_FORM_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new FormData(form),
                 });
-                status.textContent = 'Thank you! Your Gmail address has been submitted successfully.';
-                setTimeout(() => {
-                    input.value = '';
-                    status.textContent = '';
-                    closeAuthModal();
-                }, 1800);
+                if (!response.ok) {
+                    const phone = contactStorePhone();
+                    const phoneHint = phone ? ` Store phone: ${phone}.` : '';
+                    showContactStatus(status, `Your message could not be sent. Please try again or call the store.${phoneHint}`, true);
+                    return;
+                }
+                status.textContent = 'Thank you! Your message has been sent. We will reply promptly.';
+                status.style.color = '#166534';
+                form.reset();
+                clearTimeout(contactStatusTimer);
+                contactStatusTimer = setTimeout(() => { status.textContent = ''; }, CONTACT_STATUS_LIFETIME_MS);
             } catch (err) {
-                status.textContent = 'Something went wrong. Please try again.';
+                const phone = contactStorePhone();
+                const phoneHint = phone ? ` Store phone: ${phone}.` : '';
+                showContactStatus(status, `Your message could not be sent. Please try again or call the store.${phoneHint}`, true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Send Message →';
             }
-        });
-
-        // --- CONTACT FORM SUBMISSION ---
-        document.getElementById('contactForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const status = document.getElementById('contactStatus');
-            status.textContent = 'Thank you! Your message has been sent. We will reply promptly.';
-            e.target.reset();
-            setTimeout(() => { status.textContent = ''; }, 4000);
         });
 
         // --- TOAST HELPER ---
@@ -1817,6 +2808,8 @@
         // --- INITIAL RENDER ---
         window.addEventListener('DOMContentLoaded', () => {
             renderCart();
+            // Show the saved count right away, before the catalog finishes loading.
+            updateWishlistBadges();
             productCatalogReady = loadProducts();
         });
     </script>
