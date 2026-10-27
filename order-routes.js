@@ -1,11 +1,39 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const fs = require("node:fs");
 const express = require("express");
 const { promisify } = require("node:util");
 const { validatePickupChoice, melbourneNow, BUSINESS_TIME_ZONE, OPENING_MINUTES, CLOSING_MINUTES } = require("./pickup-time");
+const {
+	normalizeProductPayload,
+	validateImageUrl,
+	MAX_STOCK,
+} = require("./product-admin");
+const {
+	decodeDataUrl,
+	validateImageBytes,
+	storeImage,
+	saveImageToDatabase,
+	deleteImageIfUnused,
+	imageNameFromPublicPath,
+	MAX_IMAGE_BYTES,
+} = require("./product-image-store");
+const {
+	validatePasswordChange,
+	validatePasswordPolicy,
+	generateResetToken,
+	hashResetToken,
+	resetTokenExpiry,
+	GENERIC_RESET_REQUEST_MESSAGE,
+} = require("./owner-account");
+const { productVisibilitySupported } = require("./public-product-routes");
+const { hashOwnerPassword } = require("./owner-credentials-tool");
 
 const scrypt = promisify(crypto.scrypt);
+// The decoded size an uploaded image may not exceed. The same limit the
+// storage table enforces, named here so the route that checks it is obvious.
+const MAX_PRODUCT_IMAGE_BYTES = MAX_IMAGE_BYTES;
 const SESSION_COOKIE = "maridel_owner_session";
 const CSRF_COOKIE = "maridel_owner_csrf";
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
@@ -14,8 +42,50 @@ const LOGIN_ATTEMPT_LIMIT = 5;
 const DEFAULT_PUBLIC_RATE_LIMITS = {
 	order: { limit: 10, windowMs: 10 * 60 * 1000 },
 	tracking: { limit: 30, windowMs: 15 * 60 * 1000 },
+	reset: { limit: 5, windowMs: 15 * 60 * 1000 },
 };
 const MAX_PUBLIC_RATE_LIMIT_CLIENTS = 10000;
+// PostgreSQL reports a missing relation as SQLSTATE 42P01. The PGlite sandbox
+// raises the same code for a missing table (verified against the sandbox), and
+// the message has the same shape, so both are recognised here. Nothing else
+// counts as "the table is not there yet".
+const MISSING_RELATION_PATTERN = /^relation "?([A-Za-z_][A-Za-z0-9_$]*(?:\.[A-Za-z_][A-Za-z0-9_$]*)*)"? does not exist$/;
+
+// products.low_stock_threshold only exists once stock-migration.sql has been
+// applied. Exactly like the is_published check in public-product-routes.js,
+// the question is asked per database and cached once it is answered with
+// "yes", so a not-yet-migrated database keeps working with the built-in
+// default threshold instead of failing a whole owner request on a missing
+// column.
+const LOW_STOCK_THRESHOLD_COLUMN_QUERY =
+	"SELECT count(*)::int AS n FROM information_schema.columns WHERE table_schema='public' AND table_name='products' AND column_name='low_stock_threshold'";
+const lowStockThresholdSupportByTarget = new WeakMap();
+
+async function productLowStockThresholdSupported(target) {
+	if (!target || typeof target.query !== "function") return false;
+	const cached = lowStockThresholdSupportByTarget.get(target);
+	if (cached !== undefined) return cached;
+	let supported = false;
+	try {
+		const row = await target.query(LOW_STOCK_THRESHOLD_COLUMN_QUERY);
+		supported = row.rows[0].n === 1;
+	} catch {
+		supported = false;
+	}
+	if (supported) lowStockThresholdSupportByTarget.set(target, true);
+	return supported;
+}
+
+function isMissingRelationError(error) {
+	if (!error || typeof error !== "object") return false;
+	if (error.code === "42P01") return true;
+	// A driver that reports the cause in the message only is still understood.
+	return typeof error.message === "string" && MISSING_RELATION_PATTERN.test(error.message.trim());
+}
+const DEFAULT_OWNER_PASSWORD_HASH = Symbol("default owner password hash");
+// One message for every unusable reset link: unknown, already used or expired.
+// The three cases are indistinguishable to the caller on purpose.
+const RESET_TOKEN_UNUSABLE_MESSAGE = "This reset link is not valid, has expired, or has already been used.";
 const ALLOWED_STATUSES = new Set(["Pending", "Confirmed", "Preparing", "Ready for Pickup", "Completed", "Picked Up", "Cancelled"]);
 const STATUS_TRANSITIONS = {
 	Pending: new Set(["Confirmed", "Cancelled"]),
@@ -135,6 +205,14 @@ function centsToAmount(cents) {
 	return `${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
 }
 
+// Calendar-day arithmetic on a YYYY-MM-DD date. It deliberately works in UTC:
+// the value is a date, not an instant, so the server's own time zone never
+// enters the calculation.
+function addCalendarDays(date, days) {
+	const [year, month, day] = date.split("-").map(Number);
+	return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 function parsePasswordHash(encoded) {
 	if (typeof encoded !== "string") return null;
 	const match = /^scrypt\$([a-f0-9]{32,})\$([a-f0-9]{128})$/i.exec(encoded);
@@ -215,23 +293,80 @@ function createPublicRateLimiter(limits = DEFAULT_PUBLIC_RATE_LIMITS) {
 }
 
 function createOrderRouter(pool, {
-	ownerPasswordHash = process.env.OWNER_PASSWORD_HASH,
+	ownerPasswordHash = DEFAULT_OWNER_PASSWORD_HASH,
 	sessionSecret = process.env.OWNER_SESSION_SECRET,
 	allowedOrigins = [],
-	secureCookies = process.env.NODE_ENV === "production",
+	isOriginAllowed = null,
+	secureCookies = isCrossOriginDeployment(),
 	publicRateLimits = DEFAULT_PUBLIC_RATE_LIMITS,
+	ownerResetDeliver,
 } = {}) {
 	const router = express.Router();
 	const allowedOriginSet = new Set(allowedOrigins);
-	const passwordHash = parsePasswordHash(ownerPasswordHash);
+	const passwordHash = null;
+	const initialPasswordHash = ownerPasswordHash !== DEFAULT_OWNER_PASSWORD_HASH ? parsePasswordHash(ownerPasswordHash) : parsePasswordHash(process.env.OWNER_PASSWORD_HASH);
+
+	// Reads the owner password credential on each call. When an explicit hash
+	// was passed to the router constructor (as in tests), use it directly.
+	// Otherwise read the environment variable so changes to OWNER_PASSWORD_HASH
+	// take effect without restarting the router.
+	async function readOwnerPasswordHash() {
+		// Database credential row wins over the environment variable.
+		try {
+			const row = await pool.query("SELECT password_hash FROM owner_credentials WHERE singleton = true");
+			if (row.rowCount === 1 && row.rows[0].password_hash) {
+				return { hash: parsePasswordHash(row.rows[0].password_hash), source: "owner_credentials table" };
+			}
+		} catch (error) {
+			// Only a database that does not have the owner_credentials table yet
+			// may fall back to the configured password. Every other failure (a
+			// connection problem, a permission error, a broken query) must
+			// surface, so a stale environment password can never be accepted
+			// because the credential lookup quietly failed.
+			if (!isMissingRelationError(error)) throw error;
+		}
+		// Explicit constructor-supplied credential takes precedence over env.
+		if (ownerPasswordHash !== DEFAULT_OWNER_PASSWORD_HASH) {
+			return { hash: parsePasswordHash(ownerPasswordHash), source: "explicit constructor option" };
+		}
+		// Otherwise read the environment variable so changes to
+		// OWNER_PASSWORD_HASH take effect without restarting the router.
+		const hash = process.env.OWNER_PASSWORD_HASH;
+		return hash ? { hash: parsePasswordHash(hash), source: "OWNER_PASSWORD_HASH environment variable" } : { hash: null, source: "none" };
+	}
 	const rateLimit = createPublicRateLimiter(publicRateLimits);
+	// A caller that supplies its own limits may leave the reset entry out. The
+	// default still applies, so the password reset routes are never unlimited.
+	const resetRateLimit = rateLimit("reset", publicRateLimits.reset || DEFAULT_PUBLIC_RATE_LIMITS.reset);
+	// The missing-provider and missing-recipient warnings are logged once per
+	// process rather than once per request: the reset request route is
+	// unauthenticated, so a caller could otherwise flood the log.
+	const resetWarnings = new Set();
+	function warnResetOnce(key, message) {
+		if (resetWarnings.has(key)) return;
+		resetWarnings.add(key);
+		console.warn(message);
+	}
 	const configuredSessionSecret = typeof sessionSecret === "string" && sessionSecret.length >= 32
 		? sessionSecret
 		: null;
 
 	function requireAllowedOrigin(req, res, next) {
 		const origin = req.get("Origin");
-		if (!origin || !allowedOriginSet.has(origin)) {
+		// A request without an Origin header is not a browser request from an
+		// allowed page, so it is refused exactly as before.
+		if (!origin) {
+			return next(apiError(403, "ORIGIN_NOT_ALLOWED", "This request origin is not allowed."));
+		}
+		// When the server hands in its own checker, it is the one that decides:
+		// it is the same function the CORS middleware uses, so the route guard
+		// can never disagree with CORS. In production that checker accepts only
+		// the explicit origin list, so nothing is widened there. Without it only
+		// the configured origin list is accepted.
+		const allowed = typeof isOriginAllowed === "function"
+			? isOriginAllowed(origin)
+			: allowedOriginSet.has(origin);
+		if (!allowed) {
 			return next(apiError(403, "ORIGIN_NOT_ALLOWED", "This request origin is not allowed."));
 		}
 		next();
@@ -377,8 +512,14 @@ function createOrderRouter(pool, {
 				responseStatus = 200;
 			} else {
 				const productIds = order.items.map(item => item.productId);
+				// An unpublished product must not be orderable, even when the
+				// customer still has it in a cart. The column only exists once the
+				// owner migration has been applied, so the filter is added only
+				// when the database actually has it.
+				const visibilitySupported = await productVisibilitySupported(client);
+				const visibilityFilter = visibilitySupported ? "AND is_published = true" : "";
 				const productsResult = await client.query(
-					"SELECT id, name, price::text AS price FROM products WHERE id = ANY($1::integer[]) ORDER BY id FOR SHARE",
+					`SELECT id, name, price::text AS price FROM products WHERE id = ANY($1::integer[]) ${visibilityFilter} ORDER BY id FOR SHARE`,
 					[productIds],
 				);
 				const products = new Map(productsResult.rows.map(product => [Number(product.id), product]));
@@ -403,6 +544,37 @@ function createOrderRouter(pool, {
 					};
 				});
 				const total = centsToAmount(totalCents);
+				// Stock is deducted inside this same transaction, one guarded
+				// UPDATE per item: the WHERE requires the quantity to still be in
+				// stock, so a row is only touched when the deduction succeeds.
+				// The retry path above (an order that already existed under this
+				// idempotency key) returns early and never reaches this loop, so a
+				// retried checkout never deducts twice. Concurrent checkouts of
+				// the same product serialise on the row lock, and the SQL re-checks
+				// its stock-above-quantity condition against the latest committed
+				// row when the lock is granted.
+				for (const item of pricedItems) {
+					const deducted = await client.query(
+						"UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 RETURNING stock",
+						[item.quantity, item.productId],
+					);
+					if (deducted.rowCount === 0) {
+						// Fetch the current stock so the response can say what the
+						// customer could actually order. A missing row means the
+						// product vanished between the pricing read and this write.
+						const available = await client.query(
+							"SELECT stock::int AS stock FROM products WHERE id = $1",
+							[item.productId],
+						);
+						const conflict = new Error("insufficient_stock");
+						conflict.stockConflict = {
+							product_id: item.productId,
+							product_name: item.productName,
+							available: available.rows.length ? available.rows[0].stock : null,
+						};
+						throw conflict;
+					}
+				}
 				const inserted = await client.query(
 					`INSERT INTO orders (
 						customer_name, customer_contact, pickup_type, pickup_date, pickup_time,
@@ -454,6 +626,13 @@ function createOrderRouter(pool, {
 				} catch (rollbackError) {
 					console.error("Order transaction rollback failed:", safeDatabaseErrorCode(rollbackError));
 				}
+			}
+			// An out-of-stock conflict is a documented, client-answerable
+			// outcome, not a server fault: the whole order (including every item
+			// deducted so far) rolled back above, and the payload names the
+			// product and its real remaining stock.
+			if (error && error.stockConflict) {
+				return res.status(409).json({ error: "insufficient_stock", ...error.stockConflict });
 			}
 			next(error);
 		} finally {
@@ -563,7 +742,8 @@ function createOrderRouter(pool, {
 	router.post("/owner/login", requireAllowedOrigin, requireCsrf, async (req, res, next) => {
 		let clientKeyHash;
 		try {
-			if (!passwordHash || !configuredSessionSecret) {
+			const { hash: currentHash } = await readOwnerPasswordHash();
+				if (!currentHash || !configuredSessionSecret) {
 				throw apiError(503, "OWNER_AUTH_NOT_CONFIGURED", "Owner authentication is not configured.");
 			}
 			clientKeyHash = await applyLoginRateLimit(req);
@@ -571,8 +751,8 @@ function createOrderRouter(pool, {
 			if (suppliedPassword.length > 1024) {
 				throw apiError(401, "INVALID_OWNER_CREDENTIALS", "Invalid owner credentials.");
 			}
-			const suppliedHash = await scrypt(suppliedPassword, passwordHash.salt, passwordHash.hash.length);
-			if (!safeEqual(suppliedHash, passwordHash.hash)) {
+			const suppliedHash = await scrypt(suppliedPassword, currentHash.salt, currentHash.hash.length);
+			if (!safeEqual(suppliedHash, currentHash.hash)) {
 				throw apiError(401, "INVALID_OWNER_CREDENTIALS", "Invalid owner credentials.");
 			}
 
@@ -611,7 +791,595 @@ function createOrderRouter(pool, {
 		return res.json({ authenticated: true, csrf_token: csrfToken });
 	});
 
+	router.post("/owner/password/reset-request", resetRateLimit, requireAllowedOrigin, async (req, res, next) => {
+		try {
+			const contactRow = await pool.query("SELECT email FROM owner_contact WHERE singleton = true");
+			let recipientEmail = contactRow.rowCount === 1 ? contactRow.rows[0].email : null;
+			if (!recipientEmail) {
+				recipientEmail = process.env.OWNER_CONTACT_EMAIL || null;
+			}
+			// A reset link can only be sent when there is both a provider and
+			// somewhere to send it.
+			const deliveryConfigured = Boolean(ownerResetDeliver) && Boolean(recipientEmail);
+			// Every outcome answers with the same generic message and the same
+			// shape, so a caller can never learn whether a reset was possible,
+			// whether a mail was sent, or anything about the owner account.
+			const respond = (delivered) => res.status(200).json({
+				message: GENERIC_RESET_REQUEST_MESSAGE,
+				requested: true,
+				delivery_configured: deliveryConfigured,
+				delivered,
+			});
+
+			if (!ownerResetDeliver) {
+				warnResetOnce(
+					"no-delivery-provider",
+					"Owner password reset requests are accepted, but no delivery provider is configured, so no reset link can be sent.",
+				);
+				return respond(false);
+			}
+			if (!recipientEmail) {
+				warnResetOnce(
+					"no-recipient-address",
+					"Owner password reset requests are accepted, but no recipient address is configured, so no reset link can be sent.",
+				);
+				return respond(false);
+			}
+
+			const token = generateResetToken();
+			const tokenHash = hashResetToken(token);
+			const expiresAt = resetTokenExpiry();
+
+			// A pool owns no transaction of its own: BEGIN and COMMIT issued as
+			// separate pool.query calls run on different connections, so they
+			// cannot wrap the cleanup and the insert. Both statements stand on
+			// their own instead.
+			await pool.query("DELETE FROM owner_reset_tokens WHERE consumed_at IS NOT NULL");
+			await pool.query(
+				"INSERT INTO owner_reset_tokens (token_hash, expires_at) VALUES ($1, $2)",
+				[tokenHash, expiresAt]
+			);
+
+			try {
+				await ownerResetDeliver({ token, recipient: recipientEmail });
+				return respond(true);
+			} catch (deliveryError) {
+				// The link was never sent, so the token must not stay usable.
+				await pool.query("DELETE FROM owner_reset_tokens WHERE token_hash = $1", [tokenHash]);
+				// Only a non-sensitive code is logged. The token, the recipient
+				// and anything the provider said about the message never are.
+				console.warn("Owner password reset email could not be sent.", {
+					code: deliveryError && deliveryError.code
+						? String(deliveryError.code).slice(0, 32)
+						: "DELIVERY_FAILED",
+				});
+				return respond(false);
+			}
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	router.post("/owner/password/reset", resetRateLimit, requireAllowedOrigin, async (req, res, next) => {
+		let client;
+		try {
+			const { token, new_password, confirm_password } = req.body || {};
+			if (!token || typeof token !== "string") {
+				throw apiError(400, "RESET_TOKEN_REQUIRED", "A reset token is required.");
+			}
+
+			client = await pool.connect();
+			try {
+				await client.query("BEGIN");
+
+				const tokenRow = await client.query(
+					"SELECT token_hash, expires_at, consumed_at FROM owner_reset_tokens WHERE token_hash = $1 FOR UPDATE",
+					[hashResetToken(token)]
+				);
+				// One message for every way a link can be unusable, so a caller
+				// cannot tell a used link from an expired one.
+				if (tokenRow.rowCount === 0) {
+					throw apiError(400, "INVALID_RESET_TOKEN", RESET_TOKEN_UNUSABLE_MESSAGE);
+				}
+				const stored = tokenRow.rows[0];
+				if (stored.consumed_at !== null) {
+					throw apiError(400, "RESET_TOKEN_CONSUMED", RESET_TOKEN_UNUSABLE_MESSAGE);
+				}
+				const expiry = new Date(stored.expires_at);
+				if (expiry <= new Date()) {
+					throw apiError(400, "RESET_TOKEN_EXPIRED", RESET_TOKEN_UNUSABLE_MESSAGE);
+				}
+
+				const passwordValidation = validatePasswordPolicy(new_password);
+				if (!passwordValidation.valid) {
+					throw apiError(400, "WEAK_PASSWORD", passwordValidation.reason);
+				}
+				if (new_password !== confirm_password) {
+					throw apiError(400, "PASSWORD_MISMATCH", "The new password and confirmation do not match.");
+				}
+
+				const newSalt = crypto.randomBytes(16);
+				const newHash = await scrypt(new_password, newSalt, 64);
+				const newEncodedHash = `scrypt$${newSalt.toString("hex")}$${newHash.toString("hex")}`;
+
+				const consumedResult = await client.query(
+					"DELETE FROM owner_reset_tokens WHERE token_hash = $1 AND consumed_at IS NULL",
+					[hashResetToken(token)]
+				);
+				if (consumedResult.rowCount === 0) {
+					throw apiError(400, "RESET_TOKEN_CONSUMED", "This reset token has already been used.");
+				}
+
+				await client.query(
+					"INSERT INTO owner_credentials (singleton, password_hash, updated_at) VALUES (true, $1, CURRENT_TIMESTAMP) ON CONFLICT (singleton) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = CURRENT_TIMESTAMP",
+					[newEncodedHash]
+				);
+				await client.query("DELETE FROM owner_sessions");
+
+				await client.query("COMMIT");
+
+				res.set("Cache-Control", "no-store");
+				return res.json({ reset: true, message: "Password reset successfully.", sessions_revoked: true });
+			} catch (error) {
+				await client.query("ROLLBACK");
+				throw error;
+			} finally {
+				client.release();
+			}
+		} catch (error) {
+			next(error);
+		}
+	});
+
 	router.use("/owner", requireAllowedOrigin, requireOwner);
+
+	// --- product images --------------------------------------------------------
+	// The photo is uploaded first and the SAVED path is what goes into the
+	// product, never a blob URL. The bytes are stored in the database so they
+	// survive a redeploy.
+	router.post("/owner/product-images", requireCsrf, async (req, res, next) => {
+		try {
+			const body = req.body && typeof req.body === "object" ? req.body : {};
+			const decoded = decodeDataUrl(body.image);
+			if (decoded.error) {
+				return res.status(400).json({ error: decoded.error, code: "INVALID_IMAGE_DATA" });
+			}
+			const validated = validateImageBytes(decoded.bytes);
+			if (!validated.valid) {
+				return res.status(400).json({ error: validated.error, code: "INVALID_IMAGE" });
+			}
+			// The decoded size is the limit that matters, never the body size.
+			if (validated.bytes.length > MAX_PRODUCT_IMAGE_BYTES) {
+				return res.status(400).json({
+					error: "Images must be 5 MB or smaller.",
+					code: "IMAGE_TOO_LARGE",
+				});
+			}
+			const stored = await saveImageToDatabase(pool, {
+				bytes: validated.bytes,
+				ext: validated.ext,
+				mime: validated.mime,
+			});
+			if (!stored.ok) {
+				// A store that is not configured is a server-side gap, not a bad
+				// request: the file was fine, there is just nowhere to put it.
+				const status = stored.code === "IMAGE_STORE_UNAVAILABLE" ? 503 : 400;
+				return res.status(status).json({ error: stored.error, code: stored.code });
+			}
+			return res.status(201).json({ image: stored.publicPath });
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	// --- product management ----------------------------------------------------
+	// The dashboard sends the filters it uses: search, category,
+	// include_unpublished, limit and offset. "include_unpublished" is only
+	// sent when the owner does NOT want hidden products, so an absent
+	// parameter means "include them".
+
+	function productIdFromParam(value) {
+		if (typeof value !== "string" || !/^[1-9]\d{0,9}$/.test(value) || Number(value) > 2147483647) {
+			throw apiError(400, "INVALID_PRODUCT_ID", "Enter a valid product ID.");
+		}
+		return Number(value);
+	}
+
+	function productListLimit(value) {
+		const parsed = Number.parseInt(String(value === undefined || value === null ? "" : value), 10);
+		if (!Number.isInteger(parsed) || parsed < 1) return 100;
+		return Math.min(parsed, 500);
+	}
+
+	function productListOffset(value) {
+		const parsed = Number.parseInt(String(value === undefined || value === null ? "" : value), 10);
+		if (!Number.isInteger(parsed) || parsed < 0) return 0;
+		return parsed;
+	}
+
+	// The columns the owner dashboard reads. The visibility and threshold
+	// columns only exist once their migrations have been applied, so each is
+	// only selected when the database actually has it.
+	function productColumns(visibilitySupported, thresholdSupported = false) {
+		const columns = "id, name, category, price::text AS price, original_price::text AS original_price, stock, image, description";
+		const extras = [visibilitySupported ? "is_published" : "", thresholdSupported ? "low_stock_threshold" : ""]
+			.filter(Boolean);
+		return extras.length ? `${columns}, ${extras.join(", ")}` : columns;
+	}
+
+	function normalizeProductRow(row, visibilitySupported, thresholdSupported = false) {
+		const product = {
+			id: Number(row.id),
+			name: row.name,
+			category: row.category,
+			price: row.price,
+			original_price: row.original_price,
+			stock: Number(row.stock || 0),
+			image: row.image,
+			description: row.description,
+		};
+		if (visibilitySupported) product.is_published = row.is_published !== false;
+		if (thresholdSupported) product.low_stock_threshold = Number(row.low_stock_threshold ?? 5);
+		return product;
+	}
+
+	async function readProductRow(id, visibilitySupported, thresholdSupported = false) {
+		const result = await pool.query(
+			`SELECT ${productColumns(visibilitySupported, thresholdSupported)} FROM products WHERE id = $1`,
+			[id],
+		);
+		return result.rows[0] || null;
+	}
+
+	// A product may only point at an image that was really uploaded, so the
+	// path has to exist in the store.
+	async function confirmStoredImage(imagePath) {
+		if (typeof imagePath !== "string" || !imagePath.startsWith("/product-images/")) {
+			return { ok: true };
+		}
+		const name = imageNameFromPublicPath(imagePath);
+		if (!name) {
+			return { ok: false, error: "That uploaded image path is not valid.", code: "INVALID_IMAGE_PATH" };
+		}
+		try {
+			const result = await pool.query(
+				"SELECT count(*)::int AS n FROM product_images WHERE name = $1",
+				[name],
+			);
+			if (!result.rows[0] || Number(result.rows[0].n) === 0) {
+				return { ok: false, error: "That image has not been uploaded.", code: "IMAGE_NOT_FOUND" };
+			}
+		} catch {
+			return { ok: false, error: "That image has not been uploaded.", code: "IMAGE_NOT_FOUND" };
+		}
+		return { ok: true };
+	}
+
+	router.get("/owner/products", async (req, res, next) => {
+		try {
+			const visibilitySupported = await productVisibilitySupported(pool);
+			const thresholdSupported = await productLowStockThresholdSupported(pool);
+			const search = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 100) : "";
+			const category = typeof req.query.category === "string" ? req.query.category.trim().slice(0, 100) : "";
+			const includeUnpublished = req.query.include_unpublished !== "false";
+			const limit = productListLimit(req.query.limit);
+			const offset = productListOffset(req.query.offset);
+
+			const conditions = [];
+			const params = [];
+			if (!includeUnpublished && visibilitySupported) {
+				conditions.push("is_published = true");
+			}
+			if (search) {
+				params.push(`%${search.toLowerCase()}%`);
+				const needle = `$${params.length}`;
+				conditions.push(
+					`(lower(name) LIKE ${needle} OR lower(COALESCE(category, '')) LIKE ${needle} OR lower(COALESCE(description, '')) LIKE ${needle})`,
+				);
+			}
+			if (category) {
+				params.push(category.toLowerCase());
+				conditions.push(`lower(COALESCE(category, '')) = $${params.length}`);
+			}
+			params.push(limit);
+			const limitParam = params.length;
+			params.push(offset);
+			const offsetParam = params.length;
+			const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+			// Every value is a bound parameter; nothing from the request is
+			// interpolated into the statement.
+			const result = await pool.query(
+				`SELECT ${productColumns(visibilitySupported, thresholdSupported)} FROM products ${where} ORDER BY id LIMIT $${limitParam} OFFSET $${offsetParam}`,
+				params,
+			);
+			return res.json({
+				visibility_supported: visibilitySupported,
+				low_stock_threshold_supported: thresholdSupported,
+				products: result.rows.map(row => normalizeProductRow(row, visibilitySupported, thresholdSupported)),
+			});
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	router.post("/owner/products", requireCsrf, async (req, res, next) => {
+		try {
+			const body = req.body && typeof req.body === "object" ? req.body : {};
+			const normalized = normalizeProductPayload(body, { partial: false });
+			if (!normalized.valid) {
+				return res.status(400).json({ error: normalized.error, code: "INVALID_PRODUCT" });
+			}
+			const value = normalized.value;
+			const visibilitySupported = await productVisibilitySupported(pool);
+			const thresholdSupported = await productLowStockThresholdSupported(pool);
+			// A new product is published unless the owner says otherwise.
+			const isPublished = body.is_published === undefined ? true : body.is_published !== false;
+			if (value.image) {
+				const imageCheck = await confirmStoredImage(value.image);
+				if (!imageCheck.ok) {
+					return res.status(400).json({ error: imageCheck.error, code: imageCheck.code });
+				}
+			}
+
+			const columns = ["name", "category", "price", "original_price", "stock", "image", "description"];
+			const params = [
+				value.name,
+				value.category === undefined ? null : value.category,
+				value.price,
+				value.original_price === undefined ? null : value.original_price,
+				value.stock,
+				value.image === undefined ? null : value.image,
+				value.description === undefined ? null : value.description,
+			];
+			if (visibilitySupported) {
+				columns.push("is_published");
+				params.push(isPublished);
+			}
+			// An initial low-stock threshold is only written when the column
+			// exists; the database default (5) covers an omitted value.
+			if (thresholdSupported && value.low_stock_threshold !== undefined) {
+				columns.push("low_stock_threshold");
+				params.push(value.low_stock_threshold);
+			}
+			const placeholders = columns.map((column, index) => `$${index + 1}`).join(", ");
+			const inserted = await pool.query(
+				`INSERT INTO products (${columns.join(", ")}) VALUES (${placeholders}) RETURNING id`,
+				params,
+			);
+			const created = await readProductRow(inserted.rows[0].id, visibilitySupported, thresholdSupported);
+			return res.status(201).json({ product: normalizeProductRow(created, visibilitySupported, thresholdSupported) });
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	router.patch("/owner/products/:id", requireCsrf, async (req, res, next) => {
+		try {
+			const id = productIdFromParam(req.params.id);
+			const body = req.body && typeof req.body === "object" ? req.body : {};
+			// Editing keeps the product's existing photo: the dashboard round-trips
+			// the stored value back in the PATCH body. A value exactly equal to the
+			// stored image is a no-op and skips URL validation, because legacy rows
+			// carry plain relative paths that the validator rejects. New or changed
+			// values are still fully validated. Creates are not affected.
+			const currentImageQuery = await pool.query("SELECT image FROM products WHERE id = $1", [id]);
+			const currentImage = currentImageQuery.rows.length === 1 ? currentImageQuery.rows[0].image : undefined;
+			const normalized = normalizeProductPayload(body, { partial: true, currentImage });
+			if (!normalized.valid) {
+				return res.status(400).json({ error: normalized.error, code: "INVALID_PRODUCT" });
+			}
+			const value = normalized.value;
+			const visibilitySupported = await productVisibilitySupported(pool);
+			const thresholdSupported = await productLowStockThresholdSupported(pool);
+			// A threshold can only be stored once the column exists; before the
+			// stock migration it is dropped exactly like an unknown field.
+			if (!thresholdSupported) delete value.low_stock_threshold;
+			const existing = await readProductRow(id, visibilitySupported, thresholdSupported);
+			if (!existing) {
+				return res.status(404).json({ error: "Product not found", code: "PRODUCT_NOT_FOUND" });
+			}
+			if (value.image) {
+				const imageCheck = await confirmStoredImage(value.image);
+				if (!imageCheck.ok) {
+					return res.status(400).json({ error: imageCheck.error, code: imageCheck.code });
+				}
+			}
+
+			const sets = [];
+			const params = [];
+			// The column names come from the normaliser, never from the request.
+			for (const [column, entry] of Object.entries(value)) {
+				params.push(entry === undefined ? null : entry);
+				sets.push(`${column} = $${params.length}`);
+			}
+			if (visibilitySupported && body.is_published !== undefined) {
+				params.push(body.is_published !== false);
+				sets.push(`is_published = $${params.length}`);
+			}
+			if (sets.length > 0) {
+				params.push(id);
+				await pool.query(`UPDATE products SET ${sets.join(", ")} WHERE id = $${params.length}`, params);
+			}
+			const updated = await readProductRow(id, visibilitySupported, thresholdSupported);
+			// The photo the product no longer uses may be free to go.
+			if (value.image !== undefined && existing.image && existing.image !== value.image) {
+				await deleteImageIfUnused(pool, existing.image);
+			}
+			return res.status(200).json({ product: normalizeProductRow(updated, visibilitySupported, thresholdSupported) });
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	// --- corrective stock changes ----------------------------------------------
+	// A dedicated stock endpoint so a quick +/- can never be coupled to a whole
+	// product payload: one small, validated UPDATE per call, and the floor at
+	// zero is enforced in the SQL itself, so a concurrent checkout deducting
+	// the last unit cannot push the number negative between the validation and
+	// the write. The response is the same product shape the list route sends.
+	router.patch("/owner/products/:id/stock", requireCsrf, async (req, res, next) => {
+		try {
+			const id = productIdFromParam(req.params.id);
+			const body = req.body && typeof req.body === "object" && !Array.isArray(req.body) ? req.body : {};
+			const hasDelta = body.delta !== undefined;
+			const hasSet = body.set !== undefined;
+			if (hasDelta && hasSet) {
+				return res.status(400).json({
+					error: "Provide either a stock delta or a stock set value, not both.",
+					code: "INVALID_STOCK_CHANGE",
+				});
+			}
+			if (!hasDelta && !hasSet) {
+				return res.status(400).json({
+					error: "Provide a stock change as either a delta or a set value.",
+					code: "INVALID_STOCK_CHANGE",
+				});
+			}
+			const change = Number(hasDelta ? body.delta : body.set);
+			if (typeof change !== "number" || !Number.isSafeInteger(change)) {
+				return res.status(400).json({
+					error: "The stock change must be a whole number.",
+					code: "INVALID_STOCK_CHANGE",
+				});
+			}
+			if (hasSet && change < 0) {
+				return res.status(400).json({
+					error: "The stock quantity cannot be negative.",
+					code: "INVALID_STOCK_CHANGE",
+				});
+			}
+			if (Math.abs(change) > MAX_STOCK) {
+				return res.status(400).json({
+					error: "That stock change is too large.",
+					code: "INVALID_STOCK_CHANGE",
+				});
+			}
+
+			const visibilitySupported = await productVisibilitySupported(pool);
+			const thresholdSupported = await productLowStockThresholdSupported(pool);
+			const statement = hasDelta
+				? `UPDATE products SET stock = GREATEST(stock + $1, 0) WHERE id = $2 RETURNING ${productColumns(visibilitySupported, thresholdSupported)}`
+				: `UPDATE products SET stock = $1 WHERE id = $2 RETURNING ${productColumns(visibilitySupported, thresholdSupported)}`;
+			const updated = await pool.query(statement, [change, id]);
+			if (updated.rowCount === 0) {
+				return res.status(404).json({ error: "Product not found", code: "PRODUCT_NOT_FOUND" });
+			}
+			return res.json({
+				product: normalizeProductRow(updated.rows[0], visibilitySupported, thresholdSupported),
+			});
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	router.delete("/owner/products/:id", requireCsrf, async (req, res, next) => {
+		let client;
+		try {
+			const id = productIdFromParam(req.params.id);
+			const body = req.body && typeof req.body === "object" ? req.body : {};
+			if (body.confirm !== "DELETE") {
+				return res.status(400).json({
+					error: 'Type DELETE to confirm removing this product.',
+					code: "CONFIRMATION_REQUIRED",
+				});
+			}
+			client = await pool.connect();
+			await client.query("BEGIN");
+			// The row is locked for the rest of the transaction, and the checkout
+			// locks products FOR SHARE, so an order arriving at the same moment
+			// cannot slip between the reference check and the delete.
+			const locked = await client.query(
+				"SELECT id, image FROM products WHERE id = $1 FOR UPDATE",
+				[id],
+			);
+			if (locked.rows.length === 0) {
+				await client.query("ROLLBACK");
+				return res.status(404).json({ error: "Product not found", code: "PRODUCT_NOT_FOUND" });
+			}
+			const referenced = await client.query(
+				"SELECT count(*)::int AS n FROM order_items WHERE product_id = $1",
+				[id],
+			);
+			if (referenced.rows[0] && Number(referenced.rows[0].n) > 0) {
+				await client.query("ROLLBACK");
+				return res.status(409).json({
+					error: "This product is referenced by an order item and cannot be deleted.",
+					code: "PRODUCT_IN_USE",
+				});
+			}
+			await client.query("DELETE FROM products WHERE id = $1", [id]);
+			await client.query("COMMIT");
+			const image = locked.rows[0].image;
+			if (image) {
+				await deleteImageIfUnused(pool, image);
+			}
+			return res.json({ deleted: true, id });
+		} catch (error) {
+			if (client) {
+				try {
+					await client.query("ROLLBACK");
+				} catch {
+					// The transaction is already gone; the original error is what matters.
+				}
+			}
+			next(error);
+		} finally {
+			if (client) client.release();
+		}
+	});
+
+	// --- password change -------------------------------------------------------
+	// The owner changes the password from the dashboard, so the current one must
+	// be proven and every session is revoked afterwards.
+	router.post("/owner/password", requireCsrf, async (req, res, next) => {
+		let clientKeyHash;
+		try {
+			const body = req.body && typeof req.body === "object" ? req.body : {};
+			const currentPassword = typeof body.current_password === "string" ? body.current_password : "";
+			const newPassword = typeof body.new_password === "string" ? body.new_password : "";
+			const confirmation = typeof body.confirm_password === "string" ? body.confirm_password : "";
+			const validation = validatePasswordChange(currentPassword, newPassword, confirmation);
+			if (!validation.valid) {
+				return res.status(400).json({ error: validation.error, code: validation.code });
+			}
+			const { hash: currentHash } = await readOwnerPasswordHash();
+			if (!currentHash) {
+				throw apiError(503, "OWNER_AUTH_NOT_CONFIGURED", "Owner authentication is not configured.");
+			}
+			// The same limit the login uses: a stolen session must not be able to
+			// brute force the current password.
+			clientKeyHash = await applyLoginRateLimit(req);
+			const suppliedHash = await scrypt(currentPassword, currentHash.salt, currentHash.hash.length);
+			if (!safeEqual(suppliedHash, currentHash.hash)) {
+				return res.status(401).json({
+					error: "The current password is not correct.",
+					code: "INVALID_CURRENT_PASSWORD",
+				});
+			}
+
+			const newHash = await hashOwnerPassword(newPassword);
+			await pool.query(
+				"INSERT INTO owner_credentials (singleton, password_hash, updated_at) VALUES (true, $1, CURRENT_TIMESTAMP) ON CONFLICT (singleton) DO UPDATE SET password_hash = EXCLUDED.password_hash, updated_at = EXCLUDED.updated_at",
+				[newHash],
+			);
+			// Every session is revoked, including the caller's.
+			await pool.query("DELETE FROM owner_sessions");
+			await pool.query("DELETE FROM owner_login_attempts WHERE client_key_hash = $1", [clientKeyHash]);
+
+			res.set("Cache-Control", "no-store");
+			res.set("Set-Cookie", [
+				serializeCookie(SESSION_COOKIE, "", { maxAge: 0, httpOnly: true, secure: secureCookies }),
+				serializeCookie(CSRF_COOKIE, "", { maxAge: 0, secure: secureCookies }),
+			]);
+			return res.json({
+				changed: true,
+				sessions_revoked: true,
+				message: "Your password has been changed. Please log in again.",
+			});
+		} catch (error) {
+			next(error);
+		}
+	});
 
 	router.post("/owner/logout", requireCsrf, async (req, res, next) => {
 		try {
@@ -622,6 +1390,94 @@ function createOrderRouter(pool, {
 				serializeCookie(CSRF_COOKIE, "", { maxAge: 0, secure: secureCookies }),
 			]);
 			return res.json({ authenticated: false });
+		} catch (error) {
+			next(error);
+		}
+	});
+
+	router.get("/owner/sales", async (req, res, next) => {
+		try {
+			// Orders are counted by the date they were placed, in the business
+			// time zone. orders.created_at is TIMESTAMP WITHOUT TIME ZONE and
+			// stores UTC, so it is read as UTC first and then converted to
+			// Australia/Melbourne. All boundaries are worked out once, in
+			// Melbourne, and handed to the database as date parameters so a
+			// daylight-saving change is resolved by the database zone data.
+			const melbourneToday = melbourneNow().date;
+			const weekday = new Date(`${melbourneToday}T00:00:00.000Z`).getUTCDay();
+			const weekStart = addCalendarDays(melbourneToday, -((weekday + 6) % 7));
+			const monthStart = `${melbourneToday.slice(0, 8)}01`;
+			const dailyStart = addCalendarDays(melbourneToday, -13);
+
+			const totals = await pool.query(
+				`WITH dated AS (
+					SELECT total, status,
+						(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date AS order_date
+					FROM orders
+				)
+				SELECT
+					COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled' AND order_date = $1::date), 0)::numeric(18,2)::text AS today_sales,
+					COUNT(*) FILTER (WHERE status <> 'Cancelled' AND order_date = $1::date)::int AS today_orders,
+					COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up' AND order_date = $1::date), 0)::numeric(18,2)::text AS today_collected,
+					COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled' AND order_date >= $2::date AND order_date <= $1::date), 0)::numeric(18,2)::text AS week_sales,
+					COUNT(*) FILTER (WHERE status <> 'Cancelled' AND order_date >= $2::date AND order_date <= $1::date)::int AS week_orders,
+					COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up' AND order_date >= $2::date AND order_date <= $1::date), 0)::numeric(18,2)::text AS week_collected,
+					COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled' AND order_date >= $3::date AND order_date <= $1::date), 0)::numeric(18,2)::text AS month_sales,
+					COUNT(*) FILTER (WHERE status <> 'Cancelled' AND order_date >= $3::date AND order_date <= $1::date)::int AS month_orders,
+					COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up' AND order_date >= $3::date AND order_date <= $1::date), 0)::numeric(18,2)::text AS month_collected,
+					COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled'), 0)::numeric(18,2)::text AS all_sales,
+					COUNT(*) FILTER (WHERE status <> 'Cancelled')::int AS all_orders,
+					COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up'), 0)::numeric(18,2)::text AS all_collected
+				FROM dated`,
+				[melbourneToday, weekStart, monthStart],
+			);
+
+			const dailySales = await pool.query(
+				`SELECT to_char(
+						(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date,
+						'YYYY-MM-DD'
+					) AS date,
+					SUM(total)::numeric(18,2)::text AS sales
+				FROM orders
+				WHERE status <> 'Cancelled'
+					AND (created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date BETWEEN $2::date AND $1::date
+				GROUP BY 1
+				ORDER BY 1`,
+				[melbourneToday, dailyStart],
+			);
+			const salesByDate = new Map(dailySales.rows.map(row => [row.date, row.sales]));
+			const daily = [];
+			for (let offset = 0; offset < 14; offset += 1) {
+				const date = addCalendarDays(dailyStart, offset);
+				daily.push({ date, sales: salesByDate.get(date) || "0.00" });
+			}
+
+			const summary = totals.rows[0];
+			res.set("Cache-Control", "no-store");
+			return res.json({
+				today: {
+					sales: summary.today_sales,
+					orders: summary.today_orders,
+					collected: summary.today_collected,
+				},
+				this_week: {
+					sales: summary.week_sales,
+					orders: summary.week_orders,
+					collected: summary.week_collected,
+				},
+				this_month: {
+					sales: summary.month_sales,
+					orders: summary.month_orders,
+					collected: summary.month_collected,
+				},
+				all_time: {
+					sales: summary.all_sales,
+					orders: summary.all_orders,
+					collected: summary.all_collected,
+				},
+				daily,
+				melbourne_today: melbourneToday,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -649,8 +1505,35 @@ function createOrderRouter(pool, {
 				LIMIT $${status ? 2 : 1} OFFSET $${status ? 3 : 2}`,
 				params,
 			);
+			const itemsByOrder = new Map();
+			if (result.rows.length > 0) {
+				const items = await pool.query(
+					`SELECT oi.order_id::text AS order_id,
+						COALESCE(oi.product_name, p.name, 'Product') AS product_name,
+						COALESCE(oi.unit_price, oi.price)::text AS unit_price,
+						oi.quantity, oi.subtotal::text AS subtotal
+					FROM order_items oi
+					LEFT JOIN products p ON p.id = oi.product_id
+					WHERE oi.order_id::text = ANY($1::text[])
+					ORDER BY oi.order_id, oi.id`,
+					[result.rows.map(order => order.id)],
+				);
+				for (const item of items.rows) {
+					const { order_id: orderId, ...orderItem } = item;
+					const existing = itemsByOrder.get(orderId);
+					if (existing) {
+						existing.push(orderItem);
+					} else {
+						itemsByOrder.set(orderId, [orderItem]);
+					}
+				}
+			}
 			res.set("Cache-Control", "no-store");
-			return res.json(result.rows.map(order => ({ ...order, order_number: `MS-${order.id}` })));
+			return res.json(result.rows.map(order => ({
+				...order,
+				order_number: `MS-${order.id}`,
+				items: itemsByOrder.get(String(order.id)) || [],
+			})));
 		} catch (error) {
 			next(error);
 		}
@@ -725,6 +1608,33 @@ function createOrderRouter(pool, {
 			) {
 				throw apiError(409, "CANCELLATION_REASON_IMMUTABLE", "The cancellation reason cannot be changed after cancellation.");
 			}
+			if (status === "Cancelled" && currentStatus !== "Cancelled") {
+				// Stock returns to the shelf exactly once: only when the order
+				// moves to Cancelled from a live status, inside this same
+				// transaction. Cancelled is terminal in STATUS_TRANSITIONS, so a
+				// later write cannot re-run this. Items are ordered by product id
+				// so concurrent restores always lock rows in the same sequence.
+				const items = await client.query(
+					"SELECT product_id, quantity FROM order_items WHERE order_id = $1 ORDER BY product_id",
+					[orderId],
+				);
+				for (const item of items.rows) {
+					const productId = Number(item.product_id);
+					const quantity = Number(item.quantity);
+					if (!Number.isSafeInteger(productId) || productId < 1
+						|| !Number.isSafeInteger(quantity) || quantity < 1) {
+						continue;
+					}
+					// A deleted product updates zero rows, which is correct: there
+				// is no shelf to return it to. A legacy row whose stock is NULL
+				// stays NULL (stock + NULL = NULL), matching the checkout rule
+				// that untracked stock is never deducted.
+				await client.query(
+					"UPDATE products SET stock = stock + $1 WHERE id = $2",
+					[quantity, productId],
+				);
+				}
+			}
 			if (status === "Cancelled") {
 				await client.query(
 					"UPDATE orders SET status = $1, cancellation_reason = $3 WHERE id = $2",
@@ -781,6 +1691,18 @@ function createOrderRouter(pool, {
 			code: "LEGACY_ADMIN_REMOVED",
 		});
 	});
+
+	// Describes the credential source in use, without exposing any secret value.
+	// Used by server.js startup logging and by operational checks.
+	router.describeOwnerCredentialSource = async function describeOwnerCredentialSource() {
+		const { hash: current, source } = await readOwnerPasswordHash();
+		const initial = initialPasswordHash;
+		return {
+			source: source || "none",
+			usable: !!current,
+			changedSinceStartup: initial && current ? !safeEqual(current.hash, initial.hash) : false,
+		};
+	};
 
 	return router;
 }
@@ -871,10 +1793,12 @@ async function orderMatchesRequest(queryable, existingOrder, requestFingerprint)
 
 async function loadOwnerOrder(queryable, orderId) {
 	const result = await queryable.query(
-		`SELECT id::text AS id, customer_name, customer_contact,
+		`SELECT id::text AS id, customer_name, customer_contact, customer_email,
 			pickup_date::text AS pickup_date,
 			COALESCE(NULLIF(pickup_time::text, ''), requested_pickup_time::text) AS pickup_time,
-			total::text AS total, status, cancellation_reason, created_at
+			total::text AS total, subtotal::text AS subtotal,
+			discount::text AS discount, shipping_fee::text AS shipping_fee,
+			status, cancellation_reason, created_at
 		FROM orders WHERE id = $1`,
 		[orderId],
 	);
@@ -893,6 +1817,20 @@ async function loadOwnerOrder(queryable, orderId) {
 	return { ...order, order_number: `MS-${order.id}`, items: items.rows };
 }
 
+
+function sameSiteFor(secure) {
+	return secure ? "None" : "Lax";
+}
+
+function isCrossOriginDeployment() {
+	const origins = (process.env.FRONTEND_ORIGINS || "")
+		.split(",")
+		.map(origin => origin.trim())
+		.filter(Boolean);
+	if (origins.length === 0) return true;
+	return origins.some(origin => !/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin));
+}
+
 module.exports = {
 	ALLOWED_STATUSES,
 	STATUS_TRANSITIONS,
@@ -901,4 +1839,7 @@ module.exports = {
 	createOrderRouter,
 	normalizeOrderRequest,
 	parsePasswordHash,
+	isCrossOriginDeployment,
+	sameSiteFor,
+	serializeCookie,
 };
