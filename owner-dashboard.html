@@ -3,62 +3,555 @@
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="robots" content="noindex, nofollow" />
 	<title>Maridel's Store — Owner Orders</title>
-	<style>
-		:root { font-family: Arial, sans-serif; color: #1f2937; background: #f4f6f8; }
-		body { max-width: 1000px; margin: 0 auto; padding: 24px; }
-		header, .panel, .order-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px #0f172a12; }
-		header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+	<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23143324'/%3E%3Ctext x='16' y='21' font-family='Arial, sans-serif' font-size='12' font-weight='700' fill='%23f6c944' text-anchor='middle'%3EMS%3C/text%3E%3C/svg%3E" />
+		<style>
+		/* --- design tokens: the store palette, defined once --- */
+		:root {
+			--brand: #143324;
+			--brand-dark: #0d2218;
+			--brand-deep: #1b4d3e;
+			--gold: #f6c944;
+			--gold-ink: #3c2f04;
+			--mint: #e8f5e9;
+			--mint-ink: #1b5e20;
+			--amber: #fdeeb0;
+			--amber-ink: #6b4400;
+			--grey: #e9edf1;
+			--grey-ink: #3f4a45;
+			--grey-line: #9aa5a0;
+			--surface: #ffffff;
+			--canvas: #f3f6f4;
+			--focus: #f6c944;
+			--danger: #b3261e;
+			--danger-soft: #fdecea;
+			--ink: #17211b;
+			--ink-soft: #5c6a63;
+			--line: #dce5e0;
+			--shadow-sm: 0 1px 2px rgba(13, 34, 24, .06), 0 2px 10px rgba(13, 34, 24, .05);
+			--radius: 14px;
+			--radius-sm: 9px;
+			font-family: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+			color: var(--ink);
+			background: var(--canvas);
+			-webkit-font-smoothing: antialiased;
+			text-rendering: optimizeLegibility;
+		}
+		body { max-width: 1120px; margin: 0 auto; padding: 32px 24px 64px; line-height: 1.55; }
+		/* Border-box everywhere, so a width plus padding can never push the page
+		   sideways on a phone. Controls already set it below individually. */
+		*, *::before, *::after { box-sizing: border-box; }
+
+		/* --- typography --- */
 		h1, h2, h3, p { margin-top: 0; }
-		form, .order-actions { display: grid; gap: 10px; }
-		input, select, textarea, button { box-sizing: border-box; font: inherit; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; }
-		button { border: 0; background: #174d36; color: #fff; font-weight: 700; cursor: pointer; }
+		h1 { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; letter-spacing: -.02em; }
+		h2 { font-size: 1.2rem; font-weight: 750; letter-spacing: -.01em; }
+		h3 { font-size: 1rem; font-weight: 700; }
+		.muted { color: var(--ink-soft); font-size: .9rem; }
+		.hint { font-weight: 400; font-size: .78rem; color: var(--ink-soft); }
+
+		/* --- surfaces --- */
+		header, .panel, .order-card, .product-card, .summary-card {
+			background: var(--surface);
+			border: 1px solid var(--line);
+			border-radius: var(--radius);
+			box-shadow: var(--shadow-sm);
+			padding: 22px;
+			margin-bottom: 16px;
+		}
+		header { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+		header p { margin-bottom: 0; }
+		.masthead { min-width: 0; display: grid; gap: 2px; justify-items: start; }
+		.masthead-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+		.owner-badge { display: inline-flex; align-items: center; background: var(--gold); color: var(--gold-ink); border-radius: 99px; padding: 2px 10px; font-size: .68rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+
+		/* --- form controls --- */
+		form, .order-actions { display: grid; gap: 12px; }
+		input, select, textarea, button {
+			box-sizing: border-box; font: inherit; padding: 11px 13px;
+			border: 1px solid var(--line); border-radius: var(--radius-sm);
+			background: var(--surface); color: var(--ink);
+			transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+		}
+		input::placeholder, textarea::placeholder { color: #9aa8a1; }
+		button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+			outline: 3px solid var(--focus); box-shadow: 0 0 0 4px rgba(13, 34, 24, .38);
+		}
+		button { border: 0; background: var(--brand); color: #fff; font-weight: 650; cursor: pointer; min-height: 44px; }
+		button:hover:not(:disabled) { background: var(--brand-dark); }
 		button:disabled { opacity: .55; cursor: wait; }
-		.order-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-		.order-card { margin: 0; }
-		.order-card p { margin: 7px 0; }
-		.order-items { padding-left: 20px; }
-		.status { display: inline-block; border-radius: 99px; padding: 4px 10px; background: #e8f1eb; color: #174d36; font-weight: 700; }
-		.error { color: #b91c1c; }
-		.muted { color: #64748b; }
+		button.ghost { background: var(--surface); color: var(--ink); border: 1px solid var(--line); font-weight: 600; }
+		button.ghost:hover:not(:disabled) { background: var(--canvas); border-color: var(--grey-line); }
+		button.danger { background: var(--danger); }
+		button.danger:hover:not(:disabled) { background: #8f1d13; }
+		button.primary { background: var(--brand); }
+
+		/* --- layout --- */
+		.order-grid, .product-grid { display: grid; gap: 14px; }
+		.product-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+		.order-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+		.order-card, .product-card { margin: 0; }
+
+		/* --- order board: status chips, every pairing AA contrast --- */
+		.chip { display: inline-flex; align-items: center; border-radius: 99px; padding: 3px 11px; font-weight: 700; font-size: .78rem; letter-spacing: .01em; white-space: nowrap; }
+		.chip-pending { background: var(--amber); color: var(--amber-ink); }
+		.chip-confirmed { background: var(--mint); color: var(--mint-ink); }
+		.chip-ready { background: var(--gold); color: var(--gold-ink); }
+		.chip-done { background: var(--brand); color: #ffffff; }
+		.chip-cancelled { background: var(--grey); color: var(--grey-ink); border: 1px solid var(--grey-line); }
+
+		/* --- alerts --- */
+		.error { color: var(--danger); font-size: .86rem; font-weight: 600; }
+		.success { color: var(--mint-ink); font-size: .86rem; font-weight: 600; }
+		.error, .success { padding: 9px 12px; border-radius: var(--radius-sm); margin: 0; }
+		.error { background: var(--danger-soft); }
+		.success { background: var(--mint); }
+		.error[hidden], .success[hidden] { display: none; }
+
+		/* --- small stat tiles beside the sales strip --- */
+		.mini-stats { display: grid; gap: 10px; align-content: start; }
+		.mini-stats .summary-card { margin: 0; padding: 14px 16px; display: grid; gap: 2px; }
+		.summary-card strong { font-size: 1.7rem; line-height: 1.1; color: var(--brand); font-variant-numeric: tabular-nums; }
+		.summary-card span { font-size: .76rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+		.summary-card.is-attention strong { color: var(--amber-ink); }
+		.summary-card.is-done strong { color: var(--mint-ink); }
+
+		/* Customer details as an honest header strip, plus a tappable phone link. */
+		.order-name { margin: 0; font-weight: 700; }
+		.order-phone { color: var(--brand-deep); text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
 		[hidden] { display: none !important; }
+		.muted { color: var(--ink-soft); }
+		.password-field { position: relative; display: flex; align-items: center; }
+		.password-field input { flex: 1; padding-right: 48px; }
+		.toggle-password { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; min-height: 0; padding: 0; border: 0; background: transparent; color: var(--ink-soft); display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; }
+		.toggle-password:hover { background: var(--canvas); color: var(--ink); }
+		.toggle-password:focus { outline: 2px solid var(--brand-deep); outline-offset: 2px; }
+		.toggle-password .eye-closed { display: none; }
+		.toggle-password[aria-pressed="true"] .eye-open { display: none; }
+		.toggle-password[aria-pressed="true"] .eye-closed { display: block; }
+
+		/* --- dashboard tabs: one segmented control --- */
+		.tabs { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: var(--shadow-sm); width: 100%; }
+		.tabs[hidden] { display: none; }
+		.tab { background: transparent; color: var(--ink-soft); border: 1px solid transparent; min-height: 44px; }
+		.tab:hover:not(.is-active) { background: var(--canvas); color: var(--brand); }
+		.tab.is-active { background: var(--brand); color: #fff; }
+
+		/* --- forms --- */
+		.field { display: grid; gap: 5px; font-size: .85rem; font-weight: 700; color: #1f2937; }
+		.field input, .field textarea { font-weight: 400; }
+		.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+		.hint { font-weight: 400; font-size: .75rem; color: #64748b; }
+		.checkbox { display: flex; align-items: center; gap: 8px; font-weight: 400; font-size: .86rem; }
+		.checkbox input { width: 17px; height: 17px; padding: 0; }
+		.checkbox input:disabled { opacity: .5; }
+		.toolbar { display: grid; grid-template-columns: 1fr 1fr auto auto auto; gap: 12px; align-items: end; margin-bottom: 14px; }
+		.toolbar .field { gap: 4px; }
+		.product-form, .account-form { display: grid; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 16px; background: var(--canvas); max-width: 620px; }
+		.product-form[hidden], .account-form[hidden] { display: none; }
+		.form-actions { display: flex; gap: 10px; }
+		.form-actions button { min-width: 120px; }
+		.error { color: var(--danger); font-size: .84rem; font-weight: 600; }
+		.error[hidden] { display: none; }
+		.success { color: var(--mint-ink); font-size: .84rem; font-weight: 600; }
+		.success[hidden] { display: none; }
+
+		/* A password hint is neither an error nor a confirmation: neutral, smaller
+		   than the real status messages, and never used to echo a value. */
+		#passwordMatch { margin: 0; font-size: .78rem; font-weight: 400; }
+		#passwordMatch[hidden] { display: none; }
+
+		/* --- password recovery --- */
+		/* Panels are hidden by default and shown one at a time, the same way the
+		   login and orders panels already are. */
+		#resetRequestPanel[hidden], #resetPasswordPanel[hidden] { display: none; }
+		.form-footer { margin: 4px 0 0; }
+		#manualRecoveryPanel[hidden] { display: none; }
+		.link-button {
+			background: none;
+			border: none;
+			padding: 0;
+			color: #2563eb;
+			font: inherit;
+			font-size: .84rem;
+			font-weight: 600;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+		.link-button:hover { color: #1d4ed8; }
+		.link-button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+		/* --- order board controls: board tabs and search --- */
+		.order-board-tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: var(--shadow-sm); overflow-x: auto; flex-wrap: nowrap; margin-bottom: 14px; }
+		.order-board-tab { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px; border-radius: 9px; background: transparent; color: var(--ink-soft); font-weight: 700; white-space: nowrap; }
+		.order-board-tab:hover:not(.is-active) { background: var(--canvas); color: var(--brand); }
+		.order-board-tab.is-active { background: var(--brand); color: #fff; }
+		.order-tab-count { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; padding: 1px 7px; border-radius: 99px; background: var(--grey); color: var(--grey-ink); font-size: .74rem; font-variant-numeric: tabular-nums; }
+		.order-board-tab.is-active .order-tab-count { background: var(--gold); color: var(--gold-ink); }
+		.order-filter-row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+		.order-filter-row h2 { margin: 0; flex: 1 1 auto; min-width: 200px; }
+		.order-filter-row .field { min-width: 220px; width: auto; }
+		.order-filter-row select { width: 100%; min-height: 44px; }
+		.order-filter-row .error { flex-basis: 100%; }
+
+		/* --- sales strip --- */
+		.sales-strip { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.7fr) minmax(230px, 1fr); align-items: stretch; margin-bottom: 16px; }
+		.sales-summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+		.sales-label { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+		.sales-card-big { display: grid; gap: 2px; }
+		.sales-value { font-size: 2.1rem; font-weight: 800; color: var(--brand); line-height: 1.1; font-variant-numeric: tabular-nums; }
+		.sales-meta { margin: 0; font-size: .84rem; color: var(--ink-soft); }
+		.sales-figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+		.sales-figure, .sales-collected { display: grid; gap: 2px; padding: 10px 12px; background: var(--canvas); border-radius: 10px; }
+		.sales-figure strong, .sales-collected strong { font-size: 1.02rem; color: var(--brand); font-variant-numeric: tabular-nums; }
+		.sales-count { font-size: .74rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+		.sales-collected { background: var(--mint); }
+		.sales-collected strong { color: var(--mint-ink); }
+		.sales-chart { display: flex; align-items: flex-end; gap: 3px; height: 64px; margin-top: 2px; min-width: 0; }
+		.chart-bar { flex: 1 1 0; min-width: 4px; background: var(--brand-deep); border-radius: 3px 3px 0 0; }
+		.chart-bar-none { background: var(--grey); }
+		.sales-note { margin: 0; font-size: .74rem; color: var(--ink-soft); }
+
+		/* --- order cards: compact, colour-coded, tappable --- */
+		.order-card { position: relative; padding: 16px 16px 16px 22px; display: grid; gap: 6px; align-content: start; }
+		.order-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: var(--radius) 0 0 var(--radius); background: var(--grey-line); }
+		.bar-pending::before { background: var(--gold); }
+		.bar-confirmed::before { background: var(--brand-deep); }
+		.bar-ready::before { background: var(--gold); }
+		.bar-done::before { background: var(--brand); }
+		.bar-cancelled::before { background: var(--grey-line); }
+		.order-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+		.order-number { margin: 0; font-size: 1.02rem; font-variant-numeric: tabular-nums; }
+		.order-pickup { margin: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-weight: 650; font-variant-numeric: tabular-nums; }
+		.pickup-hint { font-size: .72rem; font-weight: 700; color: var(--mint-ink); background: var(--mint); border-radius: 99px; padding: 2px 8px; }
+		.pickup-hint.is-overdue { background: var(--amber); color: var(--amber-ink); }
+		.order-items-line { margin: 0; color: var(--ink-soft); font-size: .86rem; }
+		.order-total { margin: 0; font-weight: 800; font-size: 1.06rem; font-variant-numeric: tabular-nums; color: var(--brand); }
+		.order-cancel-reason { margin: 0; font-size: .82rem; color: var(--danger); }
+
+		/* --- actions: exactly one primary button, the rest in a menu --- */
+		.order-actions { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; margin-top: 6px; }
+		.primary-action { flex: 1 1 auto; background: var(--brand); color: #fff; }
+		.order-menu { position: relative; margin-left: auto; }
+		.order-menu-btn { min-width: 44px; min-height: 44px; padding: 0 12px; font-size: 1.15rem; background: var(--surface); color: var(--ink); border: 1px solid var(--line); font-weight: 700; }
+		.order-menu-btn:hover:not(:disabled) { background: var(--mint); border-color: var(--brand-deep); }
+		.order-menu-list { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 230px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(13, 34, 24, .18); padding: 6px; display: grid; gap: 4px; }
+		.order-menu-list[hidden] { display: none; }
+		.order-menu-item { text-align: left; background: transparent; border: 1px solid transparent; color: var(--ink); min-height: 44px; padding: 8px 12px; font-weight: 600; }
+		.order-menu-item:hover:not(:disabled) { background: var(--mint); }
+		.order-menu-item.danger-outline { color: var(--danger); border: 1px solid var(--danger); background: transparent; }
+		.order-menu-item.danger-outline:hover:not(:disabled) { background: var(--danger-soft); }
+		.board-empty { grid-column: 1 / -1; padding: 30px 8px; text-align: center; color: var(--ink-soft); background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); }
+		.board-empty p { margin: 0 0 4px; font-weight: 700; color: var(--ink); }
+
+		/* --- product grid --- */
+		.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+		.product-card { display: grid; gap: 10px; padding: 14px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin: 0; }
+		.product-card[aria-busy="true"] { opacity: .5; }
+		.product-thumb { display: flex; align-items: center; justify-content: center; height: 130px; background: #f1f5f9; border-radius: 8px; overflow: hidden; }
+		.product-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+		.thumb-placeholder { font-size: .78rem; color: #94a3b8; font-weight: 600; }
+		.product-body { display: grid; gap: 4px; }
+		.product-body h3 { margin: 0; font-size: .95rem; }
+		.product-body p { margin: 0; font-size: .82rem; }
+		.price { font-weight: 800; color: #174d36; }
+		.was { color: #94a3b8; font-size: .8rem; }
+		.tag { display: inline-block; justify-self: start; border-radius: 99px; padding: 2px 9px; font-size: .7rem; font-weight: 700; }
+		.hidden-tag { background: #fef3c7; color: #92400e; }
+		.product-actions { display: flex; gap: 8px; }
+		.product-actions button { flex: 1; font-size: .82rem; padding: 8px 10px; }
+
+		/* --- stock badges and controls --- */
+		/* Colours reuse the AA-safe palette pairs the status chips already use:
+		   green above the threshold, soft red for low, solid dark red for sold
+		   out. The badge keeps the number visible except at zero. */
+		.stock-warning { margin: 0 0 12px; padding: 9px 12px; border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger); font-size: .86rem; font-weight: 700; }
+		.stock-warning[hidden] { display: none; }
+		.stock-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+		.stock-badge { display: inline-flex; align-items: center; border-radius: 99px; padding: 3px 10px; font-size: .76rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+		.stock-badge.stock-ok { background: var(--mint); color: var(--mint-ink); }
+		.stock-badge.stock-low { background: var(--danger-soft); color: var(--danger); }
+		.stock-badge.stock-out { background: var(--danger); color: #fff; }
+		.stock-controls { display: flex; gap: 6px; align-items: center; }
+		/* Every control is an honest 44px target, on a phone or anywhere else. */
+		.stock-controls button { min-width: 44px; min-height: 44px; padding: 6px 10px; font-weight: 800; flex: 0 0 auto; }
+		.stock-controls .stock-step { font-size: 1.05rem; }
+		.stock-controls .stock-set { font-size: .8rem; }
+		.stock-controls input { width: 4.6rem; min-height: 44px; padding: 6px 8px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 700; }
+		.stock-controls input::-webkit-outer-spin-button, .stock-controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+		.stock-controls input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+		/* --- product photo upload --- */
+		.image-upload { display: grid; gap: 8px; padding: 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; }
+		.image-upload input[type="file"] { font-weight: 400; font-size: .82rem; }
+		.image-upload input[type="file"]::file-selector-button {
+			font: inherit; font-weight: 700; color: #174d36;
+			background: #fff; border: 1px solid #cbd5e1; border-radius: 8px;
+			padding: 7px 14px; margin-right: 10px; cursor: pointer;
+		}
+		.image-upload input[type="file"]::file-selector-button:hover { background: #f1f5f9; }
+		.image-preview { display: grid; gap: 8px; justify-items: start; }
+		.image-preview img {
+			max-width: 190px; max-height: 190px; object-fit: contain;
+			background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 6px;
+		}
+		.image-preview-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+		.image-preview-actions button { font-size: .78rem; padding: 7px 12px; }
+		#productImageError { margin: 0; }
+
+		#productsEmpty[hidden], #productsList:empty + #productsEmpty { display: none; }
+
+		@media (max-width: 900px) {
+			.toolbar { grid-template-columns: 1fr 1fr; }
+			.toolbar button { grid-column: span 1; }
+			.sales-strip { grid-template-columns: 1fr; }
+		}
+		@media (max-width: 640px) {
+			body { padding: 20px 12px 48px; }
+			.toolbar { grid-template-columns: 1fr; }
+			.product-grid { grid-template-columns: 1fr; }
+			.order-grid { grid-template-columns: 1fr; }
+			.form-actions { flex-direction: column; }
+			.form-actions button { width: 100%; }
+			.sales-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+			.order-filter-row .field { min-width: 100%; }
+			/* Card buttons go full width on a phone; every target stays sizable. */
+			.order-actions .primary-action { width: 100%; flex-basis: 100%; }
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*, *::before, *::after {
+				transition-duration: 0.01ms !important;
+				animation-duration: 0.01ms !important;
+				animation-iteration-count: 1 !important;
+				scroll-behavior: auto !important;
+			}
+		}
 	</style>
 </head>
 <body>
 	<header>
-		<div>
-			<h1>Maridel's Store</h1>
+		<div class="masthead">
+			<div class="masthead-row">
+				<h1>Maridel's Store</h1>
+				<span class="owner-badge">Owner</span>
+			</div>
 			<p class="muted">Owner order dashboard</p>
 		</div>
 		<button type="button" id="logoutButton" hidden>Log out</button>
 	</header>
+
+	<nav class="tabs" id="dashboardTabs" hidden>
+		<button type="button" class="tab is-active" data-tab="orders" aria-current="true">Orders</button>
+		<button type="button" class="tab" data-tab="products">Products</button>
+		<button type="button" class="tab" data-tab="account">Account</button>
+	</nav>
 
 	<main>
 		<section class="panel" id="loginPanel">
 			<h2>Owner login</h2>
 			<form id="loginForm">
 				<label for="ownerPassword">Password</label>
-				<input id="ownerPassword" type="password" autocomplete="current-password" required maxlength="1024" />
+				<div class="password-field">
+					<input id="ownerPassword" type="password" autocomplete="current-password" required maxlength="1024" />
+					<button type="button" id="togglePassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+						<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+					</button>
+				</div>
 				<button type="submit">Log in</button>
 				<p class="error" id="loginError" role="alert" hidden></p>
+				<p class="form-footer">
+					<button type="button" id="forgotPasswordLink" class="link-button">Forgot password?</button>
+				</p>
 			</form>
+		</section>
+
+		<section class="panel" id="resetRequestPanel" hidden>
+			<h2>Reset your owner password</h2>
+			<p class="muted">
+				A reset link is sent to the owner email address held for this store, and to no other
+				address. The reply is the same whether or not delivery is configured, so it never
+				reveals anything about the account.
+			</p>
+			<form id="resetRequestForm">
+				<button type="submit" id="requestSubmit">Send reset link</button>
+				<p class="error" id="resetRequestError" role="alert" hidden></p>
+				<p class="success" id="resetRequestSuccess" role="status" hidden></p>
+			</form>
+			<p class="muted" id="manualRecoveryPanel" hidden>
+				Email delivery is not configured for this store, so no link can be sent. If a reset
+				token has been issued directly in the database, enter it with the option below.
+			</p>
+			<p class="form-footer">
+				<button type="button" id="haveResetTokenLink" class="link-button">I already have a reset token</button>
+			</p>
+			<p class="form-footer">
+				<button type="button" id="backToLoginFromRequest" class="link-button">Back to login</button>
+			</p>
+		</section>
+
+		<section class="panel" id="resetPasswordPanel" hidden>
+			<h2>Choose a new owner password</h2>
+			<p class="muted">
+				The reset link works once and expires after 30 minutes. Setting a new password signs out
+				every existing owner session.
+			</p>
+			<form id="resetPasswordForm">
+				<label for="resetToken">Reset token</label>
+				<input id="resetToken" maxlength="128" autocomplete="off" placeholder="Paste the token from the reset link" />
+				<label for="resetNewPassword">New password</label>
+				<div class="password-field">
+					<input id="resetNewPassword" type="password" autocomplete="new-password" maxlength="1024" />
+					<button type="button" id="toggleResetNewPassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+						<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11-8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c-7 0-11 8-11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1" x2="23" y2="23"/></svg>
+					</button>
+				</div>
+				<label for="resetConfirmPassword">Re-type new password</label>
+				<div class="password-field">
+					<input id="resetConfirmPassword" type="password" autocomplete="new-password" maxlength="1024" />
+					<button type="button" id="toggleResetConfirmPassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+						<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11-8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+						<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c-7 0-11 8-11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1" x2="23" y2="23"/></svg>
+					</button>
+				</div>
+				<button type="submit">Set new password</button>
+				<p class="error" id="resetPasswordError" role="alert" hidden></p>
+				<p class="success" id="resetPasswordSuccess" role="status" hidden></p>
+			</form>
+			<p class="form-footer">
+				<button type="button" id="backToLoginFromReset" class="link-button">Back to login</button>
+			</p>
 		</section>
 
 		<section id="ordersPanel" hidden>
 			<div class="panel">
-				<h2>Pickup orders</h2>
-				<label for="statusFilter">Filter by status</label>
-				<select id="statusFilter">
-					<option value="">All statuses</option>
-					<option>Pending</option>
-					<option>Confirmed</option>
-					<option>Ready for Pickup</option>
-					<option>Picked Up</option>
-					<option>Cancelled</option>
-				</select>
+				<div class="order-filter-row">
+					<h2>Pickup orders</h2>
+					<label class="field" for="statusFilter"><span>Filter by status</span>
+						<select id="statusFilter">
+							<option value="">All statuses</option>
+							<option>Pending</option>
+							<option>Confirmed</option>
+							<option>Preparing</option>
+							<option>Ready for Pickup</option>
+							<option>Picked Up</option>
+							<option>Cancelled</option>
+						</select>
+					</label>
+					<label class="field" for="orderSearch"><span>Search orders</span>
+						<input type="search" id="orderSearch" placeholder="Name, order number or phone" maxlength="100" />
+					</label>
+				</div>
 				<p class="error" id="ordersError" role="alert" hidden></p>
 			</div>
+			<div id="salesStrip"></div>
+			<nav class="order-board-tabs" id="orderBoardTabs" role="tablist" aria-label="Order groups">
+				<button type="button" class="order-board-tab is-active" data-board-tab="needs" role="tab" aria-selected="true">Needs action <span class="order-tab-count">0</span></button>
+				<button type="button" class="order-board-tab" data-board-tab="upcoming" role="tab" aria-selected="false">Upcoming <span class="order-tab-count">0</span></button>
+				<button type="button" class="order-board-tab" data-board-tab="done" role="tab" aria-selected="false">Done <span class="order-tab-count">0</span></button>
+			</nav>
 			<div class="order-grid" id="ordersList"></div>
+		</section>
+
+		<section class="panel" id="productsPanel" hidden>
+			<h2>Products</h2>
+			<div class="toolbar">
+				<label class="field">
+					<span>Search</span>
+					<input type="search" id="productSearch" placeholder="Search by name, category or description" maxlength="100" />
+				</label>
+				<label class="field">
+					<span>Category</span>
+					<input type="text" id="productCategoryFilter" placeholder="All categories" maxlength="100" />
+				</label>
+				<label class="checkbox">
+					<input type="checkbox" id="productIncludeUnpublished" checked />
+					<span>Include hidden products</span>
+				</label>
+				<button type="button" id="refreshProducts" class="ghost">Refresh</button>
+				<button type="button" id="addProductToggle" class="primary">Add product</button>
+			</div>
+			<p class="stock-warning" id="stockWarning" role="status" hidden></p>
+			<p class="error" id="productsError" role="alert" hidden></p>
+			<p class="success" id="productsStatus" role="status" hidden></p>
+			<form id="productForm" class="product-form" hidden>
+				<input type="hidden" id="productId" />
+				<label class="field"><span>Name</span><input id="productName" type="text" maxlength="200" required /></label>
+				<label class="field"><span>Category</span><input id="productCategory" type="text" maxlength="100" placeholder="Drinks, Sauces…" /></label>
+				<div class="field-row">
+					<label class="field"><span>Price (AUD)</span><input id="productPrice" type="text" inputmode="decimal" placeholder="2.50" required /></label>
+					<label class="field"><span>Compare-at price (optional)</span><input id="productOriginalPrice" type="text" inputmode="decimal" placeholder="3.00" /></label>
+					<label class="field"><span>Stock</span><input id="productStock" type="number" min="0" step="1" placeholder="0" /></label>
+				</div>
+				<div class="field">
+					<span>Product photo</span>
+					<div class="image-upload">
+						<input type="file" id="productImageFile" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" />
+						<p class="hint">PNG, JPEG, WebP, GIF or AVIF, up to 5&nbsp;MB. Large photos are resized in your browser before upload. The file is checked again on the server; only real image data is accepted.</p>
+						<p class="error" id="productImageError" role="alert" hidden></p>
+						<div class="image-preview" id="productImagePreview" hidden>
+							<img id="productImagePreviewImg" alt="Selected product photo" />
+							<div class="image-preview-actions">
+								<button type="button" id="productImageReplace" class="ghost">Choose a different photo</button>
+								<button type="button" id="productImageClear" class="ghost">Remove</button>
+							</div>
+						</div>
+						<p class="hint" id="productImageStored" hidden>A new photo will be saved when you save the product.</p>
+					</div>
+				</div>
+				<label class="field"><span>Description</span><textarea id="productDescription" rows="3" maxlength="2000"></textarea></label>
+				<label class="checkbox"><input type="checkbox" id="productPublished" checked /> <span>Visible in the storefront</span></label>
+				<div class="form-actions">
+					<button type="submit" class="primary" id="productSubmit">Save product</button>
+					<button type="button" class="ghost" id="productCancel">Cancel</button>
+				</div>
+			</form>
+			<div class="product-grid" id="productsList"></div>
+			<p class="muted" id="productsEmpty" hidden>No products match your search.</p>
+		</section>
+
+		<section class="panel" id="accountPanel" hidden>
+			<h2>Account settings</h2>
+			<form id="passwordForm" class="account-form">
+				<label class="field"><span>Current password</span>
+					<div class="password-field">
+						<input id="currentPassword" type="password" autocomplete="current-password" maxlength="1024" required />
+						<button type="button" id="toggleCurrentPassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+							<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+							<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c-7 0-11 8-11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1" x2="23" y2="23"/></svg>
+						</button>
+					</div>
+				</label>
+				<label class="field"><span>New password</span>
+					<div class="password-field">
+						<input id="newPassword" type="password" autocomplete="new-password" maxlength="1024" required />
+						<button type="button" id="toggleNewPassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+							<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11-8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+							<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c-7 0-11 8-11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1" x2="23" y2="23"/></svg>
+						</button>
+					</div>
+					<small class="hint">At least 12 characters, with a letter and a number.</small>
+				</label>
+				<label class="field"><span>Confirm new password</span>
+					<div class="password-field">
+						<input id="confirmPassword" type="password" autocomplete="new-password" maxlength="1024" required />
+						<button type="button" id="toggleConfirmPassword" class="toggle-password" aria-label="Show password" aria-pressed="false" title="Show password">
+							<svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11-8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+							<svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c-7 0-11 8-11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1" x2="23" y2="23"/></svg>
+						</button>
+					</div>
+				</label>
+				<p class="muted" id="passwordMatch" role="status" hidden></p>
+				<div class="form-actions">
+					<button type="submit" class="primary" id="passwordSubmit">Change password</button>
+				</div>
+				<p class="error" id="passwordError" role="alert" hidden></p>
+				<p class="success" id="passwordStatus" role="status" hidden></p>
+			</form>
+			<p class="muted">Locked out? Use <strong>Forgot password?</strong> on the login screen to request a reset link.</p>
 		</section>
 	</main>
 
