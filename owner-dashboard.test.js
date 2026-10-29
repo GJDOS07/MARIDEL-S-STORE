@@ -186,3 +186,52 @@ test("the recovery panels can always step back to the login screen", () => {
 	}
 });
 
+test("the monthly sales card renders from the sales response in the strip", () => {
+	// The strip appends the monthly card whenever real sales data arrives.
+	assert.match(script, /strip\.append\(buildSalesCards\(salesData\), buildMonthlySalesPanel\(salesData\)\)/);
+});
+
+test("the monthly sales card places every visible string with textContent", () => {
+	const block = /function buildMonthlySalesPanel\(data\) \{([\s\S]*?)\n\}/.exec(script);
+	assert.ok(block, "monthly panel builder not found");
+	const builderBody = block[1];
+	assert.ok(!/innerHTML|insertAdjacentHTML|outerHTML/.test(builderBody),
+		"the monthly card must never build HTML from strings");
+	assert.match(builderBody, /textContent = "Monthly sales"/);
+	assert.match(builderBody, /textContent = `A\$\$\{money\(sales\)\}`/);
+	assert.match(builderBody, /textContent = `\$\{MONTH_SHORT\[/);
+	// The empty state is worded as promised.
+	assert.match(builderBody, /No sales yet\. Your first orders will chart here month by month\./);
+});
+
+test("the monthly comparison never shows a percentage without a real base", () => {
+	const block = /function buildMonthlySalesPanel\(data\) \{([\s\S]*?)\n\}/.exec(script);
+	assert.ok(block, "monthly panel builder not found");
+	const builderBody = block[1];
+	// Zero last month: the plain no-comparison sentence, no percentage.
+	assert.match(builderBody, /if \(lastFull === 0\) \{/);
+	assert.match(builderBody, /No sales last month to compare\./);
+	// Zero same-days base: still no percentage, even when last month sold.
+	assert.match(builderBody, /\} else if \(lastSameDays === 0\) \{/);
+	// The percentage is only computed after both zero bases are ruled out, and
+	// never divides by zero: the divide sits inside the final else branch.
+	const changeIndex = builderBody.indexOf("const change = Math.round(");
+	const zeroGuardsEnd = builderBody.indexOf("} else {");
+	assert.ok(changeIndex > -1 && changeIndex > zeroGuardsEnd,
+		"the percentage must be computed only after the zero guards");
+	// Green for up, red for down.
+	assert.match(builderBody, /classList\.add\("is-up"\)/);
+	assert.match(builderBody, /classList\.add\("is-down"\)/);
+});
+
+test("the monthly chart CSS cannot scroll the dashboard sideways", () => {
+	// Narrow Android first: every new block clamps to its cell.
+	assert.match(html, /\.monthly-panel\s*\{[^}]*min-width:\s*0/);
+	assert.match(html, /\.monthly-grid\s*\{[^}]*min-width:\s*0/);
+	assert.match(html, /\.monthly-cell\s*\{[^}]*min-width:\s*0/);
+	// A long amount clips inside its cell instead of widening the row.
+	assert.match(html, /\.monthly-value\s*\{[^}]*max-width:\s*100%/);
+	// The comparison line wraps instead of overflowing.
+	assert.match(html, /\.monthly-compare\s*\{[^}]*min-width:\s*0/);
+});
+

@@ -213,6 +213,63 @@ function addCalendarDays(date, days) {
 	return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
+// Calendar-month arithmetic on YYYY-MM keys, same UTC-first rule as
+// addCalendarDays. These feed the monthly sales history: the window of charted
+// months, the previous month's boundaries, and the same-days comparison end.
+function formatMonthKey(year, month) {
+	return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function previousMonthKey(year, month) {
+	return month === 1 ? formatMonthKey(year - 1, 12) : formatMonthKey(year, month - 1);
+}
+
+// The oldest month whose full context makes sense to chart: 11 months before
+// the current one, so the window never exceeds 12 entries including now.
+function monthWindowFloor(year, month) {
+	const floorDate = new Date(Date.UTC(year, month - 1 - 11, 1));
+	return formatMonthKey(floorDate.getUTCFullYear(), floorDate.getUTCMonth() + 1);
+}
+
+// Days in a YYYY-MM month: day 0 of the following month is its last day.
+function daysInMonth(monthKey) {
+	const [year, month] = monthKey.split("-").map(Number);
+	return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+// Every YYYY-MM key from start to end inclusive; start must not be after end.
+function enumerateMonths(startKey, endKey) {
+	const [startYear, startMonth] = startKey.split("-").map(Number);
+	const months = [];
+	for (let year = startYear, month = startMonth; ;) {
+		months.push(formatMonthKey(year, month));
+		const current = `${year}-${String(month).padStart(2, "0")}`;
+		if (current >= endKey) break;
+		month += 1;
+		if (month > 12) {
+			month = 1;
+			year += 1;
+		}
+	}
+	return months;
+}
+
+// Zero-valued period in the same shape the sales response already uses:
+// amounts as numeric text with two decimals, counts as integers.
+function emptyPeriod() {
+	return { sales: "0.00", orders: 0, collected: "0.00" };
+}
+
+// Adds one grouped day row (the same SQL alias shapes as emptyPeriod) into an
+// accumulating period.
+function addPeriod(period, row) {
+	return {
+		sales: centsToAmount(amountToCents(period.sales) + amountToCents(row.sales)),
+		orders: period.orders + Number(row.orders),
+		collected: centsToAmount(amountToCents(period.collected) + amountToCents(row.collected)),
+	};
+}
+
 function parsePasswordHash(encoded) {
 	if (typeof encoded !== "string") return null;
 	const match = /^scrypt\$([a-f0-9]{32,})\$([a-f0-9]{128})$/i.exec(encoded);
@@ -1452,6 +1509,108 @@ function createOrderRouter(pool, {
 				daily.push({ date, sales: salesByDate.get(date) || "0.00" });
 			}
 
+			// Monthly history for the last 12 Melbourne calendar months. The
+			// window starts at the month of the first order, but never further
+			// back than 11 months before the current one, so the chart stays
+			// bounded even for an old store. Buckets use the same Melbourne
+			// order date as every other figure in this response, and the same
+			// status rules: sales and counts exclude Cancelled, collected
+			// counts Picked Up only.
+			const currentYear = Number(melbourneToday.slice(0, 4));
+			const currentMonth = Number(melbourneToday.slice(5, 7));
+			const currentMonthKey = formatMonthKey(currentYear, currentMonth);
+			const firstOrderMonthResult = await pool.query(
+				"SELECT to_char(MIN((created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date), 'YYYY-MM') AS first_order_month FROM orders",
+			);
+			const firstOrderMonth = firstOrderMonthResult.rows.length === 1
+				&& typeof firstOrderMonthResult.rows[0].first_order_month === "string"
+				? firstOrderMonthResult.rows[0].first_order_month
+				: null;
+			// No orders at all means nothing to chart or compare; the dashboard
+			// renders its friendly empty message instead.
+			const monthlyWindowStart = firstOrderMonth === null
+				? null
+				: (firstOrderMonth > monthWindowFloor(currentYear, currentMonth)
+					? firstOrderMonth
+					: monthWindowFloor(currentYear, currentMonth));
+			let monthlyMonths = [];
+			let monthlyPeriods = {
+				this_month_so_far: emptyPeriod(),
+				last_month: emptyPeriod(),
+				last_month_same_days: emptyPeriod(),
+			};
+			if (monthlyWindowStart !== null) {
+				// The previous month's length clamps the same-days comparison:
+				// a 31st compares against a 28-day February's last day, the
+				// honest latest point the two months share.
+				const previousMonth = previousMonthKey(currentYear, currentMonth);
+				const lastMonthStart = `${previousMonth}-01`;
+				const sameDaysEnd = `${previousMonth}-${String(Math.min(Number(melbourneToday.slice(8, 10)), daysInMonth(previousMonth))).padStart(2, "0")}`;
+
+				const monthlyRows = await pool.query(
+					`WITH dated AS (
+						SELECT total, status,
+							(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date AS order_date
+						FROM orders
+					)
+					SELECT to_char(order_date, 'YYYY-MM') AS ym,
+						COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled'), 0)::numeric(18,2)::text AS sales,
+						COUNT(*) FILTER (WHERE status <> 'Cancelled')::int AS orders,
+						COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up'), 0)::numeric(18,2)::text AS collected
+					FROM dated
+					WHERE order_date >= $1::date AND order_date <= $2::date
+					GROUP BY 1
+					ORDER BY 1`,
+					[`${monthlyWindowStart}-01`, melbourneToday],
+				);
+				const salesByMonth = new Map(monthlyRows.rows.map(row => [row.ym, row]));
+				monthlyMonths = enumerateMonths(monthlyWindowStart, currentMonthKey).map(ym => {
+					const row = salesByMonth.get(ym);
+					return {
+						month: ym,
+						sales: row ? row.sales : "0.00",
+						orders: row ? Number(row.orders) : 0,
+						collected: row ? row.collected : "0.00",
+					};
+				});
+
+				// One per-day pass over the two comparison months, aggregated
+				// here: the running current month, last month in full, and last
+				// month up to today's equivalent day.
+				const dayRows = await pool.query(
+					`WITH dated AS (
+						SELECT total, status,
+							(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Australia/Melbourne')::date AS order_date
+						FROM orders
+					)
+					SELECT to_char(order_date, 'YYYY-MM-DD') AS order_date,
+						COALESCE(SUM(total) FILTER (WHERE status <> 'Cancelled'), 0)::numeric(18,2)::text AS sales,
+						COUNT(*) FILTER (WHERE status <> 'Cancelled')::int AS orders,
+						COALESCE(SUM(total) FILTER (WHERE status = 'Picked Up'), 0)::numeric(18,2)::text AS collected
+					FROM dated
+					WHERE order_date >= $1::date AND order_date <= $2::date
+					GROUP BY 1
+					ORDER BY 1`,
+					[lastMonthStart, melbourneToday],
+				);
+				let thisMonthSoFar = emptyPeriod();
+				let lastMonthFull = emptyPeriod();
+				let lastMonthSameDays = emptyPeriod();
+				for (const row of dayRows.rows) {
+					// Plain string comparison is safe on YYYY-MM-DD dates.
+					if (row.order_date >= monthStart) thisMonthSoFar = addPeriod(thisMonthSoFar, row);
+					else lastMonthFull = addPeriod(lastMonthFull, row);
+					if (row.order_date <= sameDaysEnd) {
+						lastMonthSameDays = addPeriod(lastMonthSameDays, row);
+					}
+				}
+				monthlyPeriods = {
+					this_month_so_far: thisMonthSoFar,
+					last_month: lastMonthFull,
+					last_month_same_days: lastMonthSameDays,
+				};
+			}
+
 			const summary = totals.rows[0];
 			res.set("Cache-Control", "no-store");
 			return res.json({
@@ -1476,6 +1635,13 @@ function createOrderRouter(pool, {
 					collected: summary.all_collected,
 				},
 				daily,
+				monthly: {
+					window_start_month: monthlyWindowStart,
+					months: monthlyMonths,
+					this_month_so_far: monthlyPeriods.this_month_so_far,
+					last_month: monthlyPeriods.last_month,
+					last_month_same_days: monthlyPeriods.last_month_same_days,
+				},
 				melbourne_today: melbourneToday,
 			});
 		} catch (error) {

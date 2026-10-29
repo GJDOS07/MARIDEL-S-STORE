@@ -110,6 +110,38 @@ function addDays(date, days) {
 	return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
 }
 
+// --- month helpers for the monthly history test ------------------------------
+// Same UTC-first rule as addDays, but on YYYY-MM month keys.
+function previousMonthOf(monthKey) {
+	const [year, month] = monthKey.split("-").map(Number);
+	return month === 1
+		? `${year - 1}-12`
+		: `${year}-${String(month - 1).padStart(2, "0")}`;
+}
+
+// Days in a YYYY-MM month: day 0 of the following month is its last day.
+function daysInMonth(monthKey) {
+	const [year, month] = monthKey.split("-").map(Number);
+	return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+// Every YYYY-MM key from start to end inclusive, oldest first.
+function enumerateMonths(startKey, endKey) {
+	const [startYear, startMonth] = startKey.split("-").map(Number);
+	const months = [];
+	for (let year = startYear, month = startMonth; ;) {
+		months.push(`${year}-${String(month).padStart(2, "0")}`);
+		const current = `${year}-${String(month).padStart(2, "0")}`;
+		if (current >= endKey) break;
+		month += 1;
+		if (month > 12) {
+			month = 1;
+			year += 1;
+		}
+	}
+	return months;
+}
+
 function money(amount) {
 	return amount.toFixed(2);
 }
@@ -482,4 +514,267 @@ test("owner sales summary buckets orders by Melbourne order date", async t => {
 	assert.equal(listed.subtotal, undefined);
 	assert.equal(listed.discount, undefined);
 	assert.equal(listed.shipping_fee, undefined);
+});
+
+test("monthly sales history charts the first order month and compares like days", async t => {
+	const db = await createDatabase();
+	t.after(() => db.close());
+
+	// The shared fixture seeds an order with the current time again.
+	await db.query("DELETE FROM orders");
+
+	const server = await startServer(db, await makeCredentials());
+	t.after(() => server.close());
+	const session = await login(server);
+
+	const today = melbourneDate(new Date());
+	const todayDay = Number(today.slice(8, 10));
+	const previousMonth = previousMonthOf(today);
+	const monthStart = `${today.slice(0, 8)}01`;
+
+	// Four months back is the first order month, so the chart spans five
+	// months: with sales in months 4 and 2 and none in month 3, the zero-filled
+	// gap month is exercised. "Now" always stays inside the 12-month window
+	// regardless of the calendar date this test runs on.
+	const [oldestMonth, gapMonth] = enumerateMonths(
+		previousMonthOf(previousMonthOf(previousMonthOf(today))),
+		previousMonth,
+	);
+
+	// The same-days boundary: today's day-of-month, clamped to last month's
+	// length so a 31st compares against a 28-day February's last day. The
+	// "late" fixture only exists when that clamp is not today's day itself.
+	const lastMonthDayCount = daysInMonth(previousMonth);
+	const sameDaysEnd = Math.min(todayDay, lastMonthDayCount);
+	const lastMonthDay = String(sameDaysEnd).padStart(2, "0");
+	const includeLateLastMonthOrder = sameDaysEnd < lastMonthDayCount;
+
+	const midnightMelbourneDate = monthStart;
+	const midnightUtcDate = addDays(midnightMelbourneDate, -1);
+
+	const fixtures = [
+		{
+			key: "today",
+			customerName: "Today Customer",
+			email: "monthly-today@example.com",
+			createdAt: `${today} 02:00:00`,
+			total: 30,
+			subtotal: "30.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Confirmed",
+		},
+		{
+			// Same day-of-month as today, one month back: the heart of the
+			// fair comparison, in both the full and same-days totals.
+			key: "sameDayLastMonth",
+			customerName: "Same Day Customer",
+			email: "monthly-same-day@example.com",
+			createdAt: `${previousMonth}-${lastMonthDay} 02:00:00`,
+			total: 20,
+			subtotal: "20.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Confirmed",
+		},
+		{
+			// Late in last month and marked Picked Up, so it belongs to the
+			// full last-month total and Collected, but not to same-days.
+			key: "lateLastMonth",
+			customerName: "Late Customer",
+			email: "monthly-late@example.com",
+			createdAt: `${previousMonth}-${String(lastMonthDayCount).padStart(2, "0")} 02:00:00`,
+			total: 15,
+			subtotal: "15.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Picked Up",
+		},
+		{
+			// 14:30 UTC on the previous UTC day is 00:30 or 01:30 on the first
+			// of the current Melbourne month: the month-boundary fixture. The
+			// chart must bucket it by the Melbourne month, not the UTC one.
+			key: "monthBoundary",
+			customerName: "Boundary Customer",
+			email: "monthly-boundary@example.com",
+			createdAt: `${midnightUtcDate} 14:30:00`,
+			total: 7,
+			subtotal: "7.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Confirmed",
+		},
+		{
+			key: "oldest",
+			customerName: "Oldest Customer",
+			email: "monthly-oldest@example.com",
+			createdAt: `${oldestMonth}-10 02:00:00`,
+			total: 10,
+			subtotal: "10.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Confirmed",
+		},
+		{
+			key: "cancelLastMonth",
+			customerName: "Monthly Cancelled Customer",
+			email: "monthly-cancelled@example.com",
+			createdAt: `${previousMonth}-15 02:00:00`,
+			total: 999,
+			subtotal: "999.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Cancelled",
+		},
+	];
+
+	// When today's day equals last month's length, the "late" order would land
+	// on the same-day fixture's date and double-count it: drop it there.
+	const seedable = includeLateLastMonthOrder ? fixtures : fixtures.filter(f => f.key !== "lateLastMonth");
+	for (const fixture of seedable) {
+		await insertSalesOrder(db, fixture);
+		fixture.melbourneDate = melbourneDateOfUtcTimestamp(fixture.createdAt);
+	}
+
+	// The point of the boundary fixture, checked like the first test's midnight
+	// fixture: Melbourne decides the bucket, not the stored UTC date.
+	const boundaryFixture = fixtures.find(fixture => fixture.key === "monthBoundary");
+	assert.equal(boundaryFixture.melbourneDate, midnightMelbourneDate);
+	assert.notEqual(boundaryFixture.createdAt.slice(0, 10), midnightMelbourneDate);
+
+	const response = await ownerRequest(server, session, "GET", "/api/owner/sales");
+	assert.equal(response.status, 200);
+	const body = await response.json();
+
+	// Window: from the first order's month up to and including the current one,
+	// oldest first, every month present even when it had no orders.
+	const expectedMonths = enumerateMonths(oldestMonth, today.slice(0, 7));
+	assert.equal(body.monthly.window_start_month, oldestMonth);
+	assert.equal(body.monthly.months.length, expectedMonths.length);
+	assert.ok(expectedMonths.length <= 12, "the charted window stays within a year");
+	assert.deepEqual(body.monthly.months.map(row => row.month), expectedMonths);
+
+	// Each charted month, bucketed with the same rules as the strip: cancelled
+	// never counted, only Picked Up collected, zero-filled when empty.
+	for (const row of body.monthly.months) {
+		const included = seedable.filter(fixture => fixture.status !== "Cancelled"
+			&& fixture.melbourneDate.slice(0, 7) === row.month);
+		assert.deepEqual(row, {
+			month: row.month,
+			sales: money(included.reduce((sum, fixture) => sum + fixture.total, 0)),
+			orders: included.length,
+			collected: money(included
+				.filter(fixture => fixture.status === "Picked Up")
+				.reduce((sum, fixture) => sum + fixture.total, 0)),
+		});
+		assert.match(row.sales, /^\d+\.\d{2}$/, "monthly sales must be money with two decimals");
+		assert.match(row.collected, /^\d+\.\d{2}$/, "monthly collected must be money with two decimals");
+	}
+	// The gap month really is empty inside the window, and the boundary order
+	// really sits in the current Melbourne month, not the previous one.
+	assert.deepEqual(body.monthly.months.find(row => row.month === gapMonth), {
+		month: gapMonth, sales: "0.00", orders: 0, collected: "0.00",
+	});
+	assert.equal(body.monthly.months.find(row => row.month === today.slice(0, 7)).orders,
+		2, "the boundary and today orders both count in the current month");
+
+	// This month so far: month start up to today.
+	assert.deepEqual(body.monthly.this_month_so_far, {
+		sales: money(seedable.filter(fixture => fixture.status !== "Cancelled"
+			&& fixture.melbourneDate >= monthStart).reduce((sum, f) => sum + f.total, 0)),
+		orders: seedable.filter(fixture => fixture.status !== "Cancelled"
+			&& fixture.melbourneDate >= monthStart).length,
+		collected: "0.00",
+	});
+
+	// Last month in full: the late Picked Up order belongs here (and is the
+	// only collected money), the cancelled order never does, and the boundary
+	// order does not because it buckets into the next month.
+	const lastMonthFixtures = seedable.filter(fixture => fixture.status !== "Cancelled"
+		&& fixture.melbourneDate.slice(0, 7) === previousMonth);
+	assert.deepEqual(body.monthly.last_month, {
+		sales: money(lastMonthFixtures.reduce((sum, fixture) => sum + fixture.total, 0)),
+		orders: lastMonthFixtures.length,
+		collected: money(lastMonthFixtures
+			.filter(fixture => fixture.status === "Picked Up")
+			.reduce((sum, fixture) => sum + fixture.total, 0)),
+	});
+
+	// The same-days comparison: day 1 to today's equivalent day of last month,
+	// cancelled orders excluded as everywhere else.
+	const sameDaysFixtures = seedable.filter(fixture => fixture.status !== "Cancelled"
+		&& fixture.melbourneDate.slice(0, 7) === previousMonth
+		&& Number(fixture.melbourneDate.slice(8, 10)) <= sameDaysEnd);
+	assert.deepEqual(body.monthly.last_month_same_days, {
+		sales: money(sameDaysFixtures.reduce((sum, fixture) => sum + fixture.total, 0)),
+		orders: sameDaysFixtures.length,
+		collected: "0.00",
+	});
+
+	// Same-days are a prefix of the full month: never more than it.
+	assert.ok(Number(body.monthly.last_month_same_days.sales) <= Number(body.monthly.last_month.sales));
+	assert.ok(body.monthly.last_month_same_days.orders <= body.monthly.last_month.orders);
+});
+
+test("monthly history reports a zero last month without inventing money", async t => {
+	const db = await createDatabase();
+	t.after(() => db.close());
+
+	await db.query("DELETE FROM orders");
+	const server = await startServer(db, await makeCredentials());
+	t.after(() => server.close());
+	const session = await login(server);
+
+	// Sales exist, but only this month and two months back: last month and the
+	// gap month are zero, and the same-days base is zero with them.
+	const today = melbourneDate(new Date());
+	const previousMonth = previousMonthOf(today);
+	const twoMonthsBack = previousMonthOf(previousMonth);
+	const fixtures = [
+		{
+			key: "today",
+			customerName: "Quiet Last Month Today",
+			email: "zero-last-month-today@example.com",
+			createdAt: `${today} 02:00:00`,
+			total: 45,
+			subtotal: "45.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Confirmed",
+		},
+		{
+			key: "older",
+			customerName: "Quiet Last Month Older",
+			email: "zero-last-month-older@example.com",
+			createdAt: `${twoMonthsBack}-05 02:00:00`,
+			total: 65,
+			subtotal: "65.00",
+			discount: "0.00",
+			shippingFee: "0.00",
+			status: "Picked Up",
+		},
+	];
+	for (const fixture of fixtures) {
+		await insertSalesOrder(db, fixture);
+		fixture.melbourneDate = melbourneDateOfUtcTimestamp(fixture.createdAt);
+	}
+
+	const response = await ownerRequest(server, session, "GET", "/api/owner/sales");
+	assert.equal(response.status, 200);
+	const body = await response.json();
+
+	const zero = { sales: "0.00", orders: 0, collected: "0.00" };
+	assert.deepEqual(body.monthly.last_month, zero, "last month without sales must be all zeros");
+	assert.deepEqual(body.monthly.last_month_same_days, zero, "the same-days base must be zero with it");
+	assert.deepEqual(body.monthly.months.find(row => row.month === previousMonth), {
+		month: previousMonth, ...zero,
+	}, "the zero month must still be charted, zero-filled");
+
+	// This month so far keeps the today order, so the dashboard has a real
+	// numerator and a zero denominator — its cue to show the no-comparison
+	// message instead of a percentage.
+	assert.deepEqual(body.monthly.this_month_so_far, {
+		sales: "45.00", orders: 1, collected: "0.00",
+	});
+	assert.equal(body.monthly.window_start_month, twoMonthsBack);
 });

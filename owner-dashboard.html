@@ -213,6 +213,22 @@
 		.chart-bar-none { background: var(--grey); }
 		.sales-note { margin: 0; font-size: .74rem; color: var(--ink-soft); }
 
+		/* --- monthly sales card --- */
+		.monthly-panel { grid-column: 1 / -1; min-width: 0; }
+		.monthly-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(86px, 1fr)); gap: 8px 10px; min-width: 0; }
+		.monthly-cell { display: grid; grid-template-rows: 54px auto auto; justify-items: center; align-items: end; gap: 3px; min-width: 0; padding: 6px 4px 7px; background: var(--canvas); border-radius: 10px; }
+		.monthly-cell.is-current { background: var(--mint); }
+		.monthly-bar-track { width: 100%; max-width: 46px; height: 100%; display: flex; align-items: flex-end; justify-content: center; min-width: 0; }
+		.monthly-bar { width: 72%; background: var(--brand-deep); border-radius: 3px 3px 0 0; }
+		.monthly-cell.is-current .monthly-bar { background: var(--brand); }
+		.monthly-bar-none { background: var(--grey-line); }
+		.monthly-label { font-size: .72rem; font-weight: 800; color: var(--ink-soft); white-space: nowrap; }
+		.monthly-cell.is-current .monthly-label { color: var(--mint-ink); }
+		.monthly-value { font-size: .7rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+		.monthly-compare { margin: 0; font-size: .85rem; font-weight: 650; color: var(--ink-soft); min-width: 0; }
+		.monthly-compare.is-up { color: var(--mint-ink); }
+		.monthly-compare.is-down { color: var(--danger); }
+
 		/* --- order cards: compact, colour-coded, tappable --- */
 		.order-card { position: relative; padding: 16px 16px 16px 22px; display: grid; gap: 6px; align-content: start; }
 		.order-card::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: var(--radius) 0 0 var(--radius); background: var(--grey-line); }

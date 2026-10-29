@@ -700,6 +700,101 @@ function buildSalesCards(data) {
 	return content;
 }
 
+// --- monthly sales -----------------------------------------------------------
+// A Monthly sales card under the main sales card: one bar per Melbourne
+// calendar month (up to 12, from the first order's month), the current month
+// highlighted, and one fair comparison line. The comparison is against the
+// same days of last month (day 1 to today's day-of-month, clamped to last
+// month's length), so a month half over is never compared with a full one.
+// Every string is placed with textContent.
+function buildMonthlySalesPanel(data) {
+	const panel = document.createElement("div");
+	panel.className = "sales-summary monthly-panel";
+
+	const title = document.createElement("span");
+	title.className = "sales-label";
+	title.textContent = "Monthly sales";
+	panel.append(title);
+
+	const monthly = data && data.monthly;
+	const months = monthly && Array.isArray(monthly.months) ? monthly.months : [];
+
+	// No charted orders at all: say so plainly and show neither chart nor a
+	// comparison, so no percentage, infinity or NaN can ever appear.
+	if (!months.some(row => Number(row && row.orders) > 0)) {
+		const empty = document.createElement("p");
+		empty.className = "sales-note";
+		empty.textContent = "No sales yet. Your first orders will chart here month by month.";
+		panel.append(empty);
+		return panel;
+	}
+
+	const grid = document.createElement("div");
+	grid.className = "monthly-grid";
+	grid.setAttribute("role", "img");
+	grid.setAttribute("aria-label", "Monthly sales, newest month last");
+
+	const peak = months.reduce((max, row) => Math.max(max, Number(row && row.sales) || 0), 0);
+	const currentMonthKey = String(months[months.length - 1].month || "");
+	for (const row of months) {
+		const sales = Number(row.sales) || 0;
+		const monthKey = String(row.month || "????-??");
+		const monthIndex = Number(monthKey.slice(5, 7));
+
+		const cell = document.createElement("div");
+		cell.className = "monthly-cell";
+		if (monthKey === currentMonthKey) cell.classList.add("is-current");
+
+		const track = document.createElement("div");
+		track.className = "monthly-bar-track";
+		const bar = document.createElement("div");
+		bar.className = sales > 0 ? "monthly-bar" : "monthly-bar monthly-bar-none";
+		bar.style.height = sales > 0 && peak > 0 ? `${Math.max(8, Math.round((sales / peak) * 100))}%` : "4px";
+		track.append(bar);
+
+		const label = document.createElement("span");
+		label.className = "monthly-label";
+		label.textContent = `${MONTH_SHORT[monthIndex >= 1 && monthIndex <= 12 ? monthIndex - 1 : 0]} ${monthKey.slice(0, 4)}`;
+
+		const value = document.createElement("span");
+		value.className = "monthly-value";
+		value.textContent = `A$${money(sales)}`;
+
+		cell.append(track, label, value);
+		grid.append(cell);
+	}
+	panel.append(grid);
+
+	// The comparison line. The displayed "last month" figure is last month in
+	// full; the percentage is fair because it compares like with like: this
+	// month so far against the same days of last month. When last month has no
+	// sales there is nothing to compare, so no percentage is ever shown.
+	const soFar = Number(monthly && monthly.this_month_so_far && monthly.this_month_so_far.sales) || 0;
+	const lastFull = Number(monthly && monthly.last_month && monthly.last_month.sales) || 0;
+	const lastSameDays = Number(monthly && monthly.last_month_same_days && monthly.last_month_same_days.sales) || 0;
+	const compare = document.createElement("p");
+	compare.className = "monthly-compare";
+	if (lastFull === 0) {
+		compare.textContent = "No sales last month to compare.";
+	} else if (lastSameDays === 0) {
+		compare.textContent = `This month so far A$${money(soFar)}, last month A$${money(lastFull)}. The first days of last month had no sales to compare yet.`;
+	} else {
+		const change = Math.round(((soFar - lastSameDays) / lastSameDays) * 100);
+		const prefix = `This month so far A$${money(soFar)}, last month A$${money(lastFull)}, `;
+		if (change > 0) {
+			compare.classList.add("is-up");
+			compare.textContent = `${prefix}up ${change}% vs the same days last month.`;
+		} else if (change < 0) {
+			compare.classList.add("is-down");
+			compare.textContent = `${prefix}down ${-change}% vs the same days last month.`;
+		} else {
+			compare.textContent = `${prefix}level with the same days last month.`;
+		}
+	}
+	panel.append(compare);
+	return panel;
+}
+
 // The strip is rebuilt on every refresh. When the sales request fails, only the
 // sales card hides (as an empty placeholder); the stat tiles beside it and the
 // order list always stay.
@@ -708,7 +803,7 @@ function renderSalesStrip() {
 	if (!host) return;
 	const strip = document.createElement("section");
 	strip.className = "sales-strip";
-	if (salesData) strip.append(buildSalesCards(salesData));
+	if (salesData) strip.append(buildSalesCards(salesData), buildMonthlySalesPanel(salesData));
 	else {
 		const placeholder = document.createElement("div");
 		placeholder.className = "sales-summary";
