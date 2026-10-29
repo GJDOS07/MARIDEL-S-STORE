@@ -566,11 +566,12 @@ async function createScrollPatrolOrder(pickup, index) {
 }
 
 test("stepping an order through the board keeps the page where the owner is", async t => {
-	// Nine seeded orders plus the sandbox's legacy first order: enough depth to
-	// need scrolling at 375px, and safely inside the checkout rate limit.
+	// Eight seeded orders plus the sandbox's legacy first order: enough depth to
+	// need scrolling at 375px. Both browser tests that check out keep the file
+	// inside the checkout rate limit of ten per ten minutes.
 	const pickup = findFuturePickupSlot();
 	const createdIds = [];
-	for (let index = 1; index <= 9; index += 1) {
+	for (let index = 1; index <= 8; index += 1) {
 		createdIds.push(await createScrollPatrolOrder(pickup, index));
 	}
 
@@ -611,6 +612,18 @@ test("stepping an order through the board keeps the page where the owner is", as
 		{ timeout: 15000, polling: 100 },
 	);
 	const after1 = await page.evaluate(() => window.scrollY);
+	// The browser clears the focus of a removed button around the end of the
+	// click event, so the focus can land a frame after the card repaints; wait
+	// for it to reach the same order's next action instead of reading once.
+	await page.waitForFunction(
+		selector => {
+			const card = document.querySelector(selector);
+			const button = card && card.querySelector("button.primary-action");
+			return Boolean(button && document.activeElement === button);
+		},
+		cardSelector,
+		{ timeout: 5000, polling: 50 },
+	);
 	const focus1 = await page.evaluate(selector => {
 		const card = document.querySelector(selector);
 		const button = card && card.querySelector("button.primary-action");
@@ -663,4 +676,128 @@ test("stepping an order through the board keeps the page where the owner is", as
 		`press 3 must keep the page near its position (moved ${before3 - after3}px)`);
 	assert.ok(after3 > 0, "press 3 must never scroll to the top");
 	assert.equal(stillListed3, false, "press 3 moves the card to the done tab");
+});
+
+// --- an order action must paint immediately, not after three round trips -----
+//
+// The very slow free server turns one press into status + orders + sales round
+// trips that the old code awaited before repainting (1-2s on a phone). The
+// optimistic path repaints the same card in one frame, keeps the change live
+// while the request crawls, merges the server's answer, and rolls the card
+// back with the error banner when the request fails.
+test("an order action paints immediately on a slow server and rolls back on failure", async t => {
+	const { context, page } = await newPage({ viewport: { width: 375, height: 667 } });
+	t.after(() => context.close());
+
+	// One checkout order on the shared stack (the file stays inside the
+	// checkout rate limit of ten per ten minutes).
+	const pickup = findFuturePickupSlot();
+	const orderId = await createScrollPatrolOrder(pickup, 1);
+	const cardSelector = `.order-card[data-id="${orderId}"]`;
+
+	await page.fill("#ownerPassword", TEST_PASSWORD);
+	await page.click("#loginForm button[type=submit]");
+	await page.waitForSelector("#ordersPanel:not([hidden])", { timeout: 20000 });
+	await page.waitForSelector(cardSelector, { timeout: 20000 });
+	// Park the card on screen like a thumb would: the scroll number must be
+	// read AFTER the card is where it will be pressed, not before Playwright's
+	// click helper scrolls it into reach.
+	await page.evaluate(selector => {
+		document.querySelector(selector).scrollIntoView({ block: "center" });
+	}, cardSelector);
+	await new Promise(resolve => setTimeout(resolve, 150));
+
+	// Latency forcing: the status request crawls (800ms, like a waking free
+	// server) and the two follow-up fetches crawl too (300ms each). The first
+	// status call lands on the real server; the second is killed to test the
+	// rollback.
+	let statusCalls = 0;
+	await context.route("**/api/owner/orders/*/status", async route => {
+		statusCalls += 1;
+		if (statusCalls === 1) {
+			await new Promise(resolve => setTimeout(resolve, 800));
+			await route.continue();
+		} else {
+			await route.abort("connectionreset");
+		}
+	});
+	await context.route("**/api/owner/orders?*", async route => {
+		await new Promise(resolve => setTimeout(resolve, 300));
+		await route.continue();
+	});
+	await context.route("**/api/owner/sales*", async route => {
+		await new Promise(resolve => setTimeout(resolve, 300));
+		await route.continue();
+	});
+
+	// --- press 1 with a slow server: the card must change before it answers --
+	const scrollBefore = await page.evaluate(() => window.scrollY);
+	const pressStartedAt = Date.now();
+	await page.locator(`${cardSelector} button.primary-action`).click();
+	await page.waitForFunction(
+		args => {
+			const card = document.querySelector(`.order-card[data-id="${args.orderId}"]`);
+			const button = card && card.querySelector("button.primary-action");
+			return Boolean(button && button.textContent === "Mark ready");
+		},
+		{ orderId },
+		{ timeout: 15000, polling: 100 },
+	);
+	const pressMilliseconds = Date.now() - pressStartedAt;
+	const scrollAfterPress = await page.evaluate(() => window.scrollY);
+
+	// --- a poll racing the crawling request must not flip the card back ------
+	// The status POST has not reached the server yet (it is still inside its
+	// 800ms delay), so a refresh right now returns the older Pending list.
+	const pollRan = await page.evaluate(() => {
+		if (typeof refreshOrdersQuietly !== "function") return "unreachable";
+		return refreshOrdersQuietly().then(() => true);
+	});
+	await new Promise(resolve => setTimeout(resolve, 400));
+	const pollGuardCard = await page.evaluate(selector => {
+		const card = document.querySelector(selector);
+		const button = card && card.querySelector("button.primary-action");
+		return button ? button.textContent : null;
+	}, cardSelector);
+
+	// --- the slow request lands: the merge keeps the same new status ---------
+	// 800ms on the wire plus the server's own work, then the follow-up sales
+	// fetch; 1300ms puts the merge safely behind both.
+	await new Promise(resolve => setTimeout(resolve, 1300));
+	const mergeCard = await page.locator(`${cardSelector} button.primary-action`).textContent();
+	const mergeMilliseconds = Date.now() - pressStartedAt;
+
+	// --- reporting first, so the numbers survive any later assertion ---------
+	console.log("\n  ORDER ACTION SPEED REPORT (375px, status+800ms, list/sales+300ms)");
+	console.log(`  press -> card changed : ${pressMilliseconds}ms (scrollY ${scrollBefore} -> ${scrollAfterPress})`);
+	console.log(`  slow request merged by: ${mergeMilliseconds}ms (card after merge: ${mergeCard})`);
+	console.log(`  poll raced the request: ran=${pollRan} card stayed at: ${pollGuardCard}`);
+
+	// --- press 2 fails: the card returns to its earlier Confirmed state ------
+	// In flight the button showed "Mark picked up"; the rollback restores the
+	// exact pre-press card: Confirmed, with "Mark ready" enabled again.
+	await page.locator(`${cardSelector} button.primary-action`).click();
+	await page.waitForFunction(
+		args => {
+			const card = document.querySelector(`.order-card[data-id="${args.orderId}"]`);
+			const button = card && card.querySelector("button.primary-action");
+			return Boolean(button && button.textContent === args.label && !button.disabled);
+		},
+		{ orderId, label: "Mark ready" },
+		{ timeout: 10000, polling: 100 },
+	);
+	const bannerAfterFailure = await page.evaluate(() => {
+		const banner = document.getElementById("ordersError");
+		return banner && !banner.hidden ? banner.textContent : null;
+	});
+	console.log(`  failure banner: ${bannerAfterFailure ? "shown" : "MISSING"}`);
+
+	assert.ok(pressMilliseconds < 1000,
+		`the card must repaint from the optimistic swap, not the round trip (took ${pressMilliseconds}ms)`);
+	assert.equal(scrollAfterPress, scrollBefore, "the press must not move the page");
+	assert.equal(mergeCard, "Mark ready", "the merged server order keeps the new status");
+	assert.equal(pollRan, true, "the racing refresh must have run");
+	assert.equal(pollGuardCard, "Mark ready", "a poll racing the request must not revert the card");
+	assert.ok(bannerAfterFailure && /waking|reached|previous status/i.test(bannerAfterFailure),
+		"the failure must surface the banner: " + String(bannerAfterFailure));
 });

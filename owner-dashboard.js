@@ -204,7 +204,7 @@ async function loadOrders({ focusOrderId = null } = {}) {
 		// Orders and sales figures travel together; a sales failure never
 		// surfaces here, it only hides the sales cards.
 		const [orders] = await Promise.all([fetchOwnerOrders(), loadSalesData()]);
-		allOrders = Array.isArray(orders) ? orders : [];
+		allOrders = mergeInFlightOrders(orders);
 		// The old cards stay on screen until the fresh board exists, so the
 		// page never collapses and never flings the owner to the top.
 		swapOrderList({ includeSales: true, focusOrderId });
@@ -243,6 +243,24 @@ function setOrdersLoading(loading) {
 	ordersList.setAttribute("aria-busy", loading ? "true" : "false");
 }
 
+// Fresh list data must never overwrite an order whose status request is still
+// on the wire: a poll or a late refresh would flip that card back to its older
+// status until the request's own authoritative merge lands. Orders that are in
+// flight keep whatever the board currently shows; every other order comes
+// through untouched.
+function mergeInFlightOrders(orders) {
+	if (!Array.isArray(orders)) return [];
+	if (ordersInFlight.size === 0) return orders;
+	const localById = new Map();
+	for (const order of allOrders) {
+		if (order && order.id !== undefined && order.id !== null) localById.set(String(order.id), order);
+	}
+	return orders.map(order => {
+		const id = order && order.id !== undefined && order.id !== null ? String(order.id) : null;
+		return id !== null && ordersInFlight.has(id) && localById.has(id) ? localById.get(id) : order;
+	});
+}
+
 // --- quiet order refresh -----------------------------------------------------
 //
 // loadOrders stays the blocking load used after a status change. A quiet refresh
@@ -258,6 +276,11 @@ const ORDERS_TRIGGER_MIN_INTERVAL_MS = 15 * 1000;
 const ORDERS_IDLE_LIMIT_MS = 30 * 60 * 1000;
 const seenOrderIds = new Set();
 const pendingNewOrderIds = new Set();
+// Orders with a status request on the wire, keyed by id string. While an order
+// is in flight its card shows the optimistic status and its buttons stay
+// disabled, so a second tap cannot queue a second request and a poll racing
+// the request cannot pull the card back to its older status.
+const ordersInFlight = new Set();
 let ordersSeenInitialized = false;
 let ordersQuietTimer = null;
 let ordersQuietInFlight = false;
@@ -426,7 +449,7 @@ async function refreshOrdersQuietly() {
 	try {
 		const [orders] = await Promise.all([fetchOwnerOrders(), loadSalesData()]);
 		if (!Array.isArray(orders)) return;
-		allOrders = orders;
+		allOrders = mergeInFlightOrders(orders);
 		const firstLoad = !ordersSeenInitialized;
 		const newIds = [];
 		for (const order of orders) {
@@ -439,10 +462,15 @@ async function refreshOrdersQuietly() {
 		else if (typeof document.createDocumentFragment === "function") fragment = document.createDocumentFragment();
 		else return;
 		const scrollY = typeof window !== "undefined" && typeof window.scrollY === "number" ? window.scrollY : null;
+		// The owner may be parked with the keyboard on a card's action button
+		// while the quiet refresh swaps the list underneath it; that focus
+		// must survive the swap, or the follow-up press stops working.
+		const focusedCardId = findFocusedOrderCardId();
 		// One swap: the finished board replaces the list, so the frame never
 		// goes blank. The sales strip renders alongside in its own container.
 		renderOrdersInto(fragment);
 		ordersList.replaceChildren(fragment);
+		if (focusedCardId) restoreOrderCardFocus(focusedCardId);
 		if (scrollY !== null && typeof window.scrollTo === "function" && window.scrollY !== scrollY) {
 			try {
 				window.scrollTo(0, scrollY);
@@ -926,7 +954,73 @@ function swapOrderList({ includeSales = false, focusOrderId = null } = {}) {
 	if (focusOrderId === null || focusOrderId === undefined) return;
 	if (typeof ordersList.querySelector !== "function") return;
 	const safeId = String(focusOrderId).replace(/[^0-9a-zA-Z_-]/g, "");
-	const card = safeId ? ordersList.querySelector(`.order-card[data-id="${safeId}"]`) : null;
+	// Focus is best effort and ALSO asynchronous-proof: a browser clears the
+	// focus of a button that was just removed from the DOM around the end of
+	// the click event, so the synchronous focus below can be undone a moment
+	// later. The follow-up re-assert runs after that settles, and only when
+	// focus actually fell back to the body or a detached node — if the owner
+	// has focused anything else in the meantime, that choice wins.
+	const refocus = () => {
+		if (!ordersList || typeof ordersList.querySelector !== "function") return null;
+		let current = null;
+		try {
+			current = document.activeElement;
+		} catch {
+			current = null;
+		}
+		let loose = current === null || current === undefined || current === document.body;
+		if (!loose && current && typeof current.isConnected === "boolean") loose = !current.isConnected;
+		if (!loose) return null;
+		let card = null;
+		try {
+			card = ordersList.querySelector(`.order-card[data-id="${safeId}"]`);
+		} catch {
+			return null;
+		}
+		if (!card) return null;
+		const button = card.querySelector("button.primary-action");
+		if (!button || typeof button.focus !== "function") return null;
+		try {
+			button.focus({ preventScroll: true });
+		} catch {
+			button.focus();
+		}
+		return button;
+	};
+	refocus();
+	if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+		window.requestAnimationFrame(refocus);
+	} else if (typeof setTimeout === "function") {
+		setTimeout(refocus, 0);
+	}
+}
+
+// A refresh must not clear the owner's working position: whichever order card
+// currently holds focus is remembered by id so the fresh list can put the
+// keyboard back after the swap.
+function findFocusedOrderCardId() {
+	if (typeof document === "undefined" || !document.activeElement) return null;
+	try {
+		const element = document.activeElement;
+		if (typeof element.closest !== "function") return null;
+		const card = element.closest(".order-card");
+		if (!card || !card.dataset || card.dataset.id === undefined || card.dataset.id === null) return null;
+		return String(card.dataset.id);
+	} catch {
+		return null;
+	}
+}
+
+function restoreOrderCardFocus(cardId) {
+	if (!ordersList || typeof ordersList.querySelector !== "function") return;
+	const safeId = String(cardId).replace(/[^0-9a-zA-Z_-]/g, "");
+	if (!safeId) return;
+	let card = null;
+	try {
+		card = ordersList.querySelector(`.order-card[data-id="${safeId}"]`);
+	} catch {
+		return;
+	}
 	if (!card) return;
 	const button = card.querySelector("button.primary-action");
 	if (!button || typeof button.focus !== "function") return;
@@ -1202,6 +1296,12 @@ function renderOrder(order) {
 	if (PICKUP_CONFIRMABLE_STATUSES.includes(order.status)) {
 		actionArea.append(buildOrderActionsMenu(order));
 	}
+	// A change in flight disarms this card's controls: a double tap cannot
+	// queue a second request while the first one is still on the wire. The
+	// buttons come back in the swap that lands with the result.
+	if (order.id !== undefined && order.id !== null && ordersInFlight.has(String(order.id))) {
+		for (const button of actionArea.querySelectorAll("button")) button.disabled = true;
+	}
 
 	card.append(head, pickup, nameLine, phone,
 		...(cancellation ? [cancellation] : []),
@@ -1209,10 +1309,69 @@ function renderOrder(order) {
 	return card;
 }
 
+const OWNER_STATUS_TIMEOUT_MS = 20 * 1000;
+
+// Raw browser network errors read like internals; say what they mean for the
+// owner, covering the free server's cold starts.
+function friendlyStatusError(error) {
+	const raw = error && error.message ? String(error.message) : "";
+	if (error && (error.name === "AbortError" || /aborted|timeout/i.test(raw))) {
+		return "The store server took too long to answer. It may still be waking up.";
+	}
+	if (/failed to fetch|networkerror|load failed/i.test(raw)) {
+		return "The store server could not be reached. It may still be waking up.";
+	}
+	return raw || "The change could not be applied.";
+}
+
 async function updateOrderStatus(orderId, status, cancellationReason, confirmedDate = null, confirmedTime = null) {
 	ordersError.hidden = true;
+	const idKey = String(orderId);
+	// One request per order at a time: the card's disabled buttons plus this
+	// guard keep a double tap from queueing a second, identical request.
+	if (ordersInFlight.has(idKey)) return;
+	const localIndex = allOrders.findIndex(order => order && order.id !== undefined && order.id !== null
+		&& String(order.id) === idKey);
+	if (localIndex === -1) {
+		// The order is not on the board (for example behind a status filter),
+		// so there is no local card to update optimistically. The original
+		// blocking path stays correct, and the banner wording stays clear.
+		try {
+			await apiRequest(`/api/owner/orders/${encodeURIComponent(orderId)}/status`, {
+				method: "POST",
+				body: JSON.stringify({
+					status,
+					...(status === "Cancelled" ? { cancellation_reason: cancellationReason } : {}),
+					...(confirmedDate !== null || confirmedTime !== null
+						? { confirmed_pickup_date: confirmedDate, confirmed_pickup_time: confirmedTime }
+						: {}),
+				}),
+			});
+			await loadOrders({ focusOrderId: orderId });
+		} catch (error) {
+			ordersError.textContent = friendlyStatusError(error);
+			ordersError.hidden = false;
+		}
+		return;
+	}
+	// Optimistic: the card adopts the new status right away through the same
+	// in-place swap a refresh uses, so the press paints in one frame instead
+	// of after three slow round trips. A cancellation reaches this point only
+	// after the reason prompt has been answered, and stock is restored by the
+	// server alone — the local copy changes the status label, nothing else.
+	const snapshot = allOrders[localIndex];
+	const optimisticOrder = { ...snapshot, status };
+	if (status === "Cancelled" && cancellationReason) {
+		optimisticOrder.cancellation_reason = cancellationReason;
+	}
+	allOrders[localIndex] = optimisticOrder;
+	ordersInFlight.add(idKey);
+	swapOrderList({ includeSales: false, focusOrderId: orderId });
+
+	const controller = typeof AbortController === "function" ? new AbortController() : null;
+	const timeoutId = controller ? setTimeout(() => controller.abort(), OWNER_STATUS_TIMEOUT_MS) : null;
 	try {
-		await apiRequest(`/api/owner/orders/${encodeURIComponent(orderId)}/status`, {
+		const updated = await apiRequest(`/api/owner/orders/${encodeURIComponent(orderId)}/status`, {
 			method: "POST",
 			body: JSON.stringify({
 				status,
@@ -1221,13 +1380,43 @@ async function updateOrderStatus(orderId, status, cancellationReason, confirmedD
 					? { confirmed_pickup_date: confirmedDate, confirmed_pickup_time: confirmedTime }
 					: {}),
 			}),
+			...(controller ? { signal: controller.signal } : {}),
 		});
-		// The action must not move the page: keeping the board in place and
-		// parking focus on the same order's next step is how the owner works
-		// through the queue card by card.
-		await loadOrders({ focusOrderId: orderId });
+		if (timeoutId !== null) clearTimeout(timeoutId);
+		// The status route answers with the whole updated order, so the board
+		// does not need a full reload: merge it wherever the card sits now.
+		// If nothing usable came back, one quiet refresh repairs the board in
+		// the background (it never blanks and never writes the banner).
+		const merged = updated && typeof updated === "object" && updated.id !== undefined && updated.id !== null
+			? updated
+			: null;
+		if (merged) {
+			const currentIndex = allOrders.findIndex(order => order && order.id !== undefined && order.id !== null
+				&& String(order.id) === idKey);
+			if (currentIndex >= 0) allOrders[currentIndex] = merged;
+			else allOrders.push(merged);
+			ordersInFlight.delete(idKey);
+			swapOrderList({ includeSales: false, focusOrderId: orderId });
+		} else {
+			ordersInFlight.delete(idKey);
+			await refreshOrdersQuietly();
+		}
+		// The sales numbers follow in the background. The board never waits
+		// for the sales strip: when the figures land, only the strip
+		// container is rebuilt, so the list, its scroll and its focus stay
+		// exactly where the owner left them.
+		await loadSalesData();
+		renderSalesStrip();
 	} catch (error) {
-		ordersError.textContent = error.message;
+		if (timeoutId !== null) clearTimeout(timeoutId);
+		// Put the card back exactly as it was, silently: no refresh, no board
+		// blanking, only this card changes.
+		const currentIndex = allOrders.findIndex(order => order && order.id !== undefined && order.id !== null
+			&& String(order.id) === idKey);
+		if (currentIndex >= 0) allOrders[currentIndex] = snapshot;
+		ordersInFlight.delete(idKey);
+		swapOrderList({ includeSales: false, focusOrderId: orderId });
+		ordersError.textContent = `${friendlyStatusError(error)} The card is back to its previous status. Try again in a moment.`;
 		ordersError.hidden = false;
 	}
 }
