@@ -18,6 +18,10 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { spawn } = require("node:child_process");
 const path = require("node:path");
+const crypto = require("node:crypto");
+// The scroll test books pickup slots through the same validator the checkout
+// route runs, so every order it seeds is one the real API must accept.
+const { validatePickupChoice, OPENING_MINUTES, CLOSING_MINUTES, SLOT_INTERVAL_MINUTES } = require("./pickup-time");
 
 const { chromium } = require("playwright-core");
 
@@ -496,4 +500,167 @@ test("a sandbox deployment marks its cookies Secure, because 127.0.0.1 is a secu
 		if (previous === undefined) delete process.env.LOCAL_SANDBOX_DB;
 		else process.env.LOCAL_SANDBOX_DB = previous;
 	}
+});
+
+// --- the orders board keeps the page where the owner is ----------------------
+//
+// The trigger is a real Android complaint: pressing a card's primary action
+// (Confirm order, then Mark ready, then Mark picked up) used to fling the page
+// to the top, because the reload emptied the whole board before the fresh data
+// arrived. The fix builds the new board off-screen, swaps it in once, restores
+// the scroll, and parks focus on the same order's next step.
+//
+// Scroll assertions keep their exact meaning:
+//   * presses 1 and 2 must leave window.scrollY byte-identical,
+//   * the tab switch and press 3 must never land on or near the top,
+//   * a leaving card can cost at most about one card height (170px),
+//   * focus must land on the next action button without scrolling.
+
+// An order action re-renders in place; a pixel or two of noise is tolerated
+// where the spec allows proximity (press 3 and later), not on presses 1 and 2.
+const SCROLL_TOLERANCE_PX = 170;
+
+// Books one pickup slot a day or more ahead, in open hours, using the exact
+// validator the checkout route runs. Day 0 is skipped so the slot cannot expire
+// between the probe and the checkout.
+function findFuturePickupSlot() {
+	const base = new Date();
+	for (let dayOffset = 1; dayOffset <= 21; dayOffset += 1) {
+		const day = new Date(base.getTime() + dayOffset * 24 * 60 * 60 * 1000);
+		const date = day.toISOString().slice(0, 10);
+		for (let minutes = OPENING_MINUTES; minutes <= CLOSING_MINUTES; minutes += SLOT_INTERVAL_MINUTES) {
+			const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+			try {
+				validatePickupChoice(date, time);
+				return { date, time };
+			} catch {
+				// Closed weekday or unopen slot: probe the next one.
+			}
+		}
+	}
+	throw new Error("no future pickup slot accepted by the store's own rules");
+}
+
+async function createScrollPatrolOrder(pickup, index) {
+	// 32 bytes as base64url: the exact idempotency-key shape checkout requires.
+	const idempotencyKey = crypto.randomBytes(32).toString("base64url");
+	const response = await fetch(`http://127.0.0.1:${API_PORT}/api/orders`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"Idempotency-Key": idempotencyKey,
+		},
+		body: JSON.stringify({
+			customer_name: `Scroll Patrol ${index}`,
+			customer_contact: "0412345678",
+			pickup_date: pickup.date,
+			pickup_time: pickup.time,
+			items: [{ product_id: 74, quantity: 1 }],
+		}),
+	});
+	if (response.status !== 201) {
+		throw new Error(`checkout seeding failed with ${response.status}`);
+	}
+	const body = await response.json();
+	return String(body.id);
+}
+
+test("stepping an order through the board keeps the page where the owner is", async t => {
+	// Nine seeded orders plus the sandbox's legacy first order: enough depth to
+	// need scrolling at 375px, and safely inside the checkout rate limit.
+	const pickup = findFuturePickupSlot();
+	const createdIds = [];
+	for (let index = 1; index <= 9; index += 1) {
+		createdIds.push(await createScrollPatrolOrder(pickup, index));
+	}
+
+	const { context, page } = await newPage({ viewport: { width: 375, height: 667 } });
+	t.after(() => context.close());
+
+	await page.fill("#ownerPassword", TEST_PASSWORD);
+	await page.click("#loginForm button[type=submit]");
+	await page.waitForSelector("#ordersPanel:not([hidden])", { timeout: 20000 });
+	await page.waitForSelector("article.order-card", { timeout: 20000 });
+	await page.waitForFunction(() => {
+		const list = document.getElementById("ordersList");
+		return list && list.querySelectorAll("article.order-card").length > 1 && list.getAttribute("aria-busy") !== "true";
+	}, undefined, { timeout: 20000, polling: 100 });
+
+	// The seeded legacy order sorts first (oldest pickup), so an early member of
+	// the fresh batch sits deeper in the list; park the third one on screen like
+	// an owner scrolling to their work.
+	const targetId = createdIds[2];
+	const cardSelector = `.order-card[data-id="${targetId}"]`;
+	await page.waitForSelector(cardSelector, { timeout: 20000 });
+	await page.evaluate(selector => {
+		document.querySelector(selector).scrollIntoView({ block: "center" });
+	}, cardSelector);
+	const startScrollY = await page.evaluate(() => window.scrollY);
+	assert.ok(startScrollY > 100, `the target card must require scrolling (scrollY=${startScrollY})`);
+
+	// --- press 1: Confirm order (Pending -> Confirmed, same tab) ------------
+	const before1 = await page.evaluate(() => window.scrollY);
+	await page.locator(`${cardSelector} button.primary-action`).click();
+	await page.waitForFunction(
+		(args) => {
+			const card = document.querySelector(`.order-card[data-id="${args.orderId}"]`);
+			const button = card && card.querySelector("button.primary-action");
+			return Boolean(button && button.textContent === args.nextLabel);
+		},
+		{ orderId: targetId, nextLabel: "Mark ready" },
+		{ timeout: 15000, polling: 100 },
+	);
+	const after1 = await page.evaluate(() => window.scrollY);
+	const focus1 = await page.evaluate(selector => {
+		const card = document.querySelector(selector);
+		const button = card && card.querySelector("button.primary-action");
+		return button && document.activeElement === button ? button.textContent : null;
+	}, cardSelector);
+
+	// --- press 2: Mark ready (Confirmed -> Ready for Pickup, moves tab) ------
+	const before2 = await page.evaluate(() => window.scrollY);
+	await page.locator(`${cardSelector} button.primary-action`).click();
+	await page.waitForFunction(
+		(args) => !document.querySelector(`.order-card[data-id="${args.orderId}"]`),
+		{ orderId: targetId },
+		{ timeout: 15000, polling: 100 },
+	);
+	const after2 = await page.evaluate(() => window.scrollY);
+	const stillListed2 = await page.evaluate(selector => Boolean(document.querySelector(selector)), cardSelector);
+
+	// --- reach the moved card through its new tab ----------------------------
+	await page.locator('[data-board-tab="upcoming"]').click();
+	await page.waitForSelector(cardSelector, { timeout: 20000 });
+	const afterTab = await page.evaluate(() => window.scrollY);
+
+	// --- press 3: Mark picked up (Ready for Pickup -> done tab) --------------
+	const before3 = await page.evaluate(() => window.scrollY);
+	await page.locator(`${cardSelector} button.primary-action`).click();
+	await page.waitForFunction(
+		(args) => !document.querySelector(`.order-card[data-id="${args.orderId}"]`),
+		{ orderId: targetId },
+		{ timeout: 15000, polling: 100 },
+	);
+	const after3 = await page.evaluate(() => window.scrollY);
+	const stillListed3 = await page.evaluate(selector => Boolean(document.querySelector(selector)), cardSelector);
+
+	// Reporting first, assertions second: the owner needs the scrollY numbers.
+	console.log("\n  ORDER BOARD SCROLL REPORT (375px viewport)");
+	console.log("  press 1          : " + before1 + " -> " + after1 + " (focus after swap: " + focus1 + ")");
+	console.log("  press 2          : " + before2 + " -> " + after2 + " (card still in tab: " + stillListed2 + ")");
+	console.log("  after tab switch : " + afterTab);
+	console.log("  press 3          : " + before3 + " -> " + after3 + " (card still in tab: " + stillListed3 + ")");
+
+	assert.equal(after1, before1, "press 1 must not move the page");
+	assert.equal(focus1, "Mark ready", "press 1 must park focus on the same order's next action");
+	assert.equal(after2, before2, "press 2 must not move the page even though the card left the tab");
+	assert.equal(stillListed2, false, "press 2 moves the card to the upcoming tab");
+	assert.ok(afterTab > 0, "choosing the new tab must not scroll to the top");
+	// The card leaving to the Done tab shortens the tab's list, so the page can
+	// lose at most about one card of scroll: "as close as possible", never the
+	// top of the board.
+	assert.ok(Math.abs(after3 - before3) <= SCROLL_TOLERANCE_PX,
+		`press 3 must keep the page near its position (moved ${before3 - after3}px)`);
+	assert.ok(after3 > 0, "press 3 must never scroll to the top");
+	assert.equal(stillListed3, false, "press 3 moves the card to the done tab");
 });

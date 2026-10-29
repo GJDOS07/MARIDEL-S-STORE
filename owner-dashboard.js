@@ -197,16 +197,17 @@ async function apiRequest(path, options = {}) {
 	return body;
 }
 
-async function loadOrders() {
+async function loadOrders({ focusOrderId = null } = {}) {
 	ordersError.hidden = true;
-	ordersList.replaceChildren();
 	setOrdersLoading(true);
 	try {
 		// Orders and sales figures travel together; a sales failure never
 		// surfaces here, it only hides the sales cards.
 		const [orders] = await Promise.all([fetchOwnerOrders(), loadSalesData()]);
 		allOrders = Array.isArray(orders) ? orders : [];
-		renderOrdersBoard();
+		// The old cards stay on screen until the fresh board exists, so the
+		// page never collapses and never flings the owner to the top.
+		swapOrderList({ includeSales: true, focusOrderId });
 	} catch (error) {
 		ordersError.textContent = error.message;
 		ordersError.hidden = false;
@@ -796,22 +797,59 @@ function renderOrdersInto(target) {
 	renderOrderListInto(target);
 }
 
-// The blocking path: build the finished board off-screen and swap it in.
-function renderOrdersBoard() {
+// Swaps a finished list in with one replaceChildren while holding the page in
+// place: the window scroll position and the list's own scroll are captured
+// before the swap and put back after it, so a refresh cannot fling the owner
+// to the top of the board. When focusOrderId names an order that is still on
+// the board after the swap, the keyboard lands on that card's next primary
+// action button; preventScroll stops the transfer from moving the page. An
+// order that has moved to another tab is simply not found there, so nothing
+// is focused and the scroll restoration alone decides where the page sits.
+function swapOrderList({ includeSales = false, focusOrderId = null } = {}) {
 	if (!ordersList) return;
 	const fragment = buildFragment();
 	if (!fragment) return;
-	renderOrdersInto(fragment);
+	const windowScrollY = typeof window !== "undefined" && typeof window.scrollY === "number" ? window.scrollY : null;
+	const listScrollTop = typeof ordersList.scrollTop === "number" ? ordersList.scrollTop : null;
+	if (includeSales) renderSalesStrip();
+	renderOrderListInto(fragment);
 	ordersList.replaceChildren(fragment);
+	if (listScrollTop !== null && ordersList.scrollTop !== listScrollTop) {
+		try {
+			ordersList.scrollTop = listScrollTop;
+		} catch {
+			// Some containers are never scroll targets; restoring is best effort.
+		}
+	}
+	if (windowScrollY !== null && typeof window.scrollTo === "function" && window.scrollY !== windowScrollY) {
+		try {
+			window.scrollTo(0, windowScrollY);
+		} catch {
+			// Restoring scroll is best effort; never let it break the refresh.
+		}
+	}
+	if (focusOrderId === null || focusOrderId === undefined) return;
+	if (typeof ordersList.querySelector !== "function") return;
+	const safeId = String(focusOrderId).replace(/[^0-9a-zA-Z_-]/g, "");
+	const card = safeId ? ordersList.querySelector(`.order-card[data-id="${safeId}"]`) : null;
+	if (!card) return;
+	const button = card.querySelector("button.primary-action");
+	if (!button || typeof button.focus !== "function") return;
+	try {
+		button.focus({ preventScroll: true });
+	} catch {
+		button.focus();
+	}
+}
+
+// The blocking path: build the finished board off-screen and swap it in.
+function renderOrdersBoard() {
+	swapOrderList({ includeSales: true });
 }
 
 // Tab and search changes only redraw the list, still in one replaceChildren.
 function renderOrderListOnly() {
-	if (!ordersList) return;
-	const fragment = buildFragment();
-	if (!fragment) return;
-	renderOrderListInto(fragment);
-	ordersList.replaceChildren(fragment);
+	swapOrderList();
 }
 
 function selectOrderBoardTab(tab) {
@@ -1089,7 +1127,10 @@ async function updateOrderStatus(orderId, status, cancellationReason, confirmedD
 					: {}),
 			}),
 		});
-		await loadOrders();
+		// The action must not move the page: keeping the board in place and
+		// parking focus on the same order's next step is how the owner works
+		// through the queue card by card.
+		await loadOrders({ focusOrderId: orderId });
 	} catch (error) {
 		ordersError.textContent = error.message;
 		ordersError.hidden = false;
