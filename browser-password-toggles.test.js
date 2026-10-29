@@ -566,12 +566,12 @@ async function createScrollPatrolOrder(pickup, index) {
 }
 
 test("stepping an order through the board keeps the page where the owner is", async t => {
-	// Eight seeded orders plus the sandbox's legacy first order: enough depth to
-	// need scrolling at 375px. Both browser tests that check out keep the file
-	// inside the checkout rate limit of ten per ten minutes.
+	// Seven seeded orders plus the sandbox's legacy first order: enough depth to
+	// need scrolling at 375px. The three browser tests that check out keep the
+	// file inside the checkout rate limit of ten per ten minutes.
 	const pickup = findFuturePickupSlot();
 	const createdIds = [];
-	for (let index = 1; index <= 8; index += 1) {
+	for (let index = 1; index <= 7; index += 1) {
 		createdIds.push(await createScrollPatrolOrder(pickup, index));
 	}
 
@@ -800,4 +800,63 @@ test("an order action paints immediately on a slow server and rolls back on fail
 	assert.equal(pollGuardCard, "Mark ready", "a poll racing the request must not revert the card");
 	assert.ok(bannerAfterFailure && /waking|reached|previous status/i.test(bannerAfterFailure),
 		"the failure must surface the banner: " + String(bannerAfterFailure));
+});
+
+// --- a broken CSRF cookie must heal itself -------------------------------------
+//
+// When the jar's CSRF cookie stops matching the live session (an old cookie
+// expiring, or another tab winning the shared jar), a press used to fail with
+// "A valid CSRF token is required." until the page was reloaded, because the
+// dashboard's single retry re-fetched a random token that can never satisfy a
+// logged-in request. The session-aware bootstrap now re-issues the
+// session-paired token, so the same retry heals the press, the status change
+// lands, and logout keeps working.
+test("a press with a poisoned CSRF cookie heals on the retry and logout still works", async t => {
+	const { context, page } = await newPage({ viewport: { width: 375, height: 667 } });
+	t.after(() => context.close());
+
+	// One checkout order on the shared stack, seeded BEFORE the login so the
+	// first board load already shows it (the file stays inside the checkout
+	// rate limit of ten per ten minutes).
+	const pickup = findFuturePickupSlot();
+	const orderId = await createScrollPatrolOrder(pickup, 1);
+	const cardSelector = `.order-card[data-id="${orderId}"]`;
+
+	await page.fill("#ownerPassword", TEST_PASSWORD);
+	await page.click("#loginForm button[type=submit]");
+	await page.waitForSelector("#ordersPanel:not([hidden])", { timeout: 20000 });
+	await page.waitForSelector(cardSelector, { timeout: 20000 });
+
+	// Break the pair exactly the way a second tab or an expiry would: the
+	// session cookie is untouched, the CSRF cookie is garbage.
+	await page.evaluate(() => {
+		document.cookie = "maridel_owner_csrf=poison-9999999999; Path=/; SameSite=None; Secure";
+	});
+
+	const button = page.locator(`${cardSelector} button.primary-action`);
+	const pressLabel = (await button.textContent()).trim();
+	console.log(`  poisoned-cookie heal: pressing "${pressLabel}" -> expect one refused press, then the retry lands it`);
+	await button.click();
+
+	// The heal path: first press 403, one bootstrap, retried press 200 with the
+	// session-paired token. The card must end Confirmed with the banner hidden.
+	await page.waitForFunction(
+		args => {
+			const card = document.querySelector(`.order-card[data-id="${args.orderId}"]`);
+			const element = card && card.querySelector("button.primary-action");
+			return Boolean(element && element.textContent === "Mark ready" && !element.disabled);
+		},
+		{ orderId },
+		{ timeout: 15000, polling: 100 },
+	);
+	const bannerAfterHeal = await page.evaluate(() => {
+		const banner = document.getElementById("ordersError");
+		return banner && !banner.hidden ? banner.textContent : null;
+	});
+	assert.equal(bannerAfterHeal, null,
+		"the healed press must leave no error banner: " + String(bannerAfterHeal));
+
+	// Logout was also CSRF-gated; with the healed pair it goes straight through.
+	await page.click("#logoutButton");
+	await page.waitForSelector("#loginPanel:not([hidden])", { timeout: 15000 });
 });

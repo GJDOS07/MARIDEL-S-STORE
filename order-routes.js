@@ -786,7 +786,38 @@ function createOrderRouter(pool, {
 		}
 	});
 
-	router.get("/owner/csrf", requireAllowedOrigin, (req, res) => {
+	router.get("/owner/csrf", requireAllowedOrigin, async (req, res) => {
+		// When the caller already holds a live session, refresh the exact pair
+		// requireCsrf expects: the token derived from that session, with the
+		// session's lifetime. This is what lets the dashboard heal a broken
+		// token-cookie pair (a cookie that expired, or was overwritten by
+		// another tab) with its one automatic retry instead of failing every
+		// press until the page is reloaded. Without a session, or when the
+		// session cannot be verified, the answer stays exactly as before: a
+		// fresh random token for the login form.
+		const cookies = parseCookies(req.get("Cookie"));
+		const sessionId = cookies.get(SESSION_COOKIE);
+		if (sessionId && configuredSessionSecret) {
+			try {
+				const result = await pool.query(
+					"SELECT 1 FROM owner_sessions WHERE session_hash = $1 AND expires_at > CURRENT_TIMESTAMP",
+					[sha256(sessionId)],
+				);
+				if (result.rowCount === 1) {
+					const csrfToken = csrfForSession(sessionId);
+					res.set("Cache-Control", "no-store");
+					res.set("Set-Cookie", serializeCookie(CSRF_COOKIE, csrfToken, {
+						maxAge: SESSION_TTL_SECONDS,
+						secure: secureCookies,
+					}));
+					return res.json({ csrf_token: csrfToken });
+				}
+			} catch {
+				// The database being unreachable must not break the bootstrap: an
+				// unknown or unverified caller still gets the random token below,
+				// and requireCsrf keeps enforcing the pair on every protected POST.
+			}
+		}
 		const token = crypto.randomBytes(32).toString("base64url");
 		res.set("Cache-Control", "no-store");
 		res.set("Set-Cookie", serializeCookie(CSRF_COOKIE, token, {

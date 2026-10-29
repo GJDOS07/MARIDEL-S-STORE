@@ -46,11 +46,65 @@ async function mount() {
 	await new Promise(resolve => server.once("listening", resolve));
 	return {
 		base: `http://127.0.0.1:${server.address().port}`,
+		db: sandbox.db,
 		async close() {
 			await new Promise(resolve => server.close(resolve));
 			await sandbox.close();
 		},
 	};
+}
+
+// Performs the bootstrap-then-login pair and hands back the cookie jar exactly
+// as the browser would hold it after a successful login.
+async function loginReturningJar(base, password) {
+	const bootstrap = await fetch(`${base}/api/owner/csrf`, { headers: { Origin: ORIGIN } });
+	const bootstrapCookie = bootstrap.headers.get("set-cookie").split(";")[0];
+	const bootstrapToken = (await bootstrap.json()).csrf_token;
+	const login = await fetch(`${base}/api/owner/login`, {
+		method: "POST",
+		headers: {
+			Origin: ORIGIN,
+			"Content-Type": "application/json",
+			Cookie: bootstrapCookie,
+			"X-CSRF-Token": bootstrapToken,
+		},
+		body: JSON.stringify({ password }),
+	});
+	return {
+		status: login.status,
+		body: await login.json().catch(() => ({})),
+		jar: login.headers.getSetCookie().map(line => line.split(";")[0]),
+	};
+}
+
+function jarCookie(jar, name) {
+	return jar.find(line => line.startsWith(name + "="));
+}
+
+// The status change needs a Pending order in the sandbox. Reuse one when the
+// seed already provides it, otherwise insert a private fixture.
+async function ensurePendingOrder(app) {
+	const existing = await app.db.query("SELECT id FROM orders WHERE status = 'Pending' ORDER BY id LIMIT 1");
+	if (existing.rowCount === 1) return existing.rows[0].id;
+	await app.db.query(
+		"INSERT INTO orders (id, customer_id, subtotal, total, status, customer_name, customer_contact, " +
+		"pickup_type, pickup_date, pickup_time, requested_pickup_time, total_amount, customer_access_token, idempotency_key, order_number) " +
+		"VALUES (777, NULL, 5.50, 5.50, 'Pending', 'CSRF Fixture', '0400000000', " +
+		"'SCHEDULED', '2026-06-01', '12:00', '12:00', 5.50, " +
+		"'csrf-fixture-credential-00000000000000000000000001', $1, 'MS-777')",
+		["7".repeat(64)],
+	);
+	await app.db.query(
+		"INSERT INTO order_items (order_id, product_id, quantity, price, product_name, unit_price, subtotal) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+		[777, 73, 1, "5.50", "Fixture Product", "5.50", "5.50"],
+	);
+	for (const table of ["orders", "order_items"]) {
+		await app.db.query(
+			"SELECT setval(pg_get_serial_sequence($1, 'id'), GREATEST((SELECT COALESCE(MAX(id), 0) FROM public." + table + "), 1), true)",
+			["public." + table],
+		);
+	}
+	return 777;
 }
 
 // Performs the bootstrap-then-login pair exactly as the frontend does.
@@ -268,4 +322,187 @@ test("a refused token is re-fetched and the request retried once", () => {
 	// Exactly one retry: a loop would hide a genuine rejection.
 	const retries = (script.match(/await send\(\{ path, options, needsToken \}\)/g) || []).length;
 	assert.equal(retries, 2, "the request is sent at most twice: once, plus one retry");
+});
+
+// --- the poisoned-pair bug ----------------------------------------------------
+//
+// THE BUG THESE GUARD AGAINST
+//   requireCsrf compares the CSRF cookie with the header and, when a session
+//   exists, demands the session-derived token. The bootstrap endpoint used to
+//   answer EVERY caller with a fresh random token, so once the jar's CSRF
+//   cookie stopped matching a live session (a cookie that expired, or another
+//   tab overwriting it with its own pair), the dashboard's one automatic retry
+//   could never heal: the retry brought yet another random token, the status
+//   press failed with "A valid CSRF token is required.", and even logout was
+//   refused until the page was reloaded and the owner logged in again.
+//   The bootstrap now issues the session-paired token whenever the request
+//   carries a live session, so the retry restores the exact pair requireCsrf
+//   expects.
+
+test("the bootstrap returns the session token for a live session", async t => {
+	const previous = process.env.OWNER_PASSWORD_HASH;
+	process.env.OWNER_PASSWORD_HASH = hashOwnerPassword(PASSWORD);
+	process.env.OWNER_SESSION_SECRET = SECRET;
+	try {
+		const app = await mount();
+		t.after(() => app.close());
+		const good = await loginReturningJar(app.base, PASSWORD);
+		assert.equal(good.status, 200, "login must succeed");
+		const sessionCookie = jarCookie(good.jar, "maridel_owner_session");
+		assert.ok(sessionCookie, "login must establish the session cookie");
+
+		// The jar lost its CSRF cookie (expired, or another tab's pair won).
+		// The bootstrap refreshes with ONLY the session cookie present.
+		const refreshed = await fetch(`${app.base}/api/owner/csrf`, {
+			headers: { Origin: ORIGIN, Cookie: sessionCookie },
+		});
+		assert.equal(refreshed.status, 200);
+		const setCookie = refreshed.headers.get("set-cookie") || "";
+		const refreshedValue = /^[^=]+=([^;]*)/.exec(setCookie)[1];
+		const refreshedBody = await refreshed.json();
+		assert.equal(decodeURIComponent(refreshedValue), refreshedBody.csrf_token, "cookie and body must agree");
+		assert.equal(refreshedBody.csrf_token, good.body.csrf_token,
+			"the refreshed token must be the session-paired token the login issued");
+		assert.match(setCookie, /Max-Age=28800/, "the refreshed cookie must keep the session lifetime, not the 10-minute one");
+	} finally {
+		if (previous === undefined) delete process.env.OWNER_PASSWORD_HASH;
+		else process.env.OWNER_PASSWORD_HASH = previous;
+		delete process.env.OWNER_SESSION_SECRET;
+	}
+});
+
+test("an unauthenticated bootstrap still gets a random token, which cannot pass an authenticated POST", async t => {
+	const previous = process.env.OWNER_PASSWORD_HASH;
+	process.env.OWNER_PASSWORD_HASH = hashOwnerPassword(PASSWORD);
+	process.env.OWNER_SESSION_SECRET = SECRET;
+	try {
+		const app = await mount();
+		t.after(() => app.close());
+		// 1. No cookie at all: the behaviour is exactly as before.
+		const fresh = await fetch(`${app.base}/api/owner/csrf`, { headers: { Origin: ORIGIN } });
+		const freshCookie = fresh.headers.get("set-cookie");
+		const freshToken = (await fresh.json()).csrf_token;
+		assert.match(freshCookie, /Max-Age=600/, "without a session the short-lived random cookie is kept");
+		// 2. That random token, even paired perfectly with its cookie, is not
+		//    accepted once a session exists: the session-derived check refuses
+		//    it, so a blackmailer cannot smuggle a bootstrap token into a
+		//    logged-in session.
+		const good = await loginReturningJar(app.base, PASSWORD);
+		assert.equal(good.status, 200);
+		const sessionCookie = jarCookie(good.jar, "maridel_owner_session");
+		const orderId = await ensurePendingOrder(app);
+		const smuggled = await fetch(`${app.base}/api/owner/orders/${orderId}/status`, {
+			method: "POST",
+			headers: {
+				Origin: ORIGIN,
+				"Content-Type": "application/json",
+				Cookie: `${sessionCookie}; maridel_owner_csrf=${freshToken}`,
+				"X-CSRF-Token": freshToken,
+			},
+			body: JSON.stringify({ status: "Confirmed" }),
+		});
+		assert.equal(smuggled.status, 403, "the random token must not satisfy a logged-in POST");
+		assert.equal((await smuggled.json()).code, "CSRF_INVALID");
+	} finally {
+		if (previous === undefined) delete process.env.OWNER_PASSWORD_HASH;
+		else process.env.OWNER_PASSWORD_HASH = previous;
+		delete process.env.OWNER_SESSION_SECRET;
+	}
+});
+
+test("a poisoned pair heals with one bootstrap: the status change lands and logout works", async t => {
+	const previous = process.env.OWNER_PASSWORD_HASH;
+	process.env.OWNER_PASSWORD_HASH = hashOwnerPassword(PASSWORD);
+	process.env.OWNER_SESSION_SECRET = SECRET;
+	try {
+		const app = await mount();
+		t.after(() => app.close());
+		const good = await loginReturningJar(app.base, PASSWORD);
+		assert.equal(good.status, 200);
+		const sessionCookie = jarCookie(good.jar, "maridel_owner_session");
+		const orderId = await ensurePendingOrder(app);
+		const statusPath = `${app.base}/api/owner/orders/${orderId}/status`;
+
+		// The press with a broken CSRF cookie, exactly as the browser does it:
+		// the header still holds the (valid) session token from login, but the
+		// jar's CSRF cookie belongs to some other pair now.
+		const poisoned = await fetch(statusPath, {
+			method: "POST",
+			headers: {
+				Origin: ORIGIN,
+				"Content-Type": "application/json",
+				Cookie: `${sessionCookie}; maridel_owner_csrf=poison-9999999999`,
+				"X-CSRF-Token": good.body.csrf_token,
+			},
+			body: JSON.stringify({ status: "Confirmed" }),
+		});
+		assert.equal(poisoned.status, 403, "the poisoned press must be refused");
+		assert.equal((await poisoned.json()).code, "CSRF_INVALID");
+
+		// The dashboard's automatic retry bootstraps a token first, sending the
+		// whole jar (session cookie plus whatever CSRF cookie survived).
+		const healed = await fetch(`${app.base}/api/owner/csrf`, {
+			headers: { Origin: ORIGIN, Cookie: `${sessionCookie}; maridel_owner_csrf=poison-9999999999` },
+		});
+		assert.equal(healed.status, 200);
+		const healedCookie = (healed.headers.get("set-cookie") || "").split(";")[0];
+		const healedToken = (await healed.json()).csrf_token;
+		assert.equal(healedToken, good.body.csrf_token, "the heal refresh must hand back the session token");
+
+		// The retry press now carries the freshly healed pair.
+		const retry = await fetch(statusPath, {
+			method: "POST",
+			headers: {
+				Origin: ORIGIN,
+				"Content-Type": "application/json",
+				Cookie: `${sessionCookie}; ${healedCookie}`,
+				"X-CSRF-Token": healedToken,
+			},
+			body: JSON.stringify({ status: "Confirmed" }),
+		});
+		assert.equal(retry.status, 200, "the healed press must succeed on the retry");
+		const updated = await retry.json();
+		assert.equal(updated.status, "Confirmed", "the server must confirm the order");
+		const row = await app.db.query("SELECT status FROM orders WHERE id = $1", [orderId]);
+		assert.equal(row.rows[0].status, "Confirmed", "the status change is real, not cosmetic");
+
+		// Logout also refused before; with the healed pair it goes through.
+		const logout = await fetch(`${app.base}/api/owner/logout`, {
+			method: "POST",
+			headers: { Origin: ORIGIN, Cookie: `${sessionCookie}; ${healedCookie}`, "X-CSRF-Token": healedToken },
+			body: "{}",
+		});
+		assert.equal(logout.status, 200, "logout must work once the pair is healed");
+	} finally {
+		if (previous === undefined) delete process.env.OWNER_PASSWORD_HASH;
+		else process.env.OWNER_PASSWORD_HASH = previous;
+		delete process.env.OWNER_SESSION_SECRET;
+	}
+});
+
+test("a disallowed origin cannot read the CSRF bootstrap, with or without a session", async t => {
+	const previous = process.env.OWNER_PASSWORD_HASH;
+	process.env.OWNER_PASSWORD_HASH = hashOwnerPassword(PASSWORD);
+	process.env.OWNER_SESSION_SECRET = SECRET;
+	try {
+		const app = await mount();
+		t.after(() => app.close());
+		const good = await loginReturningJar(app.base, PASSWORD);
+		assert.equal(good.status, 200);
+		const sessionCookie = jarCookie(good.jar, "maridel_owner_session");
+		for (const withSession of [false, true]) {
+			const headers = { Origin: "https://attacker.example" };
+			if (withSession) headers.Cookie = sessionCookie;
+			const refused = await fetch(`${app.base}/api/owner/csrf`, { headers });
+			assert.equal(refused.status, 403, "a disallowed origin is refused before any token is minted");
+			assert.equal(refused.headers.get("set-cookie"), null, "no cookie must be set for a disallowed origin");
+			const body = await refused.json();
+			assert.equal(body.code, "ORIGIN_NOT_ALLOWED");
+			assert.equal(body.csrf_token, undefined, "no token may leak to a disallowed origin");
+		}
+	} finally {
+		if (previous === undefined) delete process.env.OWNER_PASSWORD_HASH;
+		else process.env.OWNER_PASSWORD_HASH = previous;
+		delete process.env.OWNER_SESSION_SECRET;
+	}
 });
